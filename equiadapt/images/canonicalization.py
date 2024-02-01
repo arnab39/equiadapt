@@ -1,14 +1,27 @@
 import torch
 import kornia as K
+from equiadapt.common.basecanonicalization import BaseCanonicalization
 from equiadapt.images.utils import roll_by_gather
 
-class GroupEquivariantImageCanonicalization(torch.nn.Module):
-    def __init__(self, equivariant_network, beta=1.0):
-        super().__init__()
-        self.equivariant_network = equivariant_network
+class GroupEquivariantImageCanonicalization(BaseCanonicalization):
+    def __init__(self, equivariant_network: torch.nn.Module, beta: float = 1.0):
+        super().__init__(equivariant_network)
         self.beta = beta
+        self.group_type = equivariant_network.group_type
+        self.num_rotations = equivariant_network.num_rotations
+        self.num_group = self.num_rotations if self.group_type == 'rotation' else 2 * self.num_rotations
         
     def groupactivations_to_groupelement(self, group_activations):
+        """
+        This method takes the activations for each group element as input and
+        returns the group element
+        
+        Args:
+            group_activations: activations for each group element
+            
+        Returns:
+            group_element: group element
+        """
         device = group_activations.device
         group_activations_one_hot = torch.nn.functional.one_hot(torch.argmax(group_activations, dim=-1), self.num_group).float()
         group_activations_soft = torch.nn.functional.softmax(self.beta * group_activations, dim=-1)
@@ -33,25 +46,21 @@ class GroupEquivariantImageCanonicalization(torch.nn.Module):
             return group_element
         
         
-    def forward(self, x):
+    def canonicalize(self, x):
         """
         This method takes an image as input and 
-        returns the canonicalized image and information dictionary which
-        contains the activations of each group element.
-        
-        x shape: (batch_size, in_channels, height, width)
-        :return: (batch_size, num_classes)
+        returns the canonicalized image 
         """
-        batch_size = x.shape[0]
         
         x_cropped = self.crop_canonization(x)
         # resize for ImageNet
         if self.num_classes == 1000:
             x_cropped = self.resize(x_cropped)
-        fibres_activations = self.canonization_network(x_cropped)
+        group_activations = self.canonization_network(x_cropped)
         
         if self.group_type == 'rotation':
-            angles = self.fibres_to_group(fibres_activations)
+            angles = self.groupactivations_to_groupelement(group_activations)
+            
             group = [angles]
             
             x = self.pad(x)
@@ -59,8 +68,9 @@ class GroupEquivariantImageCanonicalization(torch.nn.Module):
             x = self.crop(x)
             
         elif self.group_type == 'roto-reflection':
-            angles, reflect_indicator = self.fibres_to_group(fibres_activations)
+            angles, reflect_indicator = self.groupactivations_to_groupelement(group_activations)
             group = [angles, reflect_indicator]
+            
             x_reflected = K.geometry.hflip(x)
             reflect_indicator = reflect_indicator[:,None,None,None]
             x = (1 - reflect_indicator) * x + reflect_indicator * x_reflected
@@ -69,30 +79,46 @@ class GroupEquivariantImageCanonicalization(torch.nn.Module):
             x = K.geometry.rotate(x, -angles)
             x = self.crop(x)
             
-        return x_canonized, group, fibres_activations
+        canonicalization_info_dict = {'group': group, 'group_activations': group_activations}
+        
+        return x, canonicalization_info_dict
     
     
-    
-        x_canonized, group, fibres_activations = self.get_canonized_images(x)
-        # NOTE: specifically for ImageNet hard-code the training to not pass through prediction network
-        if self.num_classes == 1000 and self.training:
-            return None, fibres_activations, x_canonized, group
-        reps = self.base_encoder(x_canonized)
-        if self.mode == 'invariance':
-            reps = reps.reshape(batch_size, -1)
-            return self.predictor(reps), fibres_activations, x_canonized, group
-        elif self.mode == 'equivariance':
-            assert len(reps.shape) == 4 and reps.shape[1] % self.num_group == 0
-            angles = group[0]
+    def invert_canonicalization(self, x_canonicalized_out, induced_rep_type='regular'):
+        """
+        This method takes the output of canonicalized image as input and
+        returns output of the original image
+        """
+        batch_size = x_canonicalized_out.shape[0]
+        if induced_rep_type == 'regular':
+            assert len(x_canonicalized_out.shape) == 4 and x_canonicalized_out.shape[1] % self.num_group == 0
+            angles = self.canonicalization_info_dict['group'][0]
             if self.group_type == 'rotation':
-                reps = K.geometry.rotate(reps, angles)
-                reps = reps.reshape(batch_size, reps.shape[1] // self.num_group, self.num_group, reps.shape[2], reps.shape[3])
-                shift = angles / 360. * reps.shape[2]
-                reps = roll_by_gather(reps, shift).reshape(batch_size, -1, reps.shape[3], reps.shape[4])
-                return self.predictor(reps.reshape(batch_size, -1))
-            elif self.group_type == 'roto-reflection':
-                reflect_indicator = group[1]
-                reps = reps.reshape(batch_size, reps.shape[1] // self.num_group, self.num_group, reps.shape[2], reps.shape[3])
-                reps = reps * reflect_indicator[:,None,None,None,None]
+                x_out = K.geometry.rotate(x_canonicalized_out, angles)
+                x_canonicalized_out = x_out.reshape(batch_size, x_out.shape[1] // self.num_group, self.num_group, x_out.shape[2], x_out.shape[3])
+                shift = angles / 360. * x_out.shape[2]
+                x_out = roll_by_gather(x_out, shift)
+                x_out = x_out.reshape(batch_size, -1, x_out.shape[3], x_out.shape[4])
+                return x_out
+            elif self.group_type == 'roto-reflection':             
                 # TODO: implement roto-reflection equivariance
                 raise NotImplementedError
+        elif induced_rep_type == 'scalar':
+            assert len(x_canonicalized_out.shape) == 4
+            angles = self.canonicalization_info_dict['group'][0]
+            if self.group_type == 'rotation':
+                x_out = K.geometry.rotate(x_canonicalized_out, angles)
+                return x_out
+            elif self.group_type == 'roto-reflection':
+                reflect_indicator = self.canonicalization_info_dict['group'][1]                
+                x_out = K.geometry.rotate(x_canonicalized_out, angles)
+                x_out_reflected = K.geometry.hflip(x_out)
+                x_out = x_out * reflect_indicator[:,None,None,None,None] + x_out_reflected * (1 - reflect_indicator[:,None,None,None,None])
+                return x_out
+        elif induced_rep_type == 'vector':
+            raise NotImplementedError
+        else:
+            raise ValueError('induced_rep_type must be regular, scalar or vector')
+        
+    def get_prior_regularization_loss(self):
+        raise NotImplementedError()
