@@ -5,169 +5,102 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 import torch
 from torch.optim.lr_scheduler import OneCycleLR, MultiStepLR
-from examples.images.inference.classes import SO2Inference, O2Inference
-from canonical_network.models.classification_networks import VanillaNetwork, EquivariantCanonizationNetwork, BasicConvEncoder, Identity, PCACanonizationNetwork, RotationEquivariantConvEncoder, OptGroupEnsembleCanonizationNetwork, SteerableCanonizationNetwork
-from canonical_network.models.resnet import resnet44
 import torchvision
 from canonical_network.utils import check_rotation_invariance, check_rotoreflection_invariance, save_images_class_wise
+from examples.images.classification.model_utils import get_canonicalization_network, get_canonicalizer, get_dataset_specific_info, get_prediction_network
 
 # define the LightningModule
-class ClassifierLightningModule(pl.LightningModule):
+class ImageClassifierPipeline(pl.LightningModule):
     def __init__(self, hyperparams):
         super().__init__()
-        #self.save_hyperparameters()
-        if hyperparams.dataset == 'rotated_mnist':
-            self.loss = nn.CrossEntropyLoss()
-            self.im_shape = (3, 224, 224)
-            num_classes = 10
-            if hyperparams.base_encoder == 'rotation_eqv_cnn':
-                out_channels = hyperparams.num_channels
-            else:
-                out_channels = 32
-        elif hyperparams.dataset in ('cifar10', 'cifar100'):
-            self.loss = nn.CrossEntropyLoss()
-            self.im_shape = (3, 224, 224)
-            num_classes = 10 if hyperparams.dataset == 'cifar10' else 100
-            out_channels = 64
-        elif hyperparams.dataset == 'stl10':
-            self.loss = nn.CrossEntropyLoss()
-            self.im_shape = (3, 224, 224)
-            num_classes = 10
-            out_channels = 64
-        elif hyperparams.dataset == 'flowers102':
-            self.loss = nn.CrossEntropyLoss()
-            self.im_shape = (3, 224, 224)
-            num_classes = 102
-            out_channels = 64
-        elif hyperparams.dataset == 'celeba':
-            self.loss = nn.BCEWithLogitsLoss()
-            self.im_shape = (3, 224, 224)
-            num_classes = 40
-            out_channels = 64
-        elif hyperparams.dataset == 'ImageNet':
-            self.loss = nn.CrossEntropyLoss()
-            self.im_shape = (3, 224, 224)
-            num_classes = 1000
-            out_channels = 64
-        else:
-            raise ValueError('dataset not implemented for now.')
+        self.save_hyperparameters()
+        
+        self.loss, self.image_shape, self.num_classes = get_dataset_specific_info(hyperparams.dataset.dataset_name)
 
-        if hyperparams.base_encoder == 'basic_cnn':
-            self.encoder = BasicConvEncoder(self.im_shape, out_channels)
-        elif hyperparams.base_encoder == 'resnet18':
-            self.encoder = torchvision.models.resnet18(weights='DEFAULT')
-            if hyperparams.dataset in ('cifar10', 'cifar100'):
-                if self.im_shape[-1] == 32 and self.im_shape[-2] == 32:
-                    self.encoder.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-                    self.encoder.maxpool = nn.Identity()
-            elif hyperparams.dataset == 'rotated_mnist':
-                self.encoder.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1, bias=False)
-                self.encoder.maxpool = nn.Identity()
-            self.encoder.fc = nn.Identity()
-        elif hyperparams.base_encoder == 'resnet44':
-            self.encoder = resnet44()
-            self.encoder.fc = nn.Identity()
-        elif hyperparams.base_encoder == 'resnet50':
-            self.encoder = torchvision.models.resnet50(weights='DEFAULT') if hyperparams.use_pretrained else torchvision.models.resnet50(weights=None)
-            if hyperparams.dataset in ('cifar10', 'cifar100'):
-                if self.im_shape[-1] == 32 and self.im_shape[-2] == 32:
-                    self.encoder.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-                    self.encoder.maxpool = nn.Identity()
-            elif hyperparams.dataset == 'rotated_mnist':
-                self.encoder.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1, bias=False)
-                self.encoder.maxpool = nn.Identity()
-            if not hyperparams.dataset == 'ImageNet':
-                self.encoder.fc = nn.Identity()
-        elif hyperparams.base_encoder == 'resnet101':
-            self.encoder = torchvision.models.resnet101(weights='DEFAULT')
-            self.encoder.fc = Identity()
-        elif hyperparams.base_encoder == 'wide_resnet':
-            self.encoder = torchvision.models.wide_resnet50_2(weights='DEFAULT') if hyperparams.use_pretrained else torchvision.models.wide_resnet50_2(weights=None)
-            self.encoder.fc = Identity()
-        elif hyperparams.base_encoder == 'vit':
-            self.encoder = torchvision.models.vit_b_16(weights='DEFAULT') if hyperparams.use_pretrained else torchvision.models.vit_b_16(weights=None)
-            if not hyperparams.dataset == 'ImageNet':
-                self.encoder.fc = nn.Identity()
-        elif hyperparams.base_encoder == 'rotation_eqv_cnn':
-            self.encoder = RotationEquivariantConvEncoder(
-                self.im_shape, out_channels,
-                num_rotations=hyperparams.num_rotations,
-                device=hyperparams.device
-            )
-        else:
-            raise ValueError('base_encoder not implemented for now.')
+        self.prediction_network = get_prediction_network(
+            architecture=hyperparams.prediction.prediction_network_architecture,
+            dataset_name=hyperparams.dataset.dataset_name,
+            use_pretrained=hyperparams.prediction.use_pretrained,
+            freeze_encoder=hyperparams.prediction.freeze_pretrained_encoder,
+            input_shape=self.image_shape,
+            num_classes=self.num_classes
+        )
 
-        # freeze the (pretrained) encoder 
-        # keep linear layer trainable which will be added in the self.network
-        if hyperparams.freeze_pretrained_encoder: 
-            for param in self.encoder.parameters():
-                param.requires_grad = False
-
-        if hyperparams.model == 'vanilla':
-            self.network = VanillaNetwork(self.encoder, self.im_shape, num_classes,
-                                          hyperparams.batch_size, hyperparams.device)
-        elif hyperparams.model == 'equivariant':
-            self.network = EquivariantCanonizationNetwork(
-                self.encoder, self.im_shape, num_classes,
-                hyperparams.canonization_out_channels,
-                hyperparams.canonization_num_layers,
-                hyperparams.canonization_kernel_size,
-                hyperparams.canonization_beta,
-                hyperparams.canonization_name,
-                hyperparams.group_type,
-                hyperparams.num_rotations,
-                hyperparams.device,
-                hyperparams.batch_size,
-            )
-        elif hyperparams.model == 'opt_equivariant':
-            self.network = OptGroupEnsembleCanonizationNetwork(
-                self.encoder, self.im_shape, num_classes,
-                hyperparams.canonization_out_channels,
-                hyperparams.canonization_num_layers,
-                hyperparams.canonization_kernel_size,
-                hyperparams.canonization_beta,
-                hyperparams.group_type,
-                hyperparams.num_rotations,
-                hyperparams.device,
-                hyperparams.batch_size,
-            )
-        elif hyperparams.model == 'steerable':
-            self.network = SteerableCanonizationNetwork(
-                self.encoder, self.im_shape, num_classes,
-                hyperparams.canonization_out_channels,
-                hyperparams.canonization_num_layers,
-                hyperparams.canonization_kernel_size,
-                hyperparams.canonization_beta,
-                hyperparams.canonization_name,
-                hyperparams.num_freq,
-                hyperparams.group_type,
-                hyperparams.device,
-                hyperparams.batch_size,
-            )
-        elif hyperparams.model == 'canonized_pca':
-            self.network = PCACanonizationNetwork(
-                self.encoder, self.im_shape, num_classes
-            )
-        else:
-            raise ValueError('model not implemented for now.')
+        self.canonicalization_network = get_canonicalization_network(
+            hyperparams.canonicalization_type, hyperparams.canonicalization_kwargs
+        )
+        
+        self.canonicalizer = get_canonicalizer(
+            hyperparams.canonicalization_type,
+            self.canonicalization_network,
+        )      
+        
         self.hyperparams = hyperparams
-        self.num_classes = num_classes
-        self.image_buffer = []
-        self.canonized_image_buffer = []
-        self.num_batches_invariant = 0.0
 
 
     def training_step(self, batch, batch_idx):
-        # training_step defines the train loop.
-        # it is independent of forward
         x, y = batch
         x = x.reshape(x.size(0), self.im_shape[0], self.im_shape[1], self.im_shape[2])
 
-        metric_identity = 0.0
-        prior_loss = 0.0
-        loss = 0.0
+        training_metrics = {}
+        
+        x_canonicalized = self.canonicalizer(x)
+        
+        if self.hyperparams.canonicalization_type == 'opt_equivariant':
+            loss, group_contrast_loss = self.canonicalizer.add_group_contrast_loss(loss)
+            training_metrics.update({"train/group_contrast_loss": group_contrast_loss})
+        
+        logits = self.prediction_network(x_canonicalized)
+        loss = self.loss(logits, y)
+        
+        if self.hyperparams.experiment.loss.prior_weight:
+            loss, prior_loss = self.canonicalizer.add_prior_regularizer(loss)
+            metric_identity = self.canonicalizer.get_identity_metric()
+            training_metrics.update({
+                    "train/prior_loss": prior_loss, 
+                    "train/identity_metric": metric_identity
+                })
+            
 
-        if self.hyperparams.model == 'steerable':
+        
+        preds = logits.argmax(dim=-1) if self.hyperparams.dataset.dataset_name != 'celeba' else logits > 0
+        acc = (preds == y).float().mean()
+        
+        training_metrics.update({
+                "train/loss": loss,
+                "train/acc": acc
+            })
+        self.log_dict(training_metrics, prog_bar=True)
+        
+        return {
+            'loss': loss, 
+            'metric_identity': metric_identity, 
+            'prior_loss': prior_loss, 
+            'acc': acc}
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        if self.hyperparams.canonicalization_type == 'steerable':
             # regression training for continuous rotations
             self.pad = torchvision.transforms.Pad(math.ceil(x.shape[-2] * 0.3), padding_mode='edge')
             self.crop = torchvision.transforms.CenterCrop((x.shape[-2], x.shape[-1])) 
@@ -226,9 +159,8 @@ class ClassifierLightningModule(pl.LightningModule):
                 metric_identity = F.mse_loss(vectors, dataset_prior)
                 prior_loss = metric_identity
 
-        elif self.hyperparams.model in ('equivariant', 'opt_equivariant'):
+        elif self.hyperparams.canonicalization_type in ('equivariant', 'opt_equivariant'):
             logits, feature_fibres, _, vectors = self.network(x)
-            loss_group_contrast = 0
 
             if self.hyperparams.model == 'opt_equivariant':
                 # shape of feature_fibres is (batch_size, group_size)
@@ -236,8 +168,8 @@ class ClassifierLightningModule(pl.LightningModule):
                     vectors = vectors.reshape(feature_fibres.shape[-1], -1, vectors.shape[-1]).permute((1, 0, 2)) # (batch_size, group_size, reference_vector_size)
                     distances = vectors @ vectors.permute((0, 2, 1))
                     mask = 1.0 - torch.eye(feature_fibres.shape[-1]).to(self.hyperparams.device) # (group_size, group_size)
-                    loss_group_contrast = torch.abs(distances * mask).sum()
-                    loss += 1e-4 * loss_group_contrast
+                    group_contrast_loss = torch.abs(distances * mask).sum()
+                    loss += 1e-4 * group_contrast_loss
 
                 elif self.hyperparams.opt_type == 'hinge':
                     hinge_threshold = torch.tensor(self.hyperparams.hinge_threshold).to(self.hyperparams.device)
@@ -245,8 +177,8 @@ class ClassifierLightningModule(pl.LightningModule):
                     distances = torch.cdist(vectors, vectors) # (batch_size, group_size, group_size)
                     mask = 1.0 - torch.eye(feature_fibres.shape[-1]).to(self.hyperparams.device) # (group_size, group_size)
                     hinged_similarity = torch.minimum(hinge_threshold, distances)
-                    loss_group_contrast = ((hinge_threshold - hinged_similarity) * mask).mean()
-                    loss += loss_group_contrast
+                    group_contrast_loss = ((hinge_threshold - hinged_similarity) * mask).mean()
+                    loss += group_contrast_loss
 
             if self.hyperparams.group_type == 'roto-reflection':
                 # take mean of the first half and the second half of soft activations
@@ -354,8 +286,8 @@ class ClassifierLightningModule(pl.LightningModule):
 
         if self.hyperparams.dataset == 'ImageNet' and self.hyperparams.version == 'v-prior':
             metrics = {"train/loss": loss, "train/identity_metric": metric_identity}
-            if loss_group_contrast:
-                metrics["train/loss_group_contrast"] = loss_group_contrast
+            if group_contrast_loss:
+                metrics["train/group_contrast_loss"] = group_contrast_loss
             self.log_dict(metrics, prog_bar=True)
             return {'loss': loss, 'metric_identity': metric_identity}
 
@@ -369,7 +301,7 @@ class ClassifierLightningModule(pl.LightningModule):
         if self.hyperparams.dataset == 'celeba':
             metrics = {"train/loss": loss, "train/identity_metric": metric_identity, "train/acc": acc, "train/prior_loss": prior_loss, "train/logit_loss": self.loss(logits, y.float())}
         else:
-            metrics = {"train/loss": loss, "train/collapse": loss_group_contrast, "train/identity": metric_identity, "train/acc": acc, "train/prior": prior_loss, "train/logit": self.loss(logits, y)}
+            metrics = {"train/loss": loss, "train/collapse": group_contrast_loss, "train/identity": metric_identity, "train/acc": acc, "train/prior": prior_loss, "train/logit": self.loss(logits, y)}
         self.log_dict(metrics, prog_bar=True)
         return {'loss': loss, 'metric_identity': metric_identity, 'prior_loss': prior_loss, 'acc': acc}
 

@@ -29,7 +29,9 @@ class BaseCanonicalization(torch.nn.Module):
     def canonicalize(self, x, **kwargs):
         """
         This method takes an input data and 
-        returns its canonicalized version
+        returns its canonicalized version and
+        a dictionary containing the information
+        about the canonicalization
         """
         raise NotImplementedError()
     
@@ -42,13 +44,34 @@ class BaseCanonicalization(torch.nn.Module):
         raise NotImplementedError()
     
     def add_prior_regularizer(self, loss: torch.Tensor):
-        return loss + self.get_prior_regularization_loss()
+        prior_loss = self.get_prior_regularization_loss()
+        loss += prior_loss
+        return loss, prior_loss
     
     def get_prior_regularization_loss(self):
         """
         This method returns the prior regularization loss
         """
         raise NotImplementedError()
+    
+    def get_group_contrast_loss(self):
+        """
+        This method returns the group contrast regularization loss
+        """
+        raise NotImplementedError()
+    
+    def add_group_contrast_loss(self, loss: torch.Tensor):
+        group_contrast_loss = self.get_group_contrast_loss()
+        loss += group_contrast_loss
+        return loss, group_contrast_loss
+    
+    def get_identity_metric(self):
+        """
+        This method returns the metric for the canonicalization
+        """
+        raise NotImplementedError()
+    
+    
     
 
 # Idea for the user interface:
