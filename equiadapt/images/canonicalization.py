@@ -53,9 +53,7 @@ class GroupEquivariantImageCanonicalization(BaseCanonicalization):
         """
         
         x_cropped = self.crop_canonization(x)
-        # resize for ImageNet
-        if self.num_classes == 1000:
-            x_cropped = self.resize(x_cropped)
+
         group_activations = self.canonization_network(x_cropped)
         
         if self.group_type == 'rotation':
@@ -82,7 +80,6 @@ class GroupEquivariantImageCanonicalization(BaseCanonicalization):
         canonicalization_info_dict = {'group': group, 'group_activations': group_activations}
         
         return x, canonicalization_info_dict
-    
     
     def invert_canonicalization(self, x_canonicalized_out, induced_rep_type='regular'):
         """
