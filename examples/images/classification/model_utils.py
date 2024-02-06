@@ -75,6 +75,7 @@ def get_prediction_network(
 def get_canonicalization_network(
     canonicalization_type: str,
     canonicalization_kwargs: dict,
+    in_shape: tuple
 ):
     """
     The function returns the canonicalization network based on the canonicalization type
@@ -109,7 +110,8 @@ def get_canonicalization_network(
     canonicalization_network = \
     canonicalization_network_dict[canonicalization_type][
         canonicalization_kwargs['network_type']](
-            **canonicalization_kwargs['network_hyperparams']
+           in_channels = in_shape[0], 
+           **canonicalization_kwargs['network_hyperparams']
     )
     
     return canonicalization_network
@@ -117,7 +119,8 @@ def get_canonicalization_network(
 def get_canonicalizer(
     canonicalization_type: str,
     canonicalization_network: torch.nn.Module,
-    beta: float = 1.0
+    canonicalization_hyperparams: dict,
+    in_shape: tuple
 ):
     """
     The function returns the canonicalization network based on the canonicalization type
@@ -135,7 +138,8 @@ def get_canonicalizer(
     
     canonicalizer = canonicalizer_dict[canonicalization_type](
         canonicalization_network=canonicalization_network,
-        beta=beta
+        canonicalization_hyperparams=canonicalization_hyperparams,
+        in_shape=in_shape
     )
     
     return canonicalizer

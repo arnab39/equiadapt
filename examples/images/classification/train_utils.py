@@ -38,7 +38,7 @@ def get_model_pipeline(hyperparams: Union[Dict, wandb.Config]):
     return model
 
 def get_trainer(
-    hyperparams:Union[Dict, wandb.Config],
+    hyperparams: Union[Dict, wandb.Config],
     callbacks: list,
     wandb_logger: pl.loggers.WandbLogger
 ):
@@ -65,7 +65,7 @@ def get_trainer(
     return trainer
     
     
-def get_callbacks(hyperparams:Union[Dict, wandb.Config]):
+def get_callbacks(hyperparams: Union[Dict, wandb.Config]):
     
     checkpoint_callback = ModelCheckpoint(
         dirpath=hyperparams.checkpoint.checkpoint_path,
@@ -98,7 +98,7 @@ def get_checkpoint_name(hyperparams : Union[Dict, wandb.Config]):
                           f"_lr_{hyperparams['experiment'].lr}"
                         
 
-def get_image_data(dataset_hyperparams:Union[Dict, wandb.Config]):
+def get_image_data(dataset_hyperparams: Union[Dict, wandb.Config]):
     
     dataset_classes = {
         "rotated_mnist": RotatedMNISTDataModule(dataset_hyperparams),

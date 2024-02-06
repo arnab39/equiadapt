@@ -2,14 +2,27 @@ import torch
 import kornia as K
 from equiadapt.common.basecanonicalization import BaseCanonicalization
 from equiadapt.images.utils import roll_by_gather
+from torchvision import transforms
+import math
 
 class GroupEquivariantImageCanonicalization(BaseCanonicalization):
-    def __init__(self, equivariant_network: torch.nn.Module, beta: float = 1.0):
-        super().__init__(equivariant_network)
-        self.beta = beta
-        self.group_type = equivariant_network.group_type
-        self.num_rotations = equivariant_network.num_rotations
+    def __init__(self, 
+                 equivariant_canonicalization_network: torch.nn.Module, 
+                 canonicalization_hyperparams: dict,
+                 in_shape: tuple
+                 ):
+        super().__init__(equivariant_canonicalization_network)
+        self.beta = canonicalization_hyperparams.beta
+        self.group_type = equivariant_canonicalization_network.group_type
+        self.num_rotations = equivariant_canonicalization_network.num_rotations
         self.num_group = self.num_rotations if self.group_type == 'rotation' else 2 * self.num_rotations
+        # padding and cropping
+        self.pad = transforms.Pad(math.ceil(in_shape[-2] * 0.4), padding_mode='edge')
+        self.crop = transforms.CenterCrop((in_shape[-2], in_shape[-1]))
+        self.crop_canonization = transforms.CenterCrop((
+            math.ceil(in_shape[-2] * canonicalization_hyperparams.input_crop_ratio), 
+            math.ceil(in_shape[-1] * canonicalization_hyperparams.input_crop_ratio)
+        ))
         
     def groupactivations_to_groupelement(self, group_activations):
         """
