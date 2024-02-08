@@ -1,14 +1,14 @@
 import torch
 import pytorch_lightning as pl
 from torch.optim.lr_scheduler import MultiStepLR
-from examples.images.classification.inference_utils import get_inference_method
-from examples.images.classification.model_utils import get_canonicalization_network, get_canonicalizer, get_dataset_specific_info, get_prediction_network
+from common import ConfigDict
+from inference_utils import get_inference_method
+from model_utils import get_canonicalization_network, get_canonicalizer, get_dataset_specific_info, get_prediction_network
 
 # define the LightningModule
 class ImageClassifierPipeline(pl.LightningModule):
-    def __init__(self, hyperparams):
+    def __init__(self, hyperparams: ConfigDict):
         super().__init__()
-        self.save_hyperparameters()
         
         self.loss, self.image_shape, self.num_classes = get_dataset_specific_info(hyperparams.dataset.dataset_name)
 
@@ -21,7 +21,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             num_classes=self.num_classes
         )
 
-        self.canonicalization_network = get_canonicalization_network(
+        canonicalization_network = get_canonicalization_network(
             hyperparams.canonicalization_type, 
             hyperparams.canonicalization,
             self.image_shape,
@@ -29,7 +29,9 @@ class ImageClassifierPipeline(pl.LightningModule):
         
         self.canonicalizer = get_canonicalizer(
             hyperparams.canonicalization_type,
-            self.canonicalization_network,
+            canonicalization_network,
+            hyperparams.canonicalization,
+            self.image_shape
         )      
         
         self.hyperparams = hyperparams
@@ -42,16 +44,17 @@ class ImageClassifierPipeline(pl.LightningModule):
             self.image_shape
         )
         
-        self.max_epochs = hyperparams.experiment.training.max_epochs
-
-
-    def training_step(self, batch):
-        x, y = batch
-        batch_size = x.shape[0]
+        self.max_epochs = hyperparams.experiment.training.num_epochs
         
-        # make sure that the input is in the right shape
-        if len(x.shape) == 3:
-            x = x.reshape(batch_size, self.im_shape[0], self.im_shape[1], self.im_shape[2])
+        self.save_hyperparameters()
+
+
+    def training_step(self, batch: torch.Tensor):
+        x, y = batch
+        batch_size, num_channels, height, width = x.shape
+        
+        # assert that the input is in the right shape
+        assert (num_channels, height, width) == self.image_shape
 
         training_metrics = {}
         
@@ -94,16 +97,14 @@ class ImageClassifierPipeline(pl.LightningModule):
         
         return {'loss': loss, 'acc': acc}
         
-        
 
-
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: torch.Tensor):
         x, y = batch
-        batch_size = x.shape[0]
         
-        # make sure that the input is in the right shape
-        if len(x.shape) == 3:
-            x = x.reshape(batch_size, self.im_shape[0], self.im_shape[1], self.im_shape[2])
+        batch_size, num_channels, height, width = x.shape
+        
+        # assert that the input is in the right shape
+        assert (num_channels, height, width) == self.image_shape
             
         validation_metrics = {}
         
@@ -136,14 +137,12 @@ class ImageClassifierPipeline(pl.LightningModule):
         return {'acc': acc}
 
 
-    def test_step(self, batch):
+    def test_step(self, batch: torch.Tensor):
         x, y = batch
-        x = x.reshape(x.size(0), self.im_shape[0], self.im_shape[1], self.im_shape[2])
-        batch_size = x.shape[0]
+        batch_size, num_channels, height, width = x.shape
         
-        # make sure that the input is in the right shape
-        if len(x.shape) == 3:
-            x = x.reshape(batch_size, self.im_shape[0], self.im_shape[1], self.im_shape[2])
+        # assert that the input is in the right shape
+        assert (num_channels, height, width) == self.image_shape
 
         test_metrics = self.inference_method.get_inference_metrics(x, y)
         
@@ -159,7 +158,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             optimizer = torch.optim.SGD(
                 [
                     {'params': self.prediction_network.parameters(), 'lr': self.hyperparams.experiment.training.prediction_lr},
-                    {'params': self.canonicalization_network.parameters(), 'lr': self.hyperparams.experiment.training.canonicalization_lr},
+                    {'params': self.canonicalizer.parameters(), 'lr': self.hyperparams.experiment.training.canonicalization_lr},
                 ], 
                 momentum=0.9,
                 weight_decay=5e-4,
@@ -183,6 +182,6 @@ class ImageClassifierPipeline(pl.LightningModule):
             print(f'using Adam optimizer')
             optimizer = torch.optim.AdamW([
                     {'params': self.prediction_network.parameters(), 'lr': self.hyperparams.experiment.training.prediction_lr},
-                    {'params': self.canonicalization_network.parameters(), 'lr': self.hyperparams.experiment.training.canonicalization_lr},
+                    {'params': self.canonicalizer.parameters(), 'lr': self.hyperparams.experiment.training.canonicalization_lr},
                 ])
             return optimizer

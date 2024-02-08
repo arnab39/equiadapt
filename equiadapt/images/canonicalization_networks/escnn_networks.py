@@ -17,6 +17,7 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.group_type = group_type
+        self.num_rotations = num_rotations
 
         if group_type == 'rotation':
             self.gspace = gspaces.rot2dOnR2(num_rotations)

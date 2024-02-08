@@ -100,3 +100,9 @@ dmypy.json
 
 # Ignore .DS_Store in all folders
 **/.DS_Store
+
+# Ignore .vscode in all folders
+**/.vscode
+
+# Ignore scripts to run experiments in mila 
+mila_scripts/

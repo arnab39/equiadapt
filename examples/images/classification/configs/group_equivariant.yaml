@@ -1,9 +1,11 @@
+canonicalization_type: 'group_equivariant' # Type of canonicalization to use
+
 dataset:
   dataset_name: "rotated_mnist" # Name of the dataset to use
   data_path: "/home/mila/a/arnab.mondal/scratch/equiadapt/image/data" # Path to the dataset
   augment: 1 # Whether to use data augmentation (1) or not (0)
   num_workers: 4 # Number of workers for data loading
-  batch_size: 256 # Number of samples per batch
+  batch_size: 128 # Number of samples per batch
 
 experiment:
   run_mode: "train" # Mode to run the model in, different run modes 1)dryrun 2)train 3)test 4)auto_tune
@@ -33,8 +35,8 @@ prediction:
 canonicalization:
   network_type: 'escnn' # Options for canonization method 1) escnn 2) custom 3) none
   network_hyperparams:
-    kernel_size: 3 # Kernel size for the canonization network
-    out_channels: 16 # Number of output channels for the canonization network
+    kernel_size: 5 # Kernel size for the canonization network
+    out_channels: 32 # Number of output channels for the canonization network
     num_layers: 3 # Number of layers in the canonization network
     group_type: "rotation" # Type of group for the canonization network
     num_rotations: 4 # Number of rotations for the canonization network
@@ -42,11 +44,11 @@ canonicalization:
   input_crop_ratio: 0.8 # Ratio at which we crop the input to the canonicalization
 
 wandb:
-  use_wandb: 1  # Whether to use Weights & Biases for logging (1) or not (0)
+  use_wandb: 0  # Whether to use Weights & Biases for logging (1) or not (0)
   wandb_project: "equiadapt" # Name of the Weights & Biases project
   wandb_entity: "symmetry_group" # Name of the Weights & Biases entity
   wandb_cache_dir: "/home/mila/a/arnab.mondal/scratch/wandb_artifacts" # Path to the Weights & Biases cache directory
-  wandb_dir: "/home/mila/a/arnab.mondal/scratch/wandb" # Path to the Weights & Biases directory
+  wandb_dir: "/home/mila/a/arnab.mondal/scratch/" # Path to the Weights & Biases directory
 
 checkpoint:
   checkpoint_path: "/home/mila/a/arnab.mondal/scratch/equiadapt/image/checkpoints" # Path to save checkpoints
