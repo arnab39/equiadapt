@@ -74,7 +74,7 @@ def custom_load_data(file_path):
     label_list = []
     for line in fp:
         image, label = load_line(line)
-        image_list.append(torch.tensor(image, dtype=torch.float32))
+        image_list.append(torch.tensor(image, dtype=torch.float32).reshape(1, 28, 28))
         label_list.append(torch.tensor(label))
     fp.close()
     images = torch.stack(image_list)

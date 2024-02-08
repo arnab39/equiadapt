@@ -2,6 +2,8 @@ import torch
 import torchvision
 import torch.nn as nn
 
+from common import ConfigDict
+
 from equiadapt.images.canonicalization import GroupEquivariantImageCanonicalization
 from equiadapt.images.canonicalization_networks.escnn_networks import ESCNNEquivariantNetwork
 
@@ -18,7 +20,7 @@ class PredictionNetwork(nn.Module):
     
 def get_dataset_specific_info(dataset_name):
     dataset_info = {
-        'rotated_mnist': (nn.CrossEntropyLoss(), (3, 224, 224), 10),
+        'rotated_mnist': (nn.CrossEntropyLoss(), (1, 28, 28), 10),
         'cifar10': (nn.CrossEntropyLoss(), (3, 224, 224), 10),
         'cifar100': (nn.CrossEntropyLoss(), (3, 224, 224), 100),
         'stl10': (nn.CrossEntropyLoss(), (3, 224, 224), 10),
@@ -62,8 +64,8 @@ def get_prediction_network(
             param.requires_grad = False
 
     if dataset_name != 'ImageNet':
-        encoder.fc = nn.Identity()
         feature_dim = encoder.fc.in_features
+        encoder.fc = nn.Identity()       
         prediction_network = PredictionNetwork(encoder, feature_dim, num_classes)
     else:
         prediction_network = encoder
@@ -74,7 +76,7 @@ def get_prediction_network(
 
 def get_canonicalization_network(
     canonicalization_type: str,
-    canonicalization_kwargs: dict,
+    canonicalization_hyperparams: ConfigDict,
     in_shape: tuple
 ):
     """
@@ -84,6 +86,8 @@ def get_canonicalization_network(
         canonicalization_type (str): defines the type of canonicalization network
         options are 1) group_equivariant 2) steerable 3) opt_group_equivariant 4) opt_steerable
     """
+    
+    # TODO: All all the canonicalization networks here which are left as none
     canonicalization_network_dict = {
         'group_equivariant': {
             'escnn': ESCNNEquivariantNetwork,
@@ -104,22 +108,23 @@ def get_canonicalization_network(
     
     if canonicalization_type not in canonicalization_network_dict:
         raise ValueError(f'{canonicalization_type} is not implemented')   
-    if canonicalization_kwargs['network_type'] not in canonicalization_network_dict[canonicalization_type]:
-        raise ValueError(f'{canonicalization_kwargs["network_type"]} is not implemented for {canonicalization_type}')
+    if canonicalization_hyperparams.network_type not in canonicalization_network_dict[canonicalization_type]:
+        raise ValueError(f'{canonicalization_hyperparams.network_type} is not implemented for {canonicalization_type}')
     
     canonicalization_network = \
     canonicalization_network_dict[canonicalization_type][
-        canonicalization_kwargs['network_type']](
+        canonicalization_hyperparams.network_type
+        ](
            in_channels = in_shape[0], 
-           **canonicalization_kwargs['network_hyperparams']
-    )
+           **canonicalization_hyperparams.network_hyperparams.to_dict()
+        )
     
     return canonicalization_network
 
 def get_canonicalizer(
     canonicalization_type: str,
     canonicalization_network: torch.nn.Module,
-    canonicalization_hyperparams: dict,
+    canonicalization_hyperparams: ConfigDict,
     in_shape: tuple
 ):
     """
@@ -129,8 +134,11 @@ def get_canonicalizer(
         canonicalization_type (str): defines the type of canonicalization network
         options are 1) group_equivariant 2) steerable 3) opt_group_equivariant 4) opt_steerable
     """
+    # TODO: Add all the canonicalizers here which are left as none
     canonicalizer_dict = {
         'group_equivariant': GroupEquivariantImageCanonicalization,
+        'steerable': None,
+        'opt_equivariant': None
     }
     
     if canonicalization_type not in canonicalizer_dict:

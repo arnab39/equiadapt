@@ -9,17 +9,18 @@ setup(
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/arnab39/EquivariantAdaptation',  # Replace with your repository URL
-    packages=find_packages(where='equiadapt'),
-    package_dir={'': 'equiadapt'},
+    packages=find_packages(),
     install_requires=[
         'torch',  # Specify your project's dependencies here
-        'numpy',
-        # Add other dependencies as needed
+        'numpy', 
+        'torchvision',
+        'kornia',
+        'escnn',
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.6',  # Minimum version requirement of Python
+    python_requires='>=3.7',  # Minimum version requirement of Python
 )
