@@ -6,7 +6,7 @@ from escnn import gspaces
 
 class ESCNNEquivariantNetwork(torch.nn.Module):
     def __init__(self, 
-                 in_channels, 
+                 in_shape, 
                  out_channels, 
                  kernel_size, 
                  group_type='rotation', 
@@ -14,6 +14,7 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
                  num_layers=1):
         super().__init__()
 
+        self.in_channels = in_shape[0]
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.group_type = group_type
@@ -29,7 +30,7 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
         # If the group is roto-reflection, then the number of group elements is twice the number of rotations
         self.num_group_elements = num_rotations if group_type == 'rotation' else 2 * num_rotations
 
-        r1 = escnn.nn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_channels)
+        r1 = escnn.nn.FieldType(self.gspace, [self.gspace.trivial_repr] * self.in_channels)
         r2 = escnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * out_channels)
         
         self.in_type = r1

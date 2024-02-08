@@ -17,7 +17,6 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def get_args():
     parser = ArgumentParser()
     parser.add_argument("--model_config", type=str, default='./configs/group_equivariant.yaml', help="pass the config path of the model you want to use")
-    parser.add_argument("--dataset_name", type=str, default='cifar10', help="pass the dataset name")
     parser.add_argument("--run_mode", type=str, default='train', help="pass the run mode")
     parser.add_argument("--use_wandb", type=bool, default=False, help="pass True if you want to use wandb for logging")
     args = parser.parse_args()

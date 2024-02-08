@@ -43,10 +43,6 @@ class BaseCanonicalization(torch.nn.Module):
         """
         raise NotImplementedError()
     
-    def add_prior_regularizer(self, loss: torch.Tensor):
-        prior_loss = self.get_prior_regularization_loss()
-        loss += prior_loss
-        return loss, prior_loss
     
     def get_prior_regularization_loss(self):
         """
@@ -59,11 +55,6 @@ class BaseCanonicalization(torch.nn.Module):
         This method returns the group contrast regularization loss
         """
         raise NotImplementedError()
-    
-    def add_group_contrast_loss(self, loss: torch.Tensor):
-        group_contrast_loss = self.get_group_contrast_loss()
-        loss += group_contrast_loss
-        return loss, group_contrast_loss
     
     def get_identity_metric(self):
         """

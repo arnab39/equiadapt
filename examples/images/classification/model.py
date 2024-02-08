@@ -57,6 +57,7 @@ class ImageClassifierPipeline(pl.LightningModule):
         assert (num_channels, height, width) == self.image_shape
 
         training_metrics = {}
+        loss = 0.0
         
         # canonicalize the input data
         # For the vanilla model, the canonicalization is the identity transformation
@@ -64,7 +65,8 @@ class ImageClassifierPipeline(pl.LightningModule):
         
         # add group contrast loss while using optmization based canonicalization method
         if self.hyperparams.canonicalization_type == 'opt_equivariant':
-            loss, group_contrast_loss = self.canonicalizer.add_group_contrast_loss(loss)
+            group_contrast_loss = self.canonicalizer.get_group_contrast_loss()
+            loss += group_contrast_loss * self.hyperparams.experiment.training.loss.group_contrast_weight
             training_metrics.update({"train/group_contrast_loss": group_contrast_loss})
         
         # Forward pass through the prediction network as you'll normally do
@@ -75,7 +77,8 @@ class ImageClassifierPipeline(pl.LightningModule):
         
         # Add prior regularization loss if the prior weight is non-zero
         if self.hyperparams.experiment.training.loss.prior_weight:
-            loss, prior_loss = self.canonicalizer.add_prior_regularizer(loss)
+            prior_loss = self.canonicalizer.get_prior_regularization_loss()
+            loss += prior_loss * self.hyperparams.experiment.training.loss.prior_weight
             metric_identity = self.canonicalizer.get_identity_metric()
             training_metrics.update({
                     "train/prior_loss": prior_loss, 
