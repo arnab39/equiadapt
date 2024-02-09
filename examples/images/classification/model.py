@@ -1,13 +1,15 @@
 import torch
 import pytorch_lightning as pl
 from torch.optim.lr_scheduler import MultiStepLR
-from common import ConfigDict
+
+from omegaconf import DictConfig
+
 from inference_utils import get_inference_method
 from model_utils import get_canonicalization_network, get_canonicalizer, get_dataset_specific_info, get_prediction_network
 
 # define the LightningModule
 class ImageClassifierPipeline(pl.LightningModule):
-    def __init__(self, hyperparams: ConfigDict):
+    def __init__(self, hyperparams: DictConfig):
         super().__init__()
         
         self.loss, self.image_shape, self.num_classes = get_dataset_specific_info(hyperparams.dataset.dataset_name)

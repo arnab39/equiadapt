@@ -1,0 +1,3 @@
+prediction_network_architecture: "resnet50" # Architecture of the prediction network
+use_pretrained: 1 # Whether to use pretrained weights (1) or not (0)
+freeze_pretrained_encoder: 0 # Whether to freeze the pretrained encoder (1) or not (0)

@@ -106,3 +106,6 @@ dmypy.json
 
 # Ignore scripts to run experiments in mila 
 mila_scripts/
+
+escnn
+*__pycache__/

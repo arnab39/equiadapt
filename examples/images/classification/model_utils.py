@@ -2,7 +2,7 @@ import torch
 import torchvision
 import torch.nn as nn
 
-from common import ConfigDict
+from omegaconf import DictConfig
 
 from equiadapt.images.canonicalization.opt_equivariant import ContrastiveOptImageCanonicalization
 from equiadapt.images.canonicalization_networks.custom_nonequivariant_networks import ConvNetwork
@@ -79,7 +79,7 @@ def get_prediction_network(
 
 def get_canonicalization_network(
     canonicalization_type: str,
-    canonicalization_hyperparams: ConfigDict,
+    canonicalization_hyperparams: DictConfig,
     in_shape: tuple
 ):
     """
@@ -119,7 +119,7 @@ def get_canonicalization_network(
         canonicalization_hyperparams.network_type
         ](
            in_shape = in_shape, 
-           **canonicalization_hyperparams.network_hyperparams.to_dict()
+           **canonicalization_hyperparams.network_hyperparams
         )
     
     return canonicalization_network
@@ -127,7 +127,7 @@ def get_canonicalization_network(
 def get_canonicalizer(
     canonicalization_type: str,
     canonicalization_network: torch.nn.Module,
-    canonicalization_hyperparams: ConfigDict,
+    canonicalization_hyperparams: DictConfig,
     in_shape: tuple
 ):
     """
