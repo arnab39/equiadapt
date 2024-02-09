@@ -1,13 +1,13 @@
 from typing import Dict
+from omegaconf import DictConfig
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-from model import ImageClassifierPipeline
-from common import ConfigDict
 
+from model import ImageClassifierPipeline
 from prepare import RotatedMNISTDataModule, CIFAR10DataModule, CIFAR100DataModule, STL10DataModule, Flowers102DataModule, CelebADataModule, ImageNetDataModule
     
-def get_model_data_and_callbacks(hyperparams : ConfigDict):
+def get_model_data_and_callbacks(hyperparams : DictConfig):
     
      # get image data
     image_data = get_image_data(hyperparams.dataset)
@@ -23,7 +23,7 @@ def get_model_data_and_callbacks(hyperparams : ConfigDict):
     
     return  model, image_data, callbacks
 
-def get_model_pipeline(hyperparams: ConfigDict):
+def get_model_pipeline(hyperparams: DictConfig):
 
     if hyperparams.experiment.run_mode == "test":
         model = ImageClassifierPipeline.load_from_checkpoint(
@@ -39,7 +39,7 @@ def get_model_pipeline(hyperparams: ConfigDict):
     return model
 
 def get_trainer(
-    hyperparams: ConfigDict,
+    hyperparams: DictConfig,
     callbacks: list,
     wandb_logger: pl.loggers.WandbLogger
 ):
@@ -69,7 +69,7 @@ def get_trainer(
     return trainer
     
     
-def get_callbacks(hyperparams: ConfigDict):
+def get_callbacks(hyperparams: DictConfig):
     
     checkpoint_callback = ModelCheckpoint(
         dirpath=hyperparams.checkpoint.checkpoint_path,
@@ -91,19 +91,19 @@ def get_recursive_hyperparams_identifier(hyperparams: Dict):
     # recursively go through the dictionary and get the values and concatenate them
     identifier = ""
     for key, value in hyperparams.items():
-        if isinstance(value, dict):
+        if isinstance(value, DictConfig):
             identifier += f"_{get_recursive_hyperparams_identifier(value)}_"
         else:
             identifier += f"_{key}_{value}_"
     return identifier
     
-def get_checkpoint_name(hyperparams : ConfigDict):
+def get_checkpoint_name(hyperparams : DictConfig):
     
-    return f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization.to_dict())}" + \
+    return f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization)}".strip("_") + \
                           f"__seed_{hyperparams.experiment.seed}"
                         
 
-def get_image_data(dataset_hyperparams: ConfigDict):
+def get_image_data(dataset_hyperparams: DictConfig):
     
     dataset_classes = {
         "rotated_mnist": RotatedMNISTDataModule,

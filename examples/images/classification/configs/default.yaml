@@ -1,0 +1,30 @@
+canonicalization_type: group_equivariant
+device: cuda
+
+# metadata specialised for each experiment
+core:
+  version: 0.0.1
+  tags:
+    - ${now:%Y-%m-%d}
+
+hydra:
+  run:
+    dir: ${oc.env:HYDRA_JOBS}/singlerun/${now:%Y-%m-%d}/${canonicalization_type}/
+
+  sweep:
+    dir: ${oc.env:HYDRA_JOBS}/multirun/${now:%Y-%m-%d}/${canonicalization_type}/
+    subdir: ${hydra.job.num}_${hydra.job.id}
+
+  job:
+    env_set:
+      WANDB_START_METHOD: thread
+      WANDB_DIR: ${oc.env:WANDB_DIR}
+
+defaults:
+  - _self_
+  - dataset: default
+  - experiment: default
+  - prediction: default
+  - canonicalization: default
+  - wandb: default
+  - checkpoint: default

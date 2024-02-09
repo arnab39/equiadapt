@@ -2,10 +2,10 @@ canonicalization_type: 'group_equivariant' # Type of canonicalization to use
 
 dataset:
   dataset_name: "cifar10" # Name of the dataset to use
-  data_path: "/home/mila/a/arnab.mondal/scratch/equiadapt/image/data" # Path to the dataset
+  data_path: "/home/mila/s/siba-smarak.panigrahi/scratch/equiadapt/image/data" # Path to the dataset
   augment: 1 # Whether to use data augmentation (1) or not (0)
   num_workers: 4 # Number of workers for data loading
-  batch_size: 128 # Number of samples per batch
+  batch_size: 32 # Number of samples per batch
 
 experiment:
   run_mode: "train" # Mode to run the model in, different run modes 1)dryrun 2)train 3)test 4)auto_tune
@@ -47,10 +47,10 @@ wandb:
   use_wandb: 0  # Whether to use Weights & Biases for logging (1) or not (0)
   wandb_project: "equiadapt" # Name of the Weights & Biases project
   wandb_entity: "symmetry_group" # Name of the Weights & Biases entity
-  wandb_cache_dir: "/home/mila/a/arnab.mondal/scratch/wandb_artifacts" # Path to the Weights & Biases cache directory
-  wandb_dir: "/home/mila/a/arnab.mondal/scratch/" # Path to the Weights & Biases directory
+  wandb_cache_dir: "/home/mila/s/siba-smarak.panigrahi/scratch/wandb_artifacts" # Path to the Weights & Biases cache directory
+  wandb_dir: "/home/mila/s/siba-smarak.panigrahi/scratch/" # Path to the Weights & Biases directory
 
 checkpoint:
-  checkpoint_path: "/home/mila/a/arnab.mondal/scratch/equiadapt/image/checkpoints" # Path to save checkpoints
+  checkpoint_path: "/home/mila/s/siba-smarak.panigrahi/scratch/equiadapt/image/checkpoints" # Path to save checkpoints
   checkpoint_name: "" # Model checkpoint name, should be left empty and dynamically allocated later
   save_canonized_images: 0 # Whether to save canonized images (1) or not (0)
