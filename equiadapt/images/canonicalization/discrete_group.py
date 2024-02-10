@@ -1,11 +1,12 @@
 import torch
 import kornia as K
-from equiadapt.common.discretecanonicalization import DiscreteGroupCanonicalization
+from equiadapt.common.basecanonicalization import DiscreteGroupCanonicalization
 from equiadapt.images.utils import get_action_on_image_features, roll_by_gather
 from torchvision import transforms
 import math
+from torch.nn import functional as F
 
-class GroupEquivariantImageCanonicalization(DiscreteGroupCanonicalization):
+class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
     def __init__(self, 
                  canonicalization_network: torch.nn.Module, 
                  canonicalization_hyperparams: dict,
@@ -66,11 +67,9 @@ class GroupEquivariantImageCanonicalization(DiscreteGroupCanonicalization):
         This method takes an image as input and 
         returns the group activations
         """
-        x_cropped = self.crop_canonization(x)
-        group_activations = self.canonicalization_network(x_cropped)
-        return group_activations
+        raise NotImplementedError('get_group_activations is not implemented for' 
+                                  'the DiscreteGroupImageCanonicalization class')
     
-        
     def canonicalize(self, x: torch.Tensor):
         """
         This method takes an image as input and 
@@ -87,11 +86,15 @@ class GroupEquivariantImageCanonicalization(DiscreteGroupCanonicalization):
         x = self.pad(x)
         x = K.geometry.rotate(x, -group_element_dict['rotation'])
         x = self.crop(x)
-            
-        canonicalization_info_dict = {'group_element': group_element_dict, 
-                                      'group_activations': group_activations}
         
-        return x, canonicalization_info_dict
+        # Check whether canonicalization_info_dict is already defined
+        if not hasattr(self, 'canonicalization_info_dict'):
+            self.canonicalization_info_dict = {}
+
+        self.canonicalization_info_dict['group_element'] = group_element_dict
+        self.canonicalization_info_dict['group_activations'] = group_activations
+        
+        return x
     
     def invert_canonicalization(self, x_canonicalized_out, induced_rep_type='regular'):
         """
@@ -103,6 +106,86 @@ class GroupEquivariantImageCanonicalization(DiscreteGroupCanonicalization):
                                                                'num_group': self.num_group},
                                             group_element_dict = self.canonicalization_info_dict['group_element'],
                                             induced_rep_type = induced_rep_type)
+    
+        
+    
+
+class GroupEquivariantImageCanonicalization(DiscreteGroupImageCanonicalization):
+    def __init__(self, 
+                 canonicalization_network: torch.nn.Module, 
+                 canonicalization_hyperparams: dict,
+                 in_shape: tuple
+                 ):
+        super().__init__(canonicalization_network,
+                         canonicalization_hyperparams,
+                         in_shape)
+    
+    def get_group_activations(self, x: torch.Tensor):
+        """
+        This method takes an image as input and 
+        returns the group activations
+        """
+        x_cropped = self.crop_canonization(x)
+        group_activations = self.canonicalization_network(x_cropped)
+        return group_activations
+        
+        
+        
+class GroupContrastiveImageCanonicalization(DiscreteGroupImageCanonicalization):
+    def __init__(self, 
+                 canonicalization_network: torch.nn.Module, 
+                 canonicalization_hyperparams: dict,
+                 in_shape: tuple
+                 ):
+        super().__init__(canonicalization_network,
+                         canonicalization_hyperparams,
+                         in_shape)
+        self.out_vector_size = canonicalization_network.out_vector_size
+        self.reference_vector = torch.nn.Parameter(
+            torch.randn(1, self.out_vector_size), requires_grad=False
+        )
+        
+    def group_augment(self, x : torch.Tensor):
+        x_augmented_list = []
+        degrees = torch.linspace(0, 360, self.num_rotations + 1)[:-1]
+
+        for rot, degree in enumerate(degrees):
+            x_rot = self.pad(x)
+            x_rot = transforms.functional.rotate(x_rot, int(degree))
+
+            if self.group_type == 'roto-reflection':
+                x_rot = transforms.functional.hflip(x_rot)
+
+            x_rot = self.crop(x_rot)
+            x_augmented_list.append(x_rot)
+
+        return torch.cat(x_augmented_list, dim=0)
+
+    
+    def get_group_activations(self, x: torch.Tensor):
+        """
+        This method takes an image as input and 
+        returns the group activations
+        """
+        x_cropped = self.crop_canonization(x)
+        
+        x_augmented = self.group_augment(x_cropped)                       # size (batch_size * group_size, in_channels, height, width)
+        vector_out = self.canonicalization_network(x_augmented)           # size (batch_size * group_size, reference_vector_size)
+        self.canonicalization_info_dict = {'vector_out': vector_out}
+        scalar_out = F.cosine_similarity(
+            self.reference_vector.repeat(vector_out.shape[0], 1), 
+            vector_out
+        )                                                                 # size (batch_size * group_size, 1)
+        group_activations = scalar_out.reshape(self.num_group, -1).T      # size (batch_size, group_size)
+        return group_activations
+        
+    
+    def get_group_contrast_loss(self):
+        vectors = self.canonicalization_info_dict['vector_out']
+        vectors = vectors.reshape(self.num_group, -1, self.out_vector_size).permute((1, 0, 2)) # (batch_size, group_size, vector_out_size)
+        distances = vectors @ vectors.permute((0, 2, 1))
+        mask = 1.0 - torch.eye(self.num_group).to(self.device) # (group_size, group_size)
+        return torch.abs(distances * mask).sum()
         
         
     
