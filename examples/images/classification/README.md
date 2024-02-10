@@ -14,4 +14,3 @@ python train.py canonicalization_type=group_equivariant
 ```
 python examples/images/classification/train.py canonicalization_type=group_equivariant
 ```
-
