@@ -4,7 +4,7 @@ import torch.nn as nn
 
 from omegaconf import DictConfig
 
-from images.canonicalization.discrete_group import GroupEquivariantImageCanonicalization, GroupContrastiveImageCanonicalization
+from equiadapt.images.canonicalization.discrete_group import GroupEquivariantImageCanonicalization, GroupContrastiveImageCanonicalization
 from equiadapt.images.canonicalization_networks import ESCNNEquivariantNetwork, ConvNetwork
 
 class PredictionNetwork(nn.Module):

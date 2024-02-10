@@ -12,6 +12,7 @@ from pytorch_lightning.loggers import WandbLogger
 from train_utils import get_model_data_and_callbacks, get_trainer, load_envs
 
 def train_images(hyperparams: DictConfig):
+    hyperparams['canonicalization_type'] = hyperparams['canonicalization']['canonicalization_type']
     hyperparams['device'] = 'cuda' if torch.cuda.is_available() else 'cpu'
     hyperparams['dataset']['data_path'] = hyperparams['dataset']['data_path'] + "/" + hyperparams['dataset']['dataset_name']
     hyperparams['checkpoint']['checkpoint_path'] = hyperparams['checkpoint']['checkpoint_path'] + "/" + \

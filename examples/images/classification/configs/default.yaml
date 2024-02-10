@@ -1,4 +1,4 @@
-canonicalization_type: group_equivariant
+canonicalization_type: group_equivariant # will be set later in training script
 device: cuda
 
 # metadata specialised for each experiment
@@ -9,10 +9,10 @@ core:
 
 hydra:
   run:
-    dir: ${oc.env:HYDRA_JOBS}/singlerun/${now:%Y-%m-%d}/${canonicalization_type}/
+    dir: ${oc.env:HYDRA_JOBS}/singlerun/${now:%Y-%m-%d}/
 
   sweep:
-    dir: ${oc.env:HYDRA_JOBS}/multirun/${now:%Y-%m-%d}/${canonicalization_type}/
+    dir: ${oc.env:HYDRA_JOBS}/multirun/${now:%Y-%m-%d}/
     subdir: ${hydra.job.num}_${hydra.job.id}
 
 defaults:
@@ -20,6 +20,6 @@ defaults:
   - dataset: default
   - experiment: default
   - prediction: default
-  - canonicalization: default
+  - canonicalization: group_equivariant
   - wandb: default
   - checkpoint: default
