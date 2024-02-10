@@ -1,5 +1,6 @@
-from typing import Dict
+import dotenv
 from omegaconf import DictConfig
+from typing import Dict, Optional
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
@@ -99,8 +100,8 @@ def get_recursive_hyperparams_identifier(hyperparams: Dict):
     
 def get_checkpoint_name(hyperparams : DictConfig):
     
-    return f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization)}".strip("_") + \
-                          f"__seed_{hyperparams.experiment.seed}"
+    return f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization)}".lstrip("_") + \
+                         f"__epochs_{hyperparams.experiment.training.num_epochs}_" + f"__seed_{hyperparams.experiment.seed}"
                         
 
 def get_image_data(dataset_hyperparams: DictConfig):
@@ -119,3 +120,15 @@ def get_image_data(dataset_hyperparams: DictConfig):
         raise ValueError(f"{dataset_hyperparams.dataset_name} not implemented")
     
     return dataset_classes[dataset_hyperparams.dataset_name](dataset_hyperparams)
+
+def load_envs(env_file: Optional[str] = None) -> None:
+    """
+    Load all the environment variables defined in the `env_file`.
+    This is equivalent to `. env_file` in bash.
+
+    It is possible to define all the system specific variables in the `env_file`.
+
+    :param env_file: the file that defines the environment variables to use. If None
+                     it searches for a `.env` file in the project.
+    """
+    dotenv.load_dotenv(dotenv_path=env_file, override=True)

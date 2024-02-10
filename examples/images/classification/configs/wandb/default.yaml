@@ -1,5 +1,5 @@
 use_wandb: 0  # Whether to use Weights & Biases for logging (1) or not (0)
 wandb_project: "equiadapt" # Name of the Weights & Biases project
 wandb_entity: "symmetry_group" # Name of the Weights & Biases entity
-wandb_cache_dir: "/home/mila/s/arnab.mondal/scratch/wandb_artifacts" # Path to the Weights & Biases cache directory
-wandb_dir: "/home/mila/s/arnab.mondal/scratch/" # Path to the Weights & Biases directory
+wandb_cache_dir: ${oc.env:WANDB_CACHE_DIR} # Path to the Weights & Biases cache directory
+wandb_dir: ${oc.env:WANDB_DIR} # Path to the Weights & Biases directory

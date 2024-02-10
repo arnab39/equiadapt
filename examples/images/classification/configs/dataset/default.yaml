@@ -1,5 +1,9 @@
 dataset_name: "cifar10" # Name of the dataset to use
+<<<<<<< HEAD
 data_path: "/home/mila/a/arnab.mondal/scratch/equiadapt/image/data" # Path to the dataset
+=======
+data_path: ${oc.env:DATA_PATH} # Path to the dataset
+>>>>>>> dbb396d660dd70e832fdc3d453d284d56195f3fa
 augment: 1 # Whether to use data augmentation (1) or not (0)
 num_workers: 4 # Number of workers for data loading
-batch_size: 32 # Number of samples per batch
+batch_size: 256 # Number of samples per batch
