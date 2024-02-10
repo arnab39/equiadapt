@@ -12,6 +12,7 @@ training:
   canonicalization_lr: 0.001 # Learning rate for the canonicalization network
   loss:
     prior_weight: 100.0 # Weight of the prior in the loss function if zero dont use it
+    group_contrast_weight: 0 # Weight of the group contrastive loss (set to 0 for group_equivariant, 0.0001 for opt_equivariant)
 inference:
   method: "group" # Type of inference options 1) vanilla 2) group
   group_type: "rotation" # Type of group to test during inference 1) Rotation 2) Roto-reflection
