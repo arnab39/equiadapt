@@ -28,21 +28,11 @@ pip install -e .
   ```
     export HYDRA_JOBS="/path/to/your/hydra/jobs/directory"
     export WANDB_DIR="/path/to/your/wandb/jobs/directory"
+    export WANDB_CACHE_DIR="/path/to/your/wandb/cache/directory"
+    export DATA_PATH="/path/to/your/data/directory"
+    export CHECKPOINT_PATH="/path/to/your/checkpoint/directory"
   ```  
 - Run `source .env` on terminal
 
 # Running Instructions
-### For image classification (without prior regularization)
-```
-python examples/images/classification/train.py canonicalization_type=group_equivariant
-```
-### For image classification (with prior regularization)
-``` 
-python examples/images/classification/train.py canonicalization_type=group_equivariant experiment.training.loss.prior_weight=0 
-```
-
-**Note**: You can also run the `train.py` as follows: 
-```
-cd examples/images/classification  
-python train.py canonicalization_type=group_equivariant
-```
+For image classification: [here](/examples/images/classification/README.md)

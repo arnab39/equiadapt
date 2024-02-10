@@ -9,7 +9,7 @@ from omegaconf import DictConfig, OmegaConf
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
-from train_utils import get_model_data_and_callbacks, get_trainer
+from train_utils import get_model_data_and_callbacks, get_trainer, load_envs
 
 def train_images(hyperparams: DictConfig):
     hyperparams['device'] = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -51,6 +51,9 @@ def train_images(hyperparams: DictConfig):
         trainer.tune(model, datamodule=image_data)
 
     trainer.test(model, datamodule=image_data)
+
+# load the variables from .env file
+load_envs()
 
 @hydra.main(config_path=str("./configs/"), config_name="default")
 def main(cfg: omegaconf.DictConfig):

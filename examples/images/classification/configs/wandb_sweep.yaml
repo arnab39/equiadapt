@@ -1,0 +1,30 @@
+program: train.py
+method: grid
+name: rotated mnist testing
+parameters:
+  dataset.dataset_name:
+    value: 'rotated_mnist'
+  experiment.seed:
+    values: [0, 1]
+  experiment.training.num_epochs:
+    values: [50, 100]
+  experiment.training.loss.prior_weight:
+    value: 0
+  experiment.inference.num_rotations:
+    value: 8
+  wandb.use_wandb:
+    value: 1
+  canonicalization.network_hyperparams.kernel_size:
+    values: [3, 5]
+  canonicalization.network_hyperparams.num_layers:
+    values: [3, 5]
+  canonicalization.network_hyperparams.num_rotations:
+    value: 8
+  canonicalization.network_hyperparams.out_channels:
+    values: [16, 32, 64]
+
+command:
+    - ${env}
+    - python3
+    - ${program}
+    - ${args_no_hyphens}
