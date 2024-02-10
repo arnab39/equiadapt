@@ -12,7 +12,7 @@ class BaseCanonicalization(torch.nn.Module):
         self.canonicalization_network = canonicalization_network
         self.canonicalization_info_dict = {}
        
-    def forward(self, x, **kwargs):
+    def forward(self, x: torch.Tensor, **kwargs):
         """
         Forward method for the canonicalization which takes the input data and
         returns the canonicalized version of the data
@@ -28,7 +28,7 @@ class BaseCanonicalization(torch.nn.Module):
         return self.canonicalize(x, **kwargs)
 
     
-    def canonicalize(self, x, **kwargs):
+    def canonicalize(self, x: torch.Tensor, **kwargs):
         """
         This method takes an input data and 
         returns its canonicalized version and
@@ -38,31 +38,13 @@ class BaseCanonicalization(torch.nn.Module):
         raise NotImplementedError()
     
 
-    def invert_canonicalization(self, x, **kwargs):
+    def invert_canonicalization(self, x: torch.Tensor, **kwargs):
         """
         This method takes the output of the canonicalized data 
         and returns the output for the original data orientation
         """
         raise NotImplementedError()
     
-    
-    # def get_prior_regularization_loss(self):
-    #     """
-    #     This method returns the prior regularization loss
-    #     """
-    #     raise NotImplementedError()
-    
-    # def get_group_contrast_loss(self):
-    #     """
-    #     This method returns the group contrast regularization loss
-    #     """
-    #     raise NotImplementedError()
-    
-    # def get_identity_metric(self):
-    #     """
-    #     This method returns the metric for the canonicalization
-    #     """
-    #     raise NotImplementedError()
 
 
  
@@ -102,7 +84,7 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
         # return the group element one hot encoding
         return group_element_onehot
     
-    def canonicalize(self, x, **kwargs):
+    def canonicalize(self, x: torch.Tensor, **kwargs):
         """
         This method takes an input data and 
         returns its canonicalized version and
@@ -112,7 +94,7 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
         raise NotImplementedError()
     
 
-    def invert_canonicalization(self, x, **kwargs):
+    def invert_canonicalization(self, x: torch.Tensor, **kwargs):
         """
         This method takes the output of the canonicalized data 
         and returns the output for the original data orientation

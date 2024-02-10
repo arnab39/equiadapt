@@ -29,7 +29,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             math.ceil(in_shape[-1] * canonicalization_hyperparams.input_crop_ratio)
         ))
         
-    def groupactivations_to_groupelement(self, group_activations):
+    def groupactivations_to_groupelement(self, group_activations: torch.Tensor):
         """
         This method takes the activations for each group element as input and
         returns the group element
@@ -96,7 +96,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         
         return x
     
-    def invert_canonicalization(self, x_canonicalized_out, induced_rep_type='regular'):
+    def invert_canonicalization(self, x_canonicalized_out: torch.Tensor, induced_rep_type: str = 'regular'):
         """
         This method takes the output of canonicalized image as input and
         returns output of the original image
