@@ -4,11 +4,8 @@ import torch.nn as nn
 
 from omegaconf import DictConfig
 
-from equiadapt.images.canonicalization.opt_equivariant import ContrastiveOptImageCanonicalization
-from equiadapt.images.canonicalization_networks.custom_nonequivariant_networks import ConvNetwork
-
-from equiadapt.images.canonicalization.group_equivariant import GroupEquivariantImageCanonicalization
-from equiadapt.images.canonicalization_networks.escnn_networks import ESCNNEquivariantNetwork
+from images.canonicalization.discrete_group import GroupEquivariantImageCanonicalization, GroupContrastiveImageCanonicalization
+from equiadapt.images.canonicalization_networks import ESCNNEquivariantNetwork, ConvNetwork
 
 class PredictionNetwork(nn.Module):
     def __init__(self, encoder: torch.nn.Module, feature_dim: int, num_classes: int):
@@ -141,7 +138,7 @@ def get_canonicalizer(
     canonicalizer_dict = {
         'group_equivariant': GroupEquivariantImageCanonicalization,
         'steerable': None,
-        'opt_equivariant': ContrastiveOptImageCanonicalization
+        'opt_equivariant': GroupContrastiveImageCanonicalization
     }
     
     if canonicalization_type not in canonicalizer_dict:
