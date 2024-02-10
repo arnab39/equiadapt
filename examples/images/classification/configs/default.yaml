@@ -15,11 +15,6 @@ hydra:
     dir: ${oc.env:HYDRA_JOBS}/multirun/${now:%Y-%m-%d}/${canonicalization_type}/
     subdir: ${hydra.job.num}_${hydra.job.id}
 
-  job:
-    env_set:
-      WANDB_START_METHOD: thread
-      WANDB_DIR: ${oc.env:WANDB_DIR}
-
 defaults:
   - _self_
   - dataset: default

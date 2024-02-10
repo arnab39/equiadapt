@@ -49,6 +49,9 @@ class VanillaInference:
 
         # Calculate accuracy per class
         acc_per_class = [(preds[y == i] == y[y == i]).float().mean() for i in range(self.num_classes)]
+        
+        # check if the accuracy per class is nan
+        acc_per_class = [0.0 if math.isnan(acc) else acc for acc in acc_per_class]
 
         # Update metrics with accuracy per class
         metrics.update({f'test/acc_class_{i}': max(acc, 0.0) for i, acc in enumerate(acc_per_class)})
@@ -116,6 +119,9 @@ class GroupInference(VanillaInference):
 
         # Calculate accuracy per class
         acc_per_class = [(preds[y == i] == y[y == i]).float().mean() for i in range(self.num_classes)]
+        
+        # check if the accuracy per class is nan
+        acc_per_class = [0.0 if math.isnan(acc) else acc for acc in acc_per_class]
 
         # Update metrics with accuracy per class
         metrics.update({f'test/acc_class_{i}': max(acc, 0.0) for i, acc in enumerate(acc_per_class)})
