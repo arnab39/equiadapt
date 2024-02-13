@@ -1,7 +1,7 @@
 canonicalization_type: opt_group_equivariant
 network_type: 'cnn' # Options for canonization method 1) cnn 2) wideresnet
 network_hyperparams:
-  kernel_size: 5 # Kernel size for the canonization network
+  kernel_size: 7 # Kernel size for the canonization network
   out_channels: 16 # Number of output channels for the canonization network
   num_layers: 3 # Number of layers in the canonization network
   out_vector_size: 128 # Dimension of the output vector

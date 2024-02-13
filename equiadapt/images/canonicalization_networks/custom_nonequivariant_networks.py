@@ -14,12 +14,12 @@ class ConvNetwork(nn.Module):
         layers = []
         for i in range(num_layers):
             if i == 0:
-                layers.append(nn.Conv2d(in_channels, out_channels, kernel_size, 1))
+                layers.append(nn.Conv2d(in_channels, out_channels, kernel_size, 2))
             elif i % 3 == 2:
                 layers.append(nn.Conv2d(out_channels, 2 * out_channels, kernel_size, 2, 1))
                 out_channels *= 2
             else:
-                layers.append(nn.Conv2d(out_channels, out_channels, kernel_size, 1))
+                layers.append(nn.Conv2d(out_channels, out_channels, kernel_size, 2))
             layers.append(nn.BatchNorm2d(out_channels))
             layers.append(nn.ReLU())
 

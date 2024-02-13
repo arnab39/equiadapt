@@ -46,7 +46,21 @@ class BaseCanonicalization(torch.nn.Module):
         raise NotImplementedError()
     
 
-
+class IdentityCanonicalization(BaseCanonicalization):
+    def __init__(self, canonicalization_network: torch.nn.Module = torch.nn.Identity()):
+        super().__init__(canonicalization_network)
+    
+    def canonicalize(self, x: torch.Tensor, **kwargs):
+        return x
+    
+    def invert_canonicalization(self, x: torch.Tensor, **kwargs):
+        return x
+    
+    def get_prior_regularization_loss(self):
+        return torch.tensor(0.0)
+    
+    def get_identity_metric(self):
+        return torch.tensor(1.0)
  
 class DiscreteGroupCanonicalization(BaseCanonicalization):
     def __init__(self, 
@@ -155,16 +169,16 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
     
     
     def get_prior_regularization_loss(self):
-        group_elements = self.canonicalization_info_dict['group_element_matrix_representation']   # shape: (batch_size, group_rep_dim, group_rep_dim)
+        group_elements_rep = self.canonicalization_info_dict['group_element_matrix_representation']   # shape: (batch_size, group_rep_dim, group_rep_dim)
         # Set the dataset prior to identity matrix of size group_rep_dim and repeat it for batch_size
-        dataset_prior = torch.eye(group_elements.shape[-1]).repeat(
-            group_elements.shape[0], 1, 1).to(self.device)
-        return torch.nn.MSELoss()(group_elements, dataset_prior)
+        dataset_prior = torch.eye(group_elements_rep.shape[-1]).repeat(
+            group_elements_rep.shape[0], 1, 1).to(self.device)
+        return torch.nn.MSELoss()(group_elements_rep, dataset_prior)
     
     def get_identity_metric(self):
-        group_elements = self.canonicalization_info_dict['group_element_matrix_representation']
-        identity_element = torch.eye(group_elements.shape[-1]).to(self.device)
-        return 1.0 - torch.nn.functional.mse_loss(group_elements, identity_element).mean()
+        group_elements_rep = self.canonicalization_info_dict['group_element_matrix_representation']
+        identity_element = torch.eye(group_elements_rep.shape[-1]).to(self.device)
+        return 1.0 - torch.nn.functional.mse_loss(group_elements_rep, identity_element).mean()
     
           
     

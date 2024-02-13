@@ -15,8 +15,10 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         super().__init__(canonicalization_network)
         self.beta = canonicalization_hyperparams.beta
         
+        # DEfine all the image transformations here which are used during canonicalization
         # pad and crop the input image if it is not rotated MNIST
         is_grayscale = in_shape[0] == 1
+        
         self.pad = torch.nn.Identity() if is_grayscale else transforms.Pad(
             math.ceil(in_shape[-2] * 0.4), padding_mode='edge'
         )
@@ -25,6 +27,9 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             math.ceil(in_shape[-2] * canonicalization_hyperparams.input_crop_ratio), 
             math.ceil(in_shape[-1] * canonicalization_hyperparams.input_crop_ratio)
         ))
+        
+        self.group_info_dict = {'num_rotations': canonicalization_hyperparams.num_rotations,
+                                 'num_group': canonicalization_hyperparams.num_rotations}
         
     def groupactivations_to_groupelement(self, group_activations: torch.Tensor):
         """
@@ -89,6 +94,14 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         self.canonicalization_info_dict['group_activations'] = group_activations
         
         return group_element_dict
+    
+    def transformations_before_canonicalization_network_forward(self, x: torch.Tensor):
+        """
+        This method takes an image as input and 
+        returns the pre-canonicalized image 
+        """
+        x = self.crop_canonization(x)
+        return x
         
     
     def canonicalize(self, x: torch.Tensor):
@@ -99,12 +112,14 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         self.device = x.device
         group_element_dict = self.get_groupelement(x)
         
+        x = self.pad(x)
+        
         if 'reflection' in group_element_dict.keys():
             reflect_indicator = group_element_dict['reflection'][:,None,None,None]
             x = (1 - reflect_indicator) * x + reflect_indicator * K.geometry.hflip(x)
 
-        x = self.pad(x)
         x = K.geometry.rotate(x, -group_element_dict['rotation'])
+        
         x = self.crop(x)
         
         return x
@@ -115,8 +130,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         returns output of the original image
         """
         return get_action_on_image_features(feature_map = x_canonicalized_out,
-                                            group_info_dict = {'num_rotations': self.num_rotations,
-                                                               'num_group': self.num_group},
+                                            group_info_dict = self.group_info_dict,
                                             group_element_dict = self.canonicalization_info_dict['group_element'],
                                             induced_rep_type = induced_rep_type)
     
@@ -141,8 +155,8 @@ class GroupEquivariantImageCanonicalization(DiscreteGroupImageCanonicalization):
         This method takes an image as input and 
         returns the group activations
         """
-        x_cropped = self.crop_canonization(x)
-        group_activations = self.canonicalization_network(x_cropped)
+        x = self.transformations_before_canonicalization_network_forward(x)
+        group_activations = self.canonicalization_network(x)
         return group_activations
         
         
@@ -178,7 +192,7 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
         
     def group_augment(self, x : torch.Tensor):
         
-        degrees = torch.linspace(0, 360, self.num_rotations + 1)[:-1]
+        degrees = torch.linspace(0, 360, self.num_rotations + 1)[:-1].to(self.device)
         x_augmented_list = self.rotate_and_maybe_reflect(x, degrees)
         
         if self.group_type == 'roto-reflection':
@@ -192,9 +206,9 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
         This method takes an image as input and 
         returns the group activations
         """
-        x_cropped = self.crop_canonization(x)
         
-        x_augmented = self.group_augment(x_cropped)                       # size (batch_size * group_size, in_channels, height, width)
+        x = self.transformations_before_canonicalization_network_forward(x)     
+        x_augmented = self.group_augment(x)                       # size (batch_size * group_size, in_channels, height, width)
         vector_out = self.canonicalization_network(x_augmented)           # size (batch_size * group_size, reference_vector_size)
         self.canonicalization_info_dict = {'vector_out': vector_out}
         scalar_out = F.cosine_similarity(
