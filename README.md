@@ -36,3 +36,17 @@ pip install -e .
 
 # Running Instructions
 For image classification: [here](/examples/images/classification/README.md)
+
+
+# Related papers
+
+For more insights on this library refer to our original paper on the idea: [Equivariance with Learned Canonicalization Function](https://proceedings.mlr.press/v202/kaba23a.html) and how to extend it to make any existing large pre-trained model equivariant: [Equivariant Adaptation of Large Pretrained Models](https://arxiv.org/abs/2310.01647).
+
+To learn more about this from a blog check out: [How to make your foundation model equivariant](https://mila.quebec/en/article/how-to-make-your-foundation-model-equivariant/)
+
+# Contact
+
+For question related to this code you can mail us at: 
+```arnab.mondal@mila.quebec```
+```siba-smarak.panigrahi@mila.quebec```
+```kabaseko@mila.quebec```

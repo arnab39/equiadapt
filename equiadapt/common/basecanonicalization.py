@@ -60,7 +60,7 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
     def groupactivations_to_groupelementonehot(self, group_activations: torch.Tensor):
         """
         This method takes the activations for each group element as input and
-        returns the group element
+        returns the group element in a differentiable manner
         
         Args:
             group_activations: activations for each group element
@@ -113,8 +113,60 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
         return (group_activations.argmax(dim=-1) == 0).float().mean()
 
 
-# TODO: Implement ContinuousGroupCanonicalization class  
     
+class ContinuousGroupCanonicalization(BaseCanonicalization):
+    def __init__(self, 
+                 canonicalization_network: torch.nn.Module, 
+                 beta: float = 1.0,
+                 gradient_trick: str = 'straight_through'):
+        super().__init__(canonicalization_network)
+        self.beta = beta
+        self.gradient_trick = gradient_trick
+    
+    def canonicalizationnetworkout_to_groupelement(self, group_activations: torch.Tensor):
+        """
+        This method takes the  as input and
+        returns the group element in a differentiable manner
+        
+        Args:
+            group_activations: activations for each group element
+            
+        Returns:
+            group_element: group element
+        """
+        raise NotImplementedError()
+    
+    def canonicalize(self, x: torch.Tensor, **kwargs):
+        """
+        This method takes an input data and 
+        returns its canonicalized version and
+        a dictionary containing the information
+        about the canonicalization
+        """
+        raise NotImplementedError()
+    
+
+    def invert_canonicalization(self, x: torch.Tensor, **kwargs):
+        """
+        This method takes the output of the canonicalized data 
+        and returns the output for the original data orientation
+        """
+        raise NotImplementedError()
+    
+    
+    def get_prior_regularization_loss(self):
+        group_elements = self.canonicalization_info_dict['group_element_matrix_representation']   # shape: (batch_size, group_rep_dim, group_rep_dim)
+        # Set the dataset prior to identity matrix of size group_rep_dim and repeat it for batch_size
+        dataset_prior = torch.eye(group_elements.shape[-1]).repeat(
+            group_elements.shape[0], 1, 1).to(self.device)
+        return torch.nn.MSELoss()(group_elements, dataset_prior)
+    
+    def get_identity_metric(self):
+        group_elements = self.canonicalization_info_dict['group_element_matrix_representation']
+        identity_element = torch.eye(group_elements.shape[-1]).to(self.device)
+        return 1.0 - torch.nn.functional.mse_loss(group_elements, identity_element).mean()
+    
+          
     
 
 # Idea for the user interface:

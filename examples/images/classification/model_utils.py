@@ -4,8 +4,9 @@ import torch.nn as nn
 
 from omegaconf import DictConfig
 
-from equiadapt.images.canonicalization.discrete_group import GroupEquivariantImageCanonicalization, GroupContrastiveImageCanonicalization
-from equiadapt.images.canonicalization_networks import ESCNNEquivariantNetwork, ConvNetwork
+from equiadapt.images.canonicalization.discrete_group import GroupEquivariantImageCanonicalization, OptimizedGroupEquivariantImageCanonicalization
+from equiadapt.images.canonicalization.continuous_group import SteerableImageCanonicalization, OptimizedSteerableImageCanonicalization
+from equiadapt.images.canonicalization_networks import ESCNNEquivariantNetwork, ConvNetwork, CustomEquivariantNetwork, ESCNNSteerableNetwork
 
 class PredictionNetwork(nn.Module):
     def __init__(self, encoder: torch.nn.Module, feature_dim: int, num_classes: int):
@@ -87,22 +88,20 @@ def get_canonicalization_network(
         options are 1) group_equivariant 2) steerable 3) opt_group_equivariant 4) opt_steerable
     """
     
-    # TODO: All all the canonicalization networks here which are left as none
+    # TODO: All all the canonicalization networks here 
     canonicalization_network_dict = {
         'group_equivariant': {
             'escnn': ESCNNEquivariantNetwork,
-            'custom': None,
-            'none': None
+            'custom': CustomEquivariantNetwork,
         },
         'steerable': {
-            'escnn': None,
-            'none': None
+            'escnn': ESCNNSteerableNetwork,
         },
-        'opt_equivariant':{
+        'opt_group_equivariant':{
             'cnn': ConvNetwork,
-            'vit': None,
-            'mlp': None,
-            'none': None
+        },
+        'opt_steerable': {
+            'cnn': ConvNetwork,
         }
     }
     
@@ -137,8 +136,9 @@ def get_canonicalizer(
     # TODO: Add all the canonicalizers here which are left as none
     canonicalizer_dict = {
         'group_equivariant': GroupEquivariantImageCanonicalization,
-        'steerable': None,
-        'opt_equivariant': GroupContrastiveImageCanonicalization
+        'steerable': SteerableImageCanonicalization,
+        'opt_group_equivariant': OptimizedGroupEquivariantImageCanonicalization,
+        'opt_steerable': OptimizedSteerableImageCanonicalization
     }
     
     if canonicalization_type not in canonicalizer_dict:

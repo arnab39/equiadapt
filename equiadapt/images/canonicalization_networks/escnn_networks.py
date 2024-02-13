@@ -2,8 +2,6 @@ import torch
 import escnn
 from escnn import gspaces
 
-
-
 class ESCNNEquivariantNetwork(torch.nn.Module):
     def __init__(self, 
                  in_shape, 
@@ -70,3 +68,54 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
         group_activations = torch.mean(feature_map, dim=(1, 3, 4))
 
         return group_activations
+    
+
+class ESCNNSteerableNetwork(torch.nn.Module):
+    def __init__(self, 
+                 in_shape: tuple, 
+                 out_channels: int, 
+                 kernel_size: int = 9, 
+                 group_type: str = 'rotation', 
+                 num_layers: int = 1):
+        super().__init__()
+        
+        self.group_type = group_type
+        assert group_type == 'rotation', 'group_type must be rotation for now.'
+        # TODO: Add support for roto-reflection group
+
+        # The model is equivariant under all planar rotations
+        self.gspace = gspaces.rot2dOnR2(N=-1)
+
+        # The input image is a scalar field, corresponding to the trivial representation
+        in_type = escnn.nn.FieldType(self.gspace, in_shape[0] * [self.gspace.trivial_repr])
+        
+        # Store the input type for wrapping the images into a geometric tensor during the forward pass
+        self.input_type = in_type
+
+        # Initialize the modules list for the sequential network
+        modules = []
+
+        # Dynamically add layers based on num_layers
+        for _ in range(num_layers):
+            activation = escnn.nn.FourierELU(self.gspace, out_channels, irreps=[(f,) for f in range(0, 5)], N=16, inplace=True)
+            modules.append(escnn.nn.R2Conv(in_type, activation.in_type, kernel_size=kernel_size, padding=0, bias=False))
+            modules.append(escnn.nn.IIDBatchNorm2d(activation.in_type))
+            modules.append(activation)
+            in_type = activation.out_type  # Update in_type for the next layer
+
+        # Define the output layer
+        out_type = escnn.nn.FieldType(self.gspace, [self.gspace.irrep(1), self.gspace.irrep(1)])
+        modules.append(escnn.nn.R2Conv(in_type, out_type, kernel_size=kernel_size, padding=0, bias=False))
+
+        # Combine all modules into a SequentialModule
+        self.block = escnn.nn.SequentialModule(*modules)
+
+    def forward(self, x : torch.Tensor):
+        x = self.input_type(x)  # Wrap input images into a geometric tensor
+        x = self.block(x)
+        x = x.tensor  # Extract tensor from geometric tensor
+        x = torch.mean(x, dim=(-1, -2))  # Average over spatial dimensions
+        x = x.reshape(x.shape[0], 2, 2)  # Reshape to get two vectors of dimension 2
+        return x
+    
+

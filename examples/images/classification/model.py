@@ -66,10 +66,10 @@ class ImageClassifierPipeline(pl.LightningModule):
         x_canonicalized = self.canonicalizer(x)
         
         # add group contrast loss while using optmization based canonicalization method
-        if self.hyperparams.canonicalization_type == 'opt_equivariant':
-            group_contrast_loss = self.canonicalizer.get_group_contrast_loss()
+        if 'opt' in self.hyperparams.canonicalization_type:
+            group_contrast_loss = self.canonicalizer.get_optimization_specific_loss()
             loss += group_contrast_loss * self.hyperparams.experiment.training.loss.group_contrast_weight
-            training_metrics.update({"train/group_contrast_loss": group_contrast_loss})
+            training_metrics.update({"train/optimization_specific_loss": group_contrast_loss})
         
         # Forward pass through the prediction network as you'll normally do
         logits = self.prediction_network(x_canonicalized)
