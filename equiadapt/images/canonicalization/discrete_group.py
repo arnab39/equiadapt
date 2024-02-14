@@ -28,8 +28,6 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             math.ceil(in_shape[-1] * canonicalization_hyperparams.input_crop_ratio)
         ))
         
-        self.group_info_dict = {'num_rotations': canonicalization_hyperparams.num_rotations,
-                                 'num_group': canonicalization_hyperparams.num_rotations}
         
     def groupactivations_to_groupelement(self, group_activations: torch.Tensor):
         """
@@ -149,6 +147,8 @@ class GroupEquivariantImageCanonicalization(DiscreteGroupImageCanonicalization):
         self.group_type = canonicalization_network.group_type
         self.num_rotations = canonicalization_network.num_rotations
         self.num_group = self.num_rotations if self.group_type == 'rotation' else 2 * self.num_rotations
+        self.group_info_dict = {'num_rotations': self.num_rotations,
+                                 'num_group': self.num_group}
     
     def get_group_activations(self, x: torch.Tensor):
         """
@@ -177,6 +177,8 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
         self.reference_vector = torch.nn.Parameter(
             torch.randn(1, self.out_vector_size), requires_grad=False
         )
+        self.group_info_dict = {'num_rotations': self.num_rotations,
+                                 'num_group': self.num_group}
         
     def rotate_and_maybe_reflect(self, x: torch.Tensor, degrees: torch.Tensor, reflect: bool = False):
         x_augmented_list = []
