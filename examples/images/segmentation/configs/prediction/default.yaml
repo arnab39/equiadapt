@@ -1,0 +1,7 @@
+prediction_network_architecture: "sam" # Architecture of the prediction network
+prediction_network_class: "vit_h" # Class of the prediction network
+use_pretrained: 1 # Whether to use pretrained weights (1) or not (0)
+freeze_image_encoder: 1, # Whether to freeze image encoder (1) or not (0)
+freeze_prompt_encoder: 1, # Whether to freeze prompt encoder (1) or not (0)
+freeze_mask_predictor: 1, # Whether to freeze mask predictor related network (1) or not (0)
+    

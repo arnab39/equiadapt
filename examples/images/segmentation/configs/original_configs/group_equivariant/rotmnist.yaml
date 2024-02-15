@@ -1,0 +1,56 @@
+canonicalization_type: 'group_equivariant' # Type of canonicalization to use
+
+dataset:
+  dataset_name: "rotated_mnist" # Name of the dataset to use
+  data_path: "/home/mila/a/arnab.mondal/scratch/equiadapt/image/data" # Path to the dataset
+  augment: 1 # Whether to use data augmentation (1) or not (0)
+  num_workers: 4 # Number of workers for data loading
+  batch_size: 256 # Number of samples per batch
+
+experiment:
+  run_mode: "train" # Mode to run the model in, different run modes 1)dryrun 2)train 3)test 4)auto_tune
+  seed: 0 # Seed for random number generation  
+  deterministic: false # Whether to set deterministic mode (true) or not (false)
+  device: "cuda" # Device, can be cuda or cpu
+  num_nodes: 1
+  num_gpus: 1
+  training:
+    num_epochs: 100 # Number of training epochs
+    patience: 20 # Number of epochs with no improvement after which training will be stopped
+    min_delta: 0.0 # Minimum change in the monitored quantity to qualify as an improvement
+    prediction_lr: 0.001 # Learning rate for the prediction
+    canonicalization_lr: 0.001 # Learning rate for the canonicalization network
+    loss:
+      prior_weight: 0 # Weight of the prior in the loss function if zero dont use it
+  inference:
+    method: "group" # Type of inference options 1) vanilla 2) group
+    group_type: "rotation" # Type of group to test during inference 1) Rotation 2) Roto-reflection
+    num_rotations: 4 # Number of rotations to check robustness during inference 
+
+prediction:
+  prediction_network_architecture: "resnet50" # Architecture of the prediction network
+  use_pretrained: 1 # Whether to use pretrained weights (1) or not (0)
+  freeze_pretrained_encoder: 0 # Whether to freeze the pretrained encoder (1) or not (0)
+
+canonicalization:
+  network_type: 'escnn' # Options for canonization method 1) escnn 2) custom 3) none
+  network_hyperparams:
+    kernel_size: 3 # Kernel size for the canonization network
+    out_channels: 16 # Number of output channels for the canonization network
+    num_layers: 3 # Number of layers in the canonization network
+    group_type: "rotation" # Type of group for the canonization network
+    num_rotations: 4 # Number of rotations for the canonization network
+  beta: 1.0 # Beta parameter for the canonization network
+  input_crop_ratio: 0.8 # Ratio at which we crop the input to the canonicalization
+
+wandb:
+  use_wandb: 0  # Whether to use Weights & Biases for logging (1) or not (0)
+  wandb_project: "equiadapt" # Name of the Weights & Biases project
+  wandb_entity: "symmetry_group" # Name of the Weights & Biases entity
+  wandb_cache_dir: "/home/mila/a/arnab.mondal/scratch/wandb_artifacts" # Path to the Weights & Biases cache directory
+  wandb_dir: "/home/mila/a/arnab.mondal/scratch/" # Path to the Weights & Biases directory
+
+checkpoint:
+  checkpoint_path: "/home/mila/a/arnab.mondal/scratch/equiadapt/image/checkpoints" # Path to save checkpoints
+  checkpoint_name: "" # Model checkpoint name, should be left empty and dynamically allocated later
+  save_canonized_images: 0 # Whether to save canonized images (1) or not (0)
