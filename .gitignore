@@ -110,4 +110,5 @@ mila_scripts/
 escnn
 *__pycache__/
 rotmnist_sweep_output/
+cifar10_sweep_output/
 wandb/

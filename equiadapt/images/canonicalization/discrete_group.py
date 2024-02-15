@@ -28,6 +28,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             math.ceil(in_shape[-1] * canonicalization_hyperparams.input_crop_ratio)
         ))
         
+        self.resize_canonization = torch.nn.Identity() if is_grayscale else transforms.Resize(size=canonicalization_hyperparams.resize_shape)
         
     def groupactivations_to_groupelement(self, group_activations: torch.Tensor):
         """
@@ -99,6 +100,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         returns the pre-canonicalized image 
         """
         x = self.crop_canonization(x)
+        x = self.resize_canonization(x)
         return x
         
     
