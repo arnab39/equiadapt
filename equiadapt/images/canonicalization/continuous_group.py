@@ -18,7 +18,7 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         # pad and crop the input image if it is not rotated MNIST
         is_grayscale = in_shape[0] == 1
         self.pad = torch.nn.Identity() if is_grayscale else transforms.Pad(
-            math.ceil(in_shape[-2] * 0.4), padding_mode='edge'
+            math.ceil(in_shape[-1] * 0.5), padding_mode='edge'
         )
         self.crop = torch.nn.Identity() if is_grayscale else transforms.CenterCrop((in_shape[-2], in_shape[-1]))
         self.crop_canonization = torch.nn.Identity() if is_grayscale else transforms.CenterCrop((
@@ -107,6 +107,10 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
             # Reflect the image conditionally
             x = (1 - reflect_indicator) * x + reflect_indicator * K.geometry.hflip(x)
         
+        
+        # Apply padding before canonicalization
+        x = self.pad(x)
+        
         # Compute affine part for warp affine
         alpha, beta = rotation_matrices[:, 0, 0], rotation_matrices[:, 0, 1]
         cx, cy = x.shape[-2] // 2, x.shape[-1] // 2
@@ -114,9 +118,8 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         
         # Prepare affine matrices for warp affine, adjusting rotation matrix for Kornia compatibility
         affine_matrices = torch.cat([rotation_matrices, affine_part.unsqueeze(-1)], dim=-1)
-
-        # Apply padding, warp affine, and then crop
-        x = self.pad(x)
+        
+        # Apply warp affine, and then crop     
         x = K.geometry.warp_affine(x, affine_matrices, dsize=(x.shape[-2], x.shape[-1]))
         x = self.crop(x)
 
