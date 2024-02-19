@@ -1,7 +1,7 @@
 import torch
 import kornia as K
 from equiadapt.common.basecanonicalization import DiscreteGroupCanonicalization
-from equiadapt.images.utils import get_action_on_image_features
+from equiadapt.images.utils import flip_boxes, flip_masks, get_action_on_image_features, rotate_boxes, rotate_masks
 from torchvision import transforms
 import math
 from torch.nn import functional as F
@@ -104,7 +104,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         return x
         
     
-    def canonicalize(self, x: torch.Tensor):
+    def canonicalize(self, x: torch.Tensor, targets: torch.Tensor = None):
         """
         This method takes an image as input and 
         returns the canonicalized image 
@@ -122,6 +122,23 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         
         x = self.crop(x)
         
+        if targets:
+            # canonicalize the targets (for instance segmentation, masks and boxes)
+            image_width = x.shape[-1]
+            
+            if 'reflection' in group_element_dict.keys():
+                # flip masks and boxes
+                for t in range(len(targets['boxes'])):
+                    targets[t]['boxes'] = flip_boxes(targets[t]['boxes'], image_width)
+                    targets[t]['masks'] = flip_masks(targets[t]['masks'])
+           
+            # rotate masks and boxes
+            for t in range(len(targets['boxes'])):
+                targets[t]['boxes'] = rotate_boxes(targets[t]['boxes'], group_element_dict['rotation'], image_width)
+                targets[t]['masks'] = rotate_masks(targets[t]['masks'], -group_element_dict['rotation'])
+                
+            return x, targets
+            
         return x
     
     def invert_canonicalization(self, x_canonicalized_out: torch.Tensor, induced_rep_type: str = 'regular'):

@@ -82,8 +82,8 @@ class GroupInference(VanillaInference):
         degrees = torch.linspace(0, 360, self.num_rotations + 1)[:-1]
         for rot, degree in enumerate(degrees):
             
-            x = self.pad(x)
-            x_rot = transforms.functional.rotate(x, int(degree))
+            x_pad = self.pad(x)
+            x_rot = transforms.functional.rotate(x_pad, int(degree))
             x_rot = self.crop(x_rot)
                     
             logits_dict[rot] = self.forward(x_rot)
@@ -92,8 +92,8 @@ class GroupInference(VanillaInference):
             # Rotate the reflected images and get the logits
             for rot, degree in enumerate(degrees):
 
-                x = self.pad(x)
-                x_reflect = transforms.functional.hflip(x)
+                x_pad = self.pad(x)
+                x_reflect = transforms.functional.hflip(x_pad)
                 x_rotoreflect = transforms.functional.rotate(x_reflect, int(degree))
                 x_rotoreflect = self.crop(x_rotoreflect)
 
@@ -105,7 +105,7 @@ class GroupInference(VanillaInference):
         
         logits_dict = self.get_group_element_wise_logits(x)
         
-        # Use list comprehension to calculate accuracy for each rotation
+        # Use list comprehension to calculate accuracy for each group element
         acc_per_group_element = torch.tensor([(logits.argmax(dim=-1) == y).float().mean() for logits in logits_dict.values()])
 
         metrics = {"test/group_acc": torch.mean(acc_per_group_element)}

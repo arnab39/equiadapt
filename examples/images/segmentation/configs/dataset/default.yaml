@@ -1,4 +1,4 @@
-dataset_name: "coco" # Name of the dataset to use
+dataset_name: coco # Name of the dataset to use
 root_dir: ${oc.env:DATA_PATH}/${dataset_name} # Root directory of the dataset
 ann_dir: ${root_dir}/annotations # Path to annotations
 augment: flip # Whether to train with flip augmentation 
