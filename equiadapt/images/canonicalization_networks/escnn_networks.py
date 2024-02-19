@@ -115,7 +115,7 @@ class ESCNNSteerableNetwork(torch.nn.Module):
         x = self.block(x)
         x = x.tensor  # Extract tensor from geometric tensor
         x = torch.mean(x, dim=(-1, -2))  # Average over spatial dimensions
-        x = x.reshape(x.shape[0], 2, 2)  # Reshape to get two vectors of dimension 2
+        x = x.reshape(x.shape[0], 2, 2)  # Reshape to get vector/vectors of dimension 2
         return x
     
 

@@ -21,7 +21,7 @@ class ConvNetwork(nn.Module):
             else:
                 layers.append(nn.Conv2d(out_channels, out_channels, kernel_size, 2))
             layers.append(nn.BatchNorm2d(out_channels))
-            layers.append(nn.ReLU())
+            layers.append(nn.GELU())
 
         self.enc_network = nn.Sequential(*layers)
         out_shape = self.enc_network(torch.zeros(1, *in_shape)).shape
