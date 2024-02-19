@@ -1,5 +1,7 @@
+import math
 import torch
 import kornia as K
+from torchvision import transforms
 
 def roll_by_gather(feature_map: torch.Tensor, shifts: torch.Tensor):
     device = shifts.device
@@ -57,3 +59,34 @@ def get_action_on_image_features(feature_map: torch.Tensor,
         raise NotImplementedError('Action for vector representation is not implemented')
     else:
         raise ValueError('induced_rep_type must be regular, scalar or vector')
+
+def flip_boxes(boxes, width):
+    boxes[:, [0, 2]] = width - boxes[:, [2, 0]]
+    return boxes 
+
+def flip_masks(masks):
+    return masks.flip(-1)
+    
+def rotate_masks(masks, angle):
+    return transforms.functional.rotate(masks, angle)
+
+def rotate_points(origin, point, angle):
+    ox, oy = origin
+    px, py = point
+
+    qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
+    qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
+    return qx, qy
+
+def rotate_boxes(boxes, angle, width):
+    # rotate points
+    origin = [width / 2, width / 2]
+    x_min_rot, y_min_rot = rotate_points(origin, boxes[:, :2].T, torch.deg2rad(angle))
+    x_max_rot, y_max_rot = rotate_points(origin, boxes[:, 2:].T, torch.deg2rad(angle))
+
+    # rearrange the max and mins to get rotated boxes
+    x_min_rot, x_max_rot = torch.min(x_min_rot, x_max_rot), torch.max(x_min_rot, x_max_rot)
+    y_min_rot, y_max_rot = torch.min(y_min_rot, y_max_rot), torch.max(y_min_rot, y_max_rot)
+    rotated_boxes = torch.stack([x_min_rot, y_min_rot, x_max_rot, y_max_rot], dim=-1)
+
+    return rotated_boxes

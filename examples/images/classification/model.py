@@ -5,7 +5,8 @@ from torch.optim.lr_scheduler import MultiStepLR
 from omegaconf import DictConfig
 
 from inference_utils import get_inference_method
-from model_utils import get_canonicalization_network, get_canonicalizer, get_dataset_specific_info, get_prediction_network
+from model_utils import get_dataset_specific_info, get_prediction_network
+from common.utils import get_canonicalization_network, get_canonicalizer
 
 # define the LightningModule
 class ImageClassifierPipeline(pl.LightningModule):
@@ -71,11 +72,23 @@ class ImageClassifierPipeline(pl.LightningModule):
             loss += group_contrast_loss * self.hyperparams.experiment.training.loss.group_contrast_weight
             training_metrics.update({"train/optimization_specific_loss": group_contrast_loss})
         
-        # Forward pass through the prediction network as you'll normally do
-        logits = self.prediction_network(x_canonicalized)
         
         # calculate the task loss which is the cross-entropy loss for classification
-        loss = self.loss(logits, y)
+        if self.hyperparams.experiment.training.loss.task_weight:
+            # Forward pass through the prediction network as you'll normally do
+            logits = self.prediction_network(x_canonicalized)
+            
+            task_loss = self.loss(logits, y)
+            loss += self.hyperparams.experiment.training.loss.task_weight * task_loss
+            
+            # Get the predictions and calculate the accuracy
+            preds = logits.argmax(dim=-1)
+            acc = (preds == y).float().mean()
+            
+            training_metrics.update({
+                    "train/task_loss": task_loss,
+                    "train/acc": acc
+                })
         
         # Add prior regularization loss if the prior weight is non-zero
         if self.hyperparams.experiment.training.loss.prior_weight:
@@ -86,15 +99,9 @@ class ImageClassifierPipeline(pl.LightningModule):
                     "train/prior_loss": prior_loss, 
                     "train/identity_metric": metric_identity
                 })
-            
-
-        # Get the predictions and calculate the accuracy
-        preds = logits.argmax(dim=-1)
-        acc = (preds == y).float().mean()
         
         training_metrics.update({
                 "train/loss": loss,
-                "train/acc": acc
             })
         
         # Log the training metrics
