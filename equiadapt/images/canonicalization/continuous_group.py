@@ -15,8 +15,10 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
                  ):
         super().__init__(canonicalization_network)
         
+        assert len(in_shape) == 3, 'Input shape should be in the format (channels, height, width)'
+        
         # pad and crop the input image if it is not rotated MNIST
-        is_grayscale = in_shape[0] == 1
+        is_grayscale = (in_shape[0] == 1)
         self.pad = torch.nn.Identity() if is_grayscale else transforms.Pad(
             math.ceil(in_shape[-1] * 0.5), padding_mode='edge'
         )
@@ -25,6 +27,7 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
             math.ceil(in_shape[-2] * canonicalization_hyperparams.input_crop_ratio), 
             math.ceil(in_shape[-1] * canonicalization_hyperparams.input_crop_ratio)
         ))
+        self.resize_canonization = torch.nn.Identity() if is_grayscale else transforms.Resize(size=canonicalization_hyperparams.resize_shape)
         self.group_info_dict = {}
         
     def get_groupelement(self, x: torch.Tensor):
@@ -39,6 +42,15 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
             group_element: group element
         """
         raise NotImplementedError('get_groupelement method is not implemented')
+    
+    def transformations_before_canonicalization_network_forward(self, x: torch.Tensor):
+        """
+        This method takes an image as input and 
+        returns the pre-canonicalized image 
+        """
+        x = self.crop_canonization(x)
+        x = self.resize_canonization(x)
+        return x
     
     def get_group_from_out_vectors(self, out_vectors: torch.Tensor):
         """
@@ -100,6 +112,7 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         group_element_dict = self.get_groupelement(x) 
         
         rotation_matrices = group_element_dict['rotation']
+        rotation_matrices[:, [0, 1], [1, 0]] *= -1
         
         if 'reflection' in group_element_dict:
             reflect_indicator = group_element_dict['reflection']
@@ -178,6 +191,8 @@ class SteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
         """
         
         group_element_dict = {}
+        
+        x = self.transformations_before_canonicalization_network_forward(x)
         
         # convert the group activations to one hot encoding of group element
         # this conversion is differentiable and will be used to select the group element
@@ -281,6 +296,8 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
         x_augmented, group_element_representations_augmented_gt = self.group_augment(x)    # size (batch_size * group_size, in_channels, height, width)
         
         x_all = torch.cat([x, x_augmented], dim=0)   # size (batch_size * 2, in_channels, height, width)
+        
+        x_all = self.transformations_before_canonicalization_network_forward(x_all)
         
         out_vectors_all = self.canonicalization_network(x_all)  # size (batch_size * 2, out_vector_size)
         

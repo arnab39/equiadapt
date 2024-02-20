@@ -13,11 +13,14 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
                  in_shape: tuple
                  ):
         super().__init__(canonicalization_network)
+        
         self.beta = canonicalization_hyperparams.beta
+        
+        assert len(in_shape) == 3, 'Input shape should be in the format (channels, height, width)'
         
         # DEfine all the image transformations here which are used during canonicalization
         # pad and crop the input image if it is not rotated MNIST
-        is_grayscale = in_shape[0] == 1
+        is_grayscale = (in_shape[0] == 1)
         
         self.pad = torch.nn.Identity() if is_grayscale else transforms.Pad(
             math.ceil(in_shape[-2] * 0.4), padding_mode='edge'
@@ -28,7 +31,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             math.ceil(in_shape[-1] * canonicalization_hyperparams.input_crop_ratio)
         ))
         
-        self.resize_canonization = torch.nn.Identity() if is_grayscale or canonicalization_hyperparams.resize_shape == in_shape[-1] else transforms.Resize(size=canonicalization_hyperparams.resize_shape)
+        self.resize_canonization = torch.nn.Identity() if is_grayscale else transforms.Resize(size=canonicalization_hyperparams.resize_shape)
         
     def groupactivations_to_groupelement(self, group_activations: torch.Tensor):
         """
@@ -203,7 +206,7 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
         x_augmented_list = []
         for degree in degrees:
             x_rot = self.pad(x)
-            x_rot = K.geometry.rotate(x_rot, degree)
+            x_rot = K.geometry.rotate(x_rot, -degree)
             if reflect:
                 x_rot = K.geometry.hflip(x_rot)
             x_rot = self.crop(x_rot)
@@ -245,7 +248,7 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
         vectors = vectors.reshape(self.num_group, -1, self.out_vector_size).permute((1, 0, 2)) # (batch_size, group_size, vector_out_size)
         distances = vectors @ vectors.permute((0, 2, 1))
         mask = 1.0 - torch.eye(self.num_group).to(self.device) # (group_size, group_size)
-        return torch.abs(distances * mask).sum()
+        return torch.abs(distances * mask).mean()
         
         
     

@@ -177,7 +177,8 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
     
     def get_identity_metric(self):
         group_elements_rep = self.canonicalization_info_dict['group_element_matrix_representation']
-        identity_element = torch.eye(group_elements_rep.shape[-1]).to(self.device)
+        identity_element = torch.eye(group_elements_rep.shape[-1]).repeat(
+            group_elements_rep.shape[0], 1, 1).to(self.device)
         return 1.0 - torch.nn.functional.mse_loss(group_elements_rep, identity_element).mean()
     
           
