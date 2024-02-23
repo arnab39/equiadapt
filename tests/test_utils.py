@@ -1,6 +1,6 @@
 import torch
 
-from equiadapt.utils import gram_schmidt
+from equiadapt.common.utils import gram_schmidt
 
 
 def test_gram_schmidt() -> None:
