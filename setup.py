@@ -15,7 +15,7 @@ setup(
         'numpy', 
         'torchvision',
         'kornia',
-        'escnn',
+        'escnn @ git+https://github.com/danibene/escnn.git@remove/py3nj_dep#egg=escnn'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
