@@ -1,19 +1,20 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-
 from segment_anything import sam_model_registry
 from torchvision.models.detection import maskrcnn_resnet50_fpn_v2
 
 ALPHA = 0.8
 GAMMA = 2
 
+
 class MaskRCNNModel(nn.Module):
     def __init__(self, architecture_type, num_classes, weights='DEFAULT'):
         super().__init__()
-        
-        assert architecture_type in ['resnet50_fpn_v2'], NotImplementedError('Only `maskrcnn_resnet50_fpn_v2` is supported for now.')
+
+        assert architecture_type in ['resnet50_fpn_v2'], NotImplementedError(
+            'Only `maskrcnn_resnet50_fpn_v2` is supported for now.'
+        )
         if architecture_type == 'resnet50_fpn_v2':
             self.model = maskrcnn_resnet50_fpn_v2(weights='DEFAULT')
 
@@ -35,7 +36,15 @@ class MaskRCNNModel(nn.Module):
                     output[0]['masks'] = target['masks']
                     output[0]['scores'] = torch.ones(len(target['masks']))
                     ious.append(torch.ones(len(target['masks']), dtype=torch.float32))
-                    pred_masks.append(torch.ones(len(target['masks']), image.shape[-2], image.shape[-1], dtype=torch.float32, device=self.hyperparams.device))
+                    pred_masks.append(
+                        torch.ones(
+                            len(target['masks']),
+                            image.shape[-2],
+                            image.shape[-1],
+                            dtype=torch.float32,
+                            device=self.hyperparams.device,
+                        )
+                    )
 
                 else:
                     masks = output[0]['masks']
@@ -43,22 +52,33 @@ class MaskRCNNModel(nn.Module):
                     pred_masks.append(masks.squeeze(1))
                     ious.append(iou_predictions)
 
-                    output[0]['masks'] = torch.as_tensor(output[0]['masks'].squeeze(1) > 0.5, dtype=torch.uint8).squeeze(1)
-                    output[0]['scores'] = torch.as_tensor(output[0]['scores'], dtype=torch.float32)
-                    output[0]['labels'] = torch.as_tensor(output[0]['labels'], dtype=torch.int64)
-                    output[0]['boxes'] = torch.as_tensor(output[0]['boxes'], dtype=torch.float32)
+                    output[0]['masks'] = torch.as_tensor(
+                        output[0]['masks'].squeeze(1) > 0.5, dtype=torch.uint8
+                    ).squeeze(1)
+                    output[0]['scores'] = torch.as_tensor(
+                        output[0]['scores'], dtype=torch.float32
+                    )
+                    output[0]['labels'] = torch.as_tensor(
+                        output[0]['labels'], dtype=torch.int64
+                    )
+                    output[0]['boxes'] = torch.as_tensor(
+                        output[0]['boxes'], dtype=torch.float32
+                    )
                 outputs.append(output[0])
 
             return None, pred_masks, ious, outputs
 
+
 class SAMModel(nn.Module):
 
-    def __init__(self, 
-                architecture_type: str,
-                sam_pretrained_ckpt_path: str):
+    def __init__(self, architecture_type: str, sam_pretrained_ckpt_path: str):
         super().__init__()
-        assert sam_pretrained_ckpt_path is not None, ValueError('SAM requires a pretrained checkpoint path.')
-        self.model = sam_model_registry[architecture_type](checkpoint=sam_pretrained_ckpt_path)
+        assert sam_pretrained_ckpt_path is not None, ValueError(
+            'SAM requires a pretrained checkpoint path.'
+        )
+        self.model = sam_model_registry[architecture_type](
+            checkpoint=sam_pretrained_ckpt_path
+        )
 
     def forward(self, images, targets):
         if type(images) == list:
@@ -91,19 +111,20 @@ class SAMModel(nn.Module):
                 mode="bilinear",
                 align_corners=False,
             )
-            pred_masks.append(masks.squeeze(1)) # bbox_length x H x W
-            ious.append(iou_predictions) # bbox_length x 1
+            pred_masks.append(masks.squeeze(1))  # bbox_length x H x W
+            ious.append(iou_predictions)  # bbox_length x 1
 
             output = dict(
-                masks = torch.as_tensor(masks.squeeze(1) > 0.5, dtype=torch.uint8),
-                scores = torch.as_tensor(iou_predictions.squeeze(1), dtype=torch.float32),
-                labels = torch.as_tensor(target['labels'], dtype=torch.int64),
-                boxes = torch.as_tensor(target['boxes'], dtype=torch.float32)
+                masks=torch.as_tensor(masks.squeeze(1) > 0.5, dtype=torch.uint8),
+                scores=torch.as_tensor(iou_predictions.squeeze(1), dtype=torch.float32),
+                labels=torch.as_tensor(target['labels'], dtype=torch.int64),
+                boxes=torch.as_tensor(target['boxes'], dtype=torch.float32),
             )
             outputs.append(output)
 
         return None, pred_masks, ious, outputs
-    
+
+
 class FocalLoss(nn.Module):
 
     def __init__(self, weight=None, size_average=True):
@@ -113,16 +134,17 @@ class FocalLoss(nn.Module):
     def forward(self, inputs, targets, alpha=ALPHA, gamma=GAMMA, smooth=1):
         inputs = F.sigmoid(inputs)
 
-        #flatten label and prediction tensors
+        # flatten label and prediction tensors
         inputs = inputs.view(-1)
         targets = targets.view(-1)
 
-        #first compute binary cross-entropy
+        # first compute binary cross-entropy
         BCE = F.binary_cross_entropy(inputs, targets, reduction='mean')
         BCE_EXP = torch.exp(-BCE)
-        focal_loss = alpha * (1 - BCE_EXP)**gamma * BCE
+        focal_loss = alpha * (1 - BCE_EXP) ** gamma * BCE
 
         return focal_loss
+
 
 class DiceLoss(nn.Module):
 
@@ -133,15 +155,16 @@ class DiceLoss(nn.Module):
     def forward(self, inputs, targets, smooth=1):
         inputs = F.sigmoid(inputs)
 
-        #flatten label and prediction tensors
+        # flatten label and prediction tensors
         inputs = inputs.view(-1)
         targets = targets.view(-1)
 
         intersection = (inputs * targets).sum()
-        dice = (2. * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
+        dice = (2.0 * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
 
         return 1 - dice
-    
+
+
 def get_dataset_specific_info(dataset_name, prediction_architecture_name):
     dataset_info = {
         'coco': {
@@ -157,6 +180,7 @@ def get_dataset_specific_info(dataset_name, prediction_architecture_name):
 
     return dataset_info[dataset_name][prediction_architecture_name]
 
+
 def get_prediction_network(
     architecture: str = 'sam',
     architecture_type: str = 'vit_h',
@@ -164,19 +188,21 @@ def get_prediction_network(
     use_pretrained: bool = False,
     freeze_encoder: bool = False,
     num_classes: int = 91,
-    sam_pretrained_ckpt_path=None
+    sam_pretrained_ckpt_path=None,
 ):
     weights = 'DEFAULT' if use_pretrained else None
     model_dict = {
         'sam': SAMModel(architecture_type, sam_pretrained_ckpt_path),
-        'maskrcnn': MaskRCNNModel(architecture_type, num_classes, weights)
+        'maskrcnn': MaskRCNNModel(architecture_type, num_classes, weights),
     }
 
     if architecture not in model_dict:
-        raise ValueError(f'{architecture} is not implemented as prediction network for now.')
+        raise ValueError(
+            f'{architecture} is not implemented as prediction network for now.'
+        )
 
     prediction_network = model_dict[architecture](weights=weights)
-    
+
     if freeze_encoder:
         for param in prediction_network.parameters():
             param.requires_grad = False
@@ -188,10 +214,13 @@ def get_prediction_network(
 
     return prediction_network
 
+
 def calc_iou(pred_mask, gt_mask):
     pred_mask = (pred_mask >= 0.5).float()
     intersection = torch.sum(torch.mul(pred_mask, gt_mask), dim=(1, 2))
-    union = torch.sum(pred_mask, dim=(1, 2)) + torch.sum(gt_mask, dim=(1, 2)) - intersection
+    union = (
+        torch.sum(pred_mask, dim=(1, 2)) + torch.sum(gt_mask, dim=(1, 2)) - intersection
+    )
     batch_iou = intersection / union
     batch_iou = batch_iou.unsqueeze(1)
     return batch_iou

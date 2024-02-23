@@ -1,15 +1,18 @@
-import torch
 import escnn
+import torch
 from escnn import gspaces
 
+
 class ESCNNEquivariantNetwork(torch.nn.Module):
-    def __init__(self, 
-                 in_shape, 
-                 out_channels, 
-                 kernel_size, 
-                 group_type='rotation', 
-                 num_rotations=4, 
-                 num_layers=1):
+    def __init__(
+        self,
+        in_shape,
+        out_channels,
+        kernel_size,
+        group_type='rotation',
+        num_rotations=4,
+        num_layers=1,
+    ):
         super().__init__()
 
         self.in_channels = in_shape[0]
@@ -24,13 +27,17 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
             self.gspace = gspaces.flipRot2dOnR2(num_rotations)
         else:
             raise ValueError('group_type must be rotation or roto-reflection for now.')
-        
-        # If the group is roto-reflection, then the number of group elements is twice the number of rotations
-        self.num_group_elements = num_rotations if group_type == 'rotation' else 2 * num_rotations
 
-        r1 = escnn.nn.FieldType(self.gspace, [self.gspace.trivial_repr] * self.in_channels)
+        # If the group is roto-reflection, then the number of group elements is twice the number of rotations
+        self.num_group_elements = (
+            num_rotations if group_type == 'rotation' else 2 * num_rotations
+        )
+
+        r1 = escnn.nn.FieldType(
+            self.gspace, [self.gspace.trivial_repr] * self.in_channels
+        )
         r2 = escnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * out_channels)
-        
+
         self.in_type = r1
         self.out_type = r2
 
@@ -41,18 +48,28 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
             escnn.nn.PointwiseDropout(self.out_type, p=0.5),
         )
         for _ in range(num_layers - 2):
-            self.eqv_network.append(escnn.nn.R2Conv(self.out_type, self.out_type, kernel_size),)
-            self.eqv_network.append(escnn.nn.InnerBatchNorm(self.out_type, momentum=0.9),)
-            self.eqv_network.append(escnn.nn.ReLU(self.out_type, inplace=True),)
-            self.eqv_network.append(escnn.nn.PointwiseDropout(self.out_type, p=0.5),)
-            
-        self.eqv_network.append(escnn.nn.R2Conv(self.out_type, self.out_type, kernel_size),)
-    
+            self.eqv_network.append(
+                escnn.nn.R2Conv(self.out_type, self.out_type, kernel_size),
+            )
+            self.eqv_network.append(
+                escnn.nn.InnerBatchNorm(self.out_type, momentum=0.9),
+            )
+            self.eqv_network.append(
+                escnn.nn.ReLU(self.out_type, inplace=True),
+            )
+            self.eqv_network.append(
+                escnn.nn.PointwiseDropout(self.out_type, p=0.5),
+            )
+
+        self.eqv_network.append(
+            escnn.nn.R2Conv(self.out_type, self.out_type, kernel_size),
+        )
+
     def forward(self, x):
         """
-        The forward takes an image as input and returns the activations of 
+        The forward takes an image as input and returns the activations of
         each group element as output.
-        
+
         x shape: (batch_size, in_channels, height, width)
         :return: (batch_size, group_size)
         """
@@ -61,24 +78,29 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
 
         feature_map = out.tensor
         feature_map = feature_map.reshape(
-            feature_map.shape[0], self.out_channels, self.num_group_elements, 
-            feature_map.shape[-2], feature_map.shape[-1]
+            feature_map.shape[0],
+            self.out_channels,
+            self.num_group_elements,
+            feature_map.shape[-2],
+            feature_map.shape[-1],
         )
-        
+
         group_activations = torch.mean(feature_map, dim=(1, 3, 4))
 
         return group_activations
-    
+
 
 class ESCNNSteerableNetwork(torch.nn.Module):
-    def __init__(self, 
-                 in_shape: tuple, 
-                 out_channels: int, 
-                 kernel_size: int = 9, 
-                 group_type: str = 'rotation', 
-                 num_layers: int = 1):
+    def __init__(
+        self,
+        in_shape: tuple,
+        out_channels: int,
+        kernel_size: int = 9,
+        group_type: str = 'rotation',
+        num_layers: int = 1,
+    ):
         super().__init__()
-        
+
         self.group_type = group_type
         assert group_type == 'rotation', 'group_type must be rotation for now.'
         # TODO: Add support for roto-reflection group
@@ -87,8 +109,10 @@ class ESCNNSteerableNetwork(torch.nn.Module):
         self.gspace = gspaces.rot2dOnR2(N=-1)
 
         # The input image is a scalar field, corresponding to the trivial representation
-        in_type = escnn.nn.FieldType(self.gspace, in_shape[0] * [self.gspace.trivial_repr])
-        
+        in_type = escnn.nn.FieldType(
+            self.gspace, in_shape[0] * [self.gspace.trivial_repr]
+        )
+
         # Store the input type for wrapping the images into a geometric tensor during the forward pass
         self.input_type = in_type
 
@@ -97,25 +121,43 @@ class ESCNNSteerableNetwork(torch.nn.Module):
 
         # Dynamically add layers based on num_layers
         for _ in range(num_layers):
-            activation = escnn.nn.FourierELU(self.gspace, out_channels, irreps=[(f,) for f in range(0, 5)], N=16, inplace=True)
-            modules.append(escnn.nn.R2Conv(in_type, activation.in_type, kernel_size=kernel_size, padding=0, bias=False))
+            activation = escnn.nn.FourierELU(
+                self.gspace,
+                out_channels,
+                irreps=[(f,) for f in range(0, 5)],
+                N=16,
+                inplace=True,
+            )
+            modules.append(
+                escnn.nn.R2Conv(
+                    in_type,
+                    activation.in_type,
+                    kernel_size=kernel_size,
+                    padding=0,
+                    bias=False,
+                )
+            )
             modules.append(escnn.nn.IIDBatchNorm2d(activation.in_type))
             modules.append(activation)
             in_type = activation.out_type  # Update in_type for the next layer
 
         # Define the output layer
-        out_type = escnn.nn.FieldType(self.gspace, [self.gspace.irrep(1), self.gspace.irrep(1)])
-        modules.append(escnn.nn.R2Conv(in_type, out_type, kernel_size=kernel_size, padding=0, bias=False))
+        out_type = escnn.nn.FieldType(
+            self.gspace, [self.gspace.irrep(1), self.gspace.irrep(1)]
+        )
+        modules.append(
+            escnn.nn.R2Conv(
+                in_type, out_type, kernel_size=kernel_size, padding=0, bias=False
+            )
+        )
 
         # Combine all modules into a SequentialModule
         self.block = escnn.nn.SequentialModule(*modules)
 
-    def forward(self, x : torch.Tensor):
+    def forward(self, x: torch.Tensor):
         x = self.input_type(x)  # Wrap input images into a geometric tensor
         x = self.block(x)
         x = x.tensor  # Extract tensor from geometric tensor
         x = torch.mean(x, dim=(-1, -2))  # Average over spatial dimensions
         x = x.reshape(x.shape[0], 2, 2)  # Reshape to get vector/vectors of dimension 2
         return x
-    
-
