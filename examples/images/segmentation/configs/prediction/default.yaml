@@ -1,5 +1,6 @@
-prediction_network_architecture: "sam" # Architecture of the prediction network
-prediction_network_class: "vit_h" # Class of the prediction network
+prediction_network_architecture: sam # Architecture of the prediction network
+prediction_network_architecture_type: vit_h # Class of the prediction network
 use_pretrained: 1 # Whether to use pretrained weights (1) or not (0)
 freeze_encoder: 1 # Whether to freeze encoder (1) or not (0)
+pretrained_ckpt_path: "/home/mila/s/siba-smarak.panigrahi/scratch/sam_checkpoints/sam_vit_h_4b8939.pth" # must be set for Segment-Anything model
     

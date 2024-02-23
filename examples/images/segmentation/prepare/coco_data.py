@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 import pytorch_lightning as pl
 import torchvision.transforms as transforms
-import vision_transforms as T
+import prepare.vision_transforms as T
 from torch.utils.data import DataLoader, Dataset
 
 from pycocotools.coco import COCO

@@ -1,4 +1,3 @@
-import math
 import torch
 import kornia as K
 from torchvision import transforms
@@ -74,8 +73,8 @@ def rotate_points(origin, point, angle):
     ox, oy = origin
     px, py = point
 
-    qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
-    qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
+    qx = ox + torch.cos(angle) * (px - ox) - torch.sin(angle) * (py - oy)
+    qy = oy + torch.sin(angle) * (px - ox) + torch.cos(angle) * (py - oy)
     return qx, qy
 
 def rotate_boxes(boxes, angle, width):

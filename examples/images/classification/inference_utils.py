@@ -83,7 +83,7 @@ class GroupInference(VanillaInference):
         for rot, degree in enumerate(degrees):
             
             x_pad = self.pad(x)
-            x_rot = transforms.functional.rotate(x_pad, int(degree))
+            x_rot = transforms.functional.rotate(x_pad, degree.item())
             x_rot = self.crop(x_rot)
                     
             logits_dict[rot] = self.forward(x_rot)
@@ -94,7 +94,7 @@ class GroupInference(VanillaInference):
 
                 x_pad = self.pad(x)
                 x_reflect = transforms.functional.hflip(x_pad)
-                x_rotoreflect = transforms.functional.rotate(x_reflect, int(degree))
+                x_rotoreflect = transforms.functional.rotate(x_reflect, degree.item())
                 x_rotoreflect = self.crop(x_rotoreflect)
 
                 logits_dict[rot + len(degrees)] = self.forward(x_rotoreflect)

@@ -50,7 +50,7 @@ def get_trainer(
             auto_scale_batch_size=True, auto_lr_find=True, logger=wandb_logger, 
             callbacks=callbacks, deterministic=hyperparams.experiment.deterministic,
             num_nodes=hyperparams.experiment.num_nodes, devices=hyperparams.experiment.num_gpus, 
-            strategy='ddp'
+            strategy='ddp' if not hyperparams.experiment.training.loss.task_weight else 'ddp_find_unused_parameters_true'
         )
         
     elif hyperparams.experiment.run_mode == "dryrun":
@@ -64,7 +64,9 @@ def get_trainer(
             max_epochs=hyperparams.experiment.training.num_epochs, accelerator="auto", 
             logger=wandb_logger, callbacks=callbacks, deterministic=hyperparams.experiment.deterministic,
             num_nodes=hyperparams.experiment.num_nodes, devices=hyperparams.experiment.num_gpus, 
-            strategy='ddp'
+            strategy='ddp' if not hyperparams.experiment.training.loss.task_weight else 'ddp_find_unused_parameters_true' 
+            # since when you do a forward pass through the (large) prediction network (such as Segment-Anything Model)
+            # there might be some unused parameters in the prediction network, so we need to set the strategy to ddp_find_unused_parameters_true
         )
 
     return trainer
@@ -107,7 +109,7 @@ def get_checkpoint_name(hyperparams : DictConfig):
 def get_image_data(dataset_hyperparams: DictConfig):
     
     dataset_classes = {
-        "coco2017": COCODataModule
+        "coco": COCODataModule
     }
     
     if dataset_hyperparams.dataset_name not in dataset_classes:

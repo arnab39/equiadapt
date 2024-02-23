@@ -4,7 +4,7 @@ from omegaconf import DictConfig
 from equiadapt.common.basecanonicalization import IdentityCanonicalization
 from equiadapt.images.canonicalization.discrete_group import GroupEquivariantImageCanonicalization, OptimizedGroupEquivariantImageCanonicalization
 from equiadapt.images.canonicalization.continuous_group import SteerableImageCanonicalization, OptimizedSteerableImageCanonicalization
-from equiadapt.images.canonicalization_networks import ESCNNEquivariantNetwork, ConvNetwork, CustomEquivariantNetwork, ESCNNSteerableNetwork
+from equiadapt.images.canonicalization_networks import ESCNNEquivariantNetwork, ConvNetwork, CustomEquivariantNetwork, ESCNNSteerableNetwork, ESCNNWRNEquivariantNetwork
 
 def get_canonicalization_network(
     canonicalization_type: str,
@@ -24,6 +24,7 @@ def get_canonicalization_network(
     canonicalization_network_dict = {
         'group_equivariant': {
             'escnn': ESCNNEquivariantNetwork,
+            'equivariant_wrn': ESCNNWRNEquivariantNetwork,
             'custom': CustomEquivariantNetwork,
         },
         'steerable': {

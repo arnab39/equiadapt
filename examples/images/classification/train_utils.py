@@ -93,15 +93,26 @@ def get_recursive_hyperparams_identifier(hyperparams: Dict):
     identifier = ""
     for key, value in hyperparams.items():
         if isinstance(value, DictConfig):
-            identifier += f"_{get_recursive_hyperparams_identifier(value)}_"
-        else:
-            identifier += f"_{key}_{value}_"
+            identifier += f"{get_recursive_hyperparams_identifier(value)}"
+        # special manipulation for the keys (to avoid exceeding OS limit for file names)    
+        elif key not in ["canonicalization_type", "beta", "input_crop_ratio"]:
+            if key == "network_type":
+                identifier += f"_net_type_{value}_"
+            elif key == "out_vector_size":
+                identifier += f"_out_vec_{value}_"
+            elif key in ["kernel_size", "resize_shape", "group_type", "artifact_err_wt"]:
+                identifier += f"_{key.split('_')[0]}_{value}_"
+            elif key in ["num_layers", "out_channels", "num_rotations"]:
+                identifier += f"_{key.split('_')[-1]}_{value}_"
+            else:
+                identifier += f"_{key}_{value}_"
     return identifier
     
 def get_checkpoint_name(hyperparams : DictConfig):
-    
     return f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization)}".lstrip("_") + \
-                         f"__epochs_{hyperparams.experiment.training.num_epochs}_" + f"__seed_{hyperparams.experiment.seed}"
+                        f"_loss_wts_{int(hyperparams.experiment.training.loss.task_weight)}_{int(hyperparams.experiment.training.loss.prior_weight)}_{int(hyperparams.experiment.training.loss.group_contrast_weight)}" + \
+                        f"_lrs_{hyperparams.experiment.training.prediction_lr}_{hyperparams.experiment.training.canonicalization_lr}" + \
+                        f"_seed_{hyperparams.experiment.seed}"
                         
 
 def get_image_data(dataset_hyperparams: DictConfig):

@@ -12,7 +12,7 @@ class BaseCanonicalization(torch.nn.Module):
         self.canonicalization_network = canonicalization_network
         self.canonicalization_info_dict = {}
        
-    def forward(self, x: torch.Tensor, **kwargs):
+    def forward(self, x: torch.Tensor, targets: torch.Tensor=None, **kwargs):
         """
         Forward method for the canonicalization which takes the input data and
         returns the canonicalized version of the data
@@ -25,10 +25,10 @@ class BaseCanonicalization(torch.nn.Module):
             canonicalized_x: canonicalized version of the input data
         """
         
-        return self.canonicalize(x, **kwargs)
+        return self.canonicalize(x, targets, **kwargs)
 
     
-    def canonicalize(self, x: torch.Tensor, **kwargs):
+    def canonicalize(self, x: torch.Tensor, targets: torch.Tensor=None, **kwargs):
         """
         This method takes an input data and 
         returns its canonicalized version and
@@ -50,7 +50,9 @@ class IdentityCanonicalization(BaseCanonicalization):
     def __init__(self, canonicalization_network: torch.nn.Module = torch.nn.Identity()):
         super().__init__(canonicalization_network)
     
-    def canonicalize(self, x: torch.Tensor, **kwargs):
+    def canonicalize(self, x: torch.Tensor, targets: torch.Tensor=None, **kwargs):
+        if targets:
+            return x, targets
         return x
     
     def invert_canonicalization(self, x: torch.Tensor, **kwargs):
@@ -98,7 +100,7 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
         # return the group element one hot encoding
         return group_element_onehot
     
-    def canonicalize(self, x: torch.Tensor, **kwargs):
+    def canonicalize(self, x: torch.Tensor, targets: torch.Tensor=None, **kwargs):
         """
         This method takes an input data and 
         returns its canonicalized version and
@@ -150,7 +152,7 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
         """
         raise NotImplementedError()
     
-    def canonicalize(self, x: torch.Tensor, **kwargs):
+    def canonicalize(self, x: torch.Tensor, targets: torch.Tensor=None, **kwargs):
         """
         This method takes an input data and 
         returns its canonicalized version and

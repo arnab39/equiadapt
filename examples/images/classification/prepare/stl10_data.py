@@ -59,7 +59,6 @@ class STL10DataModule(pl.LightningDataModule):
                     transforms.Pad(4),
                     transforms.RandomCrop(96),
                     transforms.Resize(224),
-                    transforms.RandomHorizontalFlip(),
 
                     transforms.ToTensor(),
                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),

@@ -7,7 +7,7 @@ from omegaconf import DictConfig
 
 from inference_utils import get_inference_method
 from model_utils import get_dataset_specific_info, get_prediction_network, calc_iou
-from common.utils import get_canonicalization_network, get_canonicalizer
+from examples.images.common.utils import get_canonicalization_network, get_canonicalizer
 
 
 # define the LightningModule
@@ -23,7 +23,8 @@ class ImageSegmentationPipeline(pl.LightningModule):
             dataset_name=hyperparams.dataset.dataset_name,
             use_pretrained=hyperparams.prediction.use_pretrained,
             freeze_encoder=hyperparams.prediction.freeze_encoder,
-            num_classes=self.num_classes
+            num_classes=self.num_classes,
+            pretrained_ckpt_path=hyperparams.prediction.pretrained_ckpt_path
         )
 
         canonicalization_network = get_canonicalization_network(
@@ -44,7 +45,6 @@ class ImageSegmentationPipeline(pl.LightningModule):
         self.inference_method = get_inference_method(
             self.canonicalizer,
             self.prediction_network,
-            self.num_classes,
             hyperparams.experiment.inference,
             self.image_shape
         )
@@ -144,6 +144,7 @@ class ImageSegmentationPipeline(pl.LightningModule):
         # Log the training metrics
         self.log_dict(training_metrics, prog_bar=True)
         
+        assert not torch.isnan(loss), "Loss is NaN"
         return {'loss': loss}
         
     def validation_step(self, batch: torch.Tensor):
@@ -205,6 +206,7 @@ class ImageSegmentationPipeline(pl.LightningModule):
 
     def test_step(self, batch: torch.Tensor):
         images, targets = batch
+        images = torch.stack(images)
         batch_size, num_channels, height, width = images.shape
         
         # assert that the input is in the right shape
@@ -217,23 +219,23 @@ class ImageSegmentationPipeline(pl.LightningModule):
         
         return test_metrics 
     
-def configure_optimizers(self):
-    # using SGD optimizer and MultiStepLR scheduler
-    optimizer = torch.optim.SGD(
-            [
-                {'params': self.prediction_network.parameters(), 'lr': self.hyperparams.experiment.training.prediction_lr},
-                {'params': self.canonicalizer.parameters(), 'lr': self.hyperparams.experiment.training.canonicalization_lr},
-            ], 
-            momentum=0.9,
-            weight_decay=5e-4,
-        )
-    
-    scheduler_dict = {
-        "scheduler": MultiStepLR(
-            optimizer,
-            milestones=self.hyperparams.experiment.training.milestones,
-            gamma=0.1,
-        ),
-        "interval": "epoch",
-    }
-    return {"optimizer": optimizer, "lr_scheduler": scheduler_dict}
+    def configure_optimizers(self):
+        # using SGD optimizer and MultiStepLR scheduler
+        optimizer = torch.optim.SGD(
+                [
+                    {'params': self.prediction_network.parameters(), 'lr': self.hyperparams.experiment.training.prediction_lr},
+                    {'params': self.canonicalizer.parameters(), 'lr': self.hyperparams.experiment.training.canonicalization_lr},
+                ], 
+                momentum=0.9,
+                weight_decay=5e-4,
+            )
+        
+        scheduler_dict = {
+            "scheduler": MultiStepLR(
+                optimizer,
+                milestones=self.hyperparams.experiment.training.milestones,
+                gamma=0.1,
+            ),
+            "interval": "epoch",
+        }
+        return {"optimizer": optimizer, "lr_scheduler": scheduler_dict}

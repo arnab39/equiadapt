@@ -16,7 +16,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         
         self.beta = canonicalization_hyperparams.beta
         
-        assert len(in_shape) == 3, 'Input shape should be in the format (channels, height, width)'
+        assert len(in_shape) == 3, "Input shape should be in the format (channels, height, width)"
         
         # DEfine all the image transformations here which are used during canonicalization
         # pad and crop the input image if it is not rotated MNIST
@@ -50,18 +50,18 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         group_elements_one_hot = self.groupactivations_to_groupelementonehot(group_activations)
         
         angles = torch.linspace(0., 360., self.num_rotations+1)[:self.num_rotations].to(self.device)
-        group_elements_rot_comp = torch.cat([angles, angles], dim=0) if self.group_type == 'roto-reflection' else angles
+        group_elements_rot_comp = torch.cat([angles, angles], dim=0) if self.group_type == "roto-reflection" else angles
         
         group_element_dict = {}
         
         group_element_rot_comp = torch.sum(group_elements_one_hot * group_elements_rot_comp, dim=-1)
-        group_element_dict['rotation'] = group_element_rot_comp
+        group_element_dict["rotation"] = group_element_rot_comp
 
-        if self.group_type == 'roto-reflection':
+        if self.group_type == "roto-reflection":
             reflect_identifier_vector = torch.cat([torch.zeros(self.num_rotations), 
                  torch.ones(self.num_rotations)], dim=0).to(self.device)
             group_element_reflect_comp = torch.sum(group_elements_one_hot * reflect_identifier_vector, dim=-1)
-            group_element_dict['reflection'] = group_element_reflect_comp
+            group_element_dict["reflection"] = group_element_reflect_comp
         
         return group_element_dict
     
@@ -70,8 +70,8 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         This method takes an image as input and 
         returns the group activations
         """
-        raise NotImplementedError('get_group_activations is not implemented for' 
-                                  'the DiscreteGroupImageCanonicalization class')
+        raise NotImplementedError("get_group_activations is not implemented for" 
+                                  "the DiscreteGroupImageCanonicalization class")
     
     
     def get_groupelement(self, x: torch.Tensor):
@@ -89,11 +89,11 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         group_element_dict = self.groupactivations_to_groupelement(group_activations)
         
         # Check whether canonicalization_info_dict is already defined
-        if not hasattr(self, 'canonicalization_info_dict'):
+        if not hasattr(self, "canonicalization_info_dict"):
             self.canonicalization_info_dict = {}
 
-        self.canonicalization_info_dict['group_element'] = group_element_dict
-        self.canonicalization_info_dict['group_activations'] = group_activations
+        self.canonicalization_info_dict["group_element"] = group_element_dict
+        self.canonicalization_info_dict["group_activations"] = group_activations
         
         return group_element_dict
     
@@ -117,11 +117,11 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         
         x = self.pad(x)
         
-        if 'reflection' in group_element_dict.keys():
-            reflect_indicator = group_element_dict['reflection'][:,None,None,None]
+        if "reflection" in group_element_dict.keys():
+            reflect_indicator = group_element_dict["reflection"][:,None,None,None]
             x = (1 - reflect_indicator) * x + reflect_indicator * K.geometry.hflip(x)
 
-        x = K.geometry.rotate(x, -group_element_dict['rotation'])
+        x = K.geometry.rotate(x, -group_element_dict["rotation"])
         
         x = self.crop(x)
         
@@ -131,27 +131,27 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             
             if 'reflection' in group_element_dict.keys():
                 # flip masks and boxes
-                for t in range(len(targets['boxes'])):
-                    targets[t]['boxes'] = flip_boxes(targets[t]['boxes'], image_width)
-                    targets[t]['masks'] = flip_masks(targets[t]['masks'])
+                for t in range(len(targets)):
+                    targets[t]["boxes"] = flip_boxes(targets[t]["boxes"], image_width)
+                    targets[t]["masks"] = flip_masks(targets[t]["masks"])
            
             # rotate masks and boxes
-            for t in range(len(targets['boxes'])):
-                targets[t]['boxes'] = rotate_boxes(targets[t]['boxes'], group_element_dict['rotation'], image_width)
-                targets[t]['masks'] = rotate_masks(targets[t]['masks'], -group_element_dict['rotation'])
+            for t in range(len(targets)):
+                targets[t]["boxes"] = rotate_boxes(targets[t]["boxes"], group_element_dict["rotation"][t], image_width)
+                targets[t]["masks"] = rotate_masks(targets[t]["masks"], -group_element_dict["rotation"][t].item())
                 
             return x, targets
             
         return x
     
-    def invert_canonicalization(self, x_canonicalized_out: torch.Tensor, induced_rep_type: str = 'regular'):
+    def invert_canonicalization(self, x_canonicalized_out: torch.Tensor, induced_rep_type: str = "regular"):
         """
         This method takes the output of canonicalized image as input and
         returns output of the original image
         """
         return get_action_on_image_features(feature_map = x_canonicalized_out,
                                             group_info_dict = self.group_info_dict,
-                                            group_element_dict = self.canonicalization_info_dict['group_element'],
+                                            group_element_dict = self.canonicalization_info_dict["group_element"],
                                             induced_rep_type = induced_rep_type)
     
         
@@ -168,9 +168,9 @@ class GroupEquivariantImageCanonicalization(DiscreteGroupImageCanonicalization):
                          in_shape)
         self.group_type = canonicalization_network.group_type
         self.num_rotations = canonicalization_network.num_rotations
-        self.num_group = self.num_rotations if self.group_type == 'rotation' else 2 * self.num_rotations
-        self.group_info_dict = {'num_rotations': self.num_rotations,
-                                 'num_group': self.num_group}
+        self.num_group = self.num_rotations if self.group_type == "rotation" else 2 * self.num_rotations
+        self.group_info_dict = {"num_rotations": self.num_rotations,
+                                 "num_group": self.num_group}
     
     def get_group_activations(self, x: torch.Tensor):
         """
@@ -194,13 +194,15 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
                          in_shape)
         self.group_type = canonicalization_hyperparams.group_type
         self.num_rotations = canonicalization_hyperparams.num_rotations
-        self.num_group = self.num_rotations if self.group_type == 'rotation' else 2 * self.num_rotations
+        self.artifact_err_wt = canonicalization_hyperparams.artifact_err_wt
+        self.num_group = self.num_rotations if self.group_type == "rotation" else 2 * self.num_rotations
         self.out_vector_size = canonicalization_network.out_vector_size
         self.reference_vector = torch.nn.Parameter(
-            torch.randn(1, self.out_vector_size), requires_grad=False
+            torch.randn(1, self.out_vector_size), 
+            requires_grad=canonicalization_hyperparams.learn_ref_vec
         )
-        self.group_info_dict = {'num_rotations': self.num_rotations,
-                                 'num_group': self.num_group}
+        self.group_info_dict = {"num_rotations": self.num_rotations,
+                                 "num_group": self.num_group}
         
     def rotate_and_maybe_reflect(self, x: torch.Tensor, degrees: torch.Tensor, reflect: bool = False):
         x_augmented_list = []
@@ -219,7 +221,7 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
         degrees = torch.linspace(0, 360, self.num_rotations + 1)[:-1].to(self.device)
         x_augmented_list = self.rotate_and_maybe_reflect(x, degrees)
         
-        if self.group_type == 'roto-reflection':
+        if self.group_type == "roto-reflection":
             x_augmented_list += self.rotate_and_maybe_reflect(x, degrees, reflect=True)
         
         return torch.cat(x_augmented_list, dim=0)
@@ -234,7 +236,25 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
         x = self.transformations_before_canonicalization_network_forward(x)     
         x_augmented = self.group_augment(x)                       # size (batch_size * group_size, in_channels, height, width)
         vector_out = self.canonicalization_network(x_augmented)           # size (batch_size * group_size, reference_vector_size)
-        self.canonicalization_info_dict = {'vector_out': vector_out}
+        self.canonicalization_info_dict = {"vector_out": vector_out}
+        
+        if self.artifact_err_wt:
+            # select a random rotation for each image in the batch
+            rotation_indices = torch.randint(0, self.num_rotations, (x_augmented.shape[0],)).to(self.device)
+            
+            # apply the rotation degree to the images
+            x_dummy = self.pad(x_augmented)
+            x_dummy = K.geometry.rotate(x_dummy, -rotation_indices * 360 / self.num_rotations)
+            x_dummy = self.crop(x_dummy)
+            
+            # invert the image back to the original orientation
+            x_dummy = self.pad(x_dummy)
+            x_dummy = K.geometry.rotate(x_dummy, rotation_indices * 360 / self.num_rotations)
+            x_dummy = self.crop(x_dummy)
+            
+            vector_out_dummy = self.canonicalization_network(x_dummy)           # size (batch_size * group_size, reference_vector_size)
+            self.canonicalization_info_dict.update({"vector_out_dummy": vector_out_dummy})
+        
         scalar_out = F.cosine_similarity(
             self.reference_vector.repeat(vector_out.shape[0], 1), 
             vector_out
@@ -244,11 +264,18 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
         
     
     def get_optimization_specific_loss(self):
-        vectors = self.canonicalization_info_dict['vector_out']
+        vectors = self.canonicalization_info_dict["vector_out"]
+        
+        # compute error to reduce rotation artifacts
+        rotation_artifact_error = 0
+        if self.artifact_err_wt:
+            vectors_dummy = self.canonicalization_info_dict["vector_out_dummy"]
+            rotation_artifact_error = torch.nn.functional.mse_loss(vectors_dummy, vectors)
+        
+        # error to ensure that the vectors are (as much as possible) orthogonal
         vectors = vectors.reshape(self.num_group, -1, self.out_vector_size).permute((1, 0, 2)) # (batch_size, group_size, vector_out_size)
         distances = vectors @ vectors.permute((0, 2, 1))
         mask = 1.0 - torch.eye(self.num_group).to(self.device) # (group_size, group_size)
-        return torch.abs(distances * mask).mean()
         
         
-    
+        return torch.abs(distances * mask).mean() + self.artifact_err_wt * rotation_artifact_error

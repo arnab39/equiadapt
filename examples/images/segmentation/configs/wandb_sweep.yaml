@@ -3,7 +3,7 @@ method: grid
 name: rotated mnist testing
 parameters:
   dataset.dataset_name:
-    value: 'rotated_mnist'
+    value: rotated_mnist
   experiment.seed:
     values: [0, 1]
   experiment.training.num_epochs:
