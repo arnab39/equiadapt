@@ -112,3 +112,7 @@ escnn
 rotmnist_sweep_output/
 cifar10_sweep_output/
 wandb/
+
+# Docs
+docs/api/
+docs/_build/
