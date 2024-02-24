@@ -19,7 +19,7 @@ prediction:
   freeze_pretrained_encoder: 0 # Whether to freeze the pretrained encoder (1) or not (0)
 
 canonicalization:
-  network_type: 'escnn' # Options o canonization method 1) escnn
+  network_type: 'escnn' # Options o canonization method 1) escnn 
   network_hyperparams:
     kernel_size: 3 # Kernel size for the canonization network
     out_channels: 16 # Number of output channels for the canonization network

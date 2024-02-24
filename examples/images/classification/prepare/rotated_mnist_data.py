@@ -1,13 +1,11 @@
-import argparse
 import os
+import argparse
 import urllib.request as url_req
 import zipfile
-
 import numpy as np
-import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-
+import pytorch_lightning as pl
 
 def obtain(dir_path):
     os.makedirs(dir_path, exist_ok=True)
@@ -15,10 +13,8 @@ def obtain(dir_path):
     print('Downloading the dataset')
 
     ## Download the main zip file
-    url_req.urlretrieve(
-        'http://www.iro.umontreal.ca/~lisa/icml2007data/mnist_rotation_new.zip',
-        os.path.join(dir_path, 'mnist_rotated.zip'),
-    )
+    url_req.urlretrieve('http://www.iro.umontreal.ca/~lisa/icml2007data/mnist_rotation_new.zip',
+                       os.path.join(dir_path, 'mnist_rotated.zip'))
     # Extract the zip file
     print('Extracting the dataset')
 
@@ -35,14 +31,8 @@ def obtain(dir_path):
     test_file_path = os.path.join(dir_path, 'mnist_rotated_test.amat')
 
     # Rename train and test files
-    os.rename(
-        os.path.join(dir_path, 'mnist_all_rotation_normalized_float_train_valid.amat'),
-        train_file_path,
-    )
-    os.rename(
-        os.path.join(dir_path, 'mnist_all_rotation_normalized_float_test.amat'),
-        test_file_path,
-    )
+    os.rename(os.path.join(dir_path, 'mnist_all_rotation_normalized_float_train_valid.amat'), train_file_path)
+    os.rename(os.path.join(dir_path, 'mnist_all_rotation_normalized_float_test.amat'), test_file_path)
 
     # Split data in valid file and train file
     fp = open(train_file_path)
@@ -77,7 +67,6 @@ def load_line(line):
     tokens = line.split()
     return np.array([float(i) for i in tokens[:-1]]), int(float(tokens[-1]))
 
-
 def custom_load_data(file_path):
     fp = open(file_path)
     # Add the lines of the file into a list
@@ -91,7 +80,6 @@ def custom_load_data(file_path):
     images = torch.stack(image_list)
     labels = torch.stack(label_list)
     return images, labels
-
 
 def get_dataset(dir_path, split='train'):
     if split == 'train':
@@ -150,7 +138,6 @@ class RotatedMNISTDataModule(pl.LightningDataModule):
             num_workers=self.hyperparams.num_workers,
         )
         return test_loader
-
 
 # if __name__ == "__main__":
 #     parser = argparse.ArgumentParser()
