@@ -104,7 +104,7 @@ dmypy.json
 # Ignore .vscode in all folders
 **/.vscode
 
-# Ignore scripts to run experiments in mila
+# Ignore scripts to run experiments in mila 
 mila_scripts/
 
 escnn
@@ -112,7 +112,3 @@ escnn
 rotmnist_sweep_output/
 cifar10_sweep_output/
 wandb/
-
-# Docs
-docs/api/
-docs/_build/

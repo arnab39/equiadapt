@@ -9,7 +9,7 @@ dataset:
 
 experiment:
   run_mode: "train" # Mode to run the model in, different run modes 1)dryrun 2)train 3)test 4)auto_tune
-  seed: 0 # Seed for random number generation
+  seed: 0 # Seed for random number generation  
   deterministic: false # Whether to set deterministic mode (true) or not (false)
   device: "cuda" # Device, can be cuda or cpu
   num_nodes: 1
@@ -25,7 +25,7 @@ experiment:
   inference:
     method: "group" # Type of inference options 1) vanilla 2) group
     group_type: "rotation" # Type of group to test during inference 1) Rotation 2) Roto-reflection
-    num_rotations: 4 # Number of rotations to check robustness during inference
+    num_rotations: 4 # Number of rotations to check robustness during inference 
 
 prediction:
   prediction_network_architecture: "resnet50" # Architecture of the prediction network
