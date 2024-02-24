@@ -51,7 +51,7 @@ class COCODataModule(pl.LightningDataModule):
     def __init__(self, hyperparams):
         super().__init__()
         self.hyperparams = hyperparams
-    
+
     def get_transform(self, train=True):
         tr = []
         tr.append(T.PILToTensor())
@@ -60,7 +60,7 @@ class COCODataModule(pl.LightningDataModule):
         if train and self.hyperparams.augment == 'flip':
             tr.append(T.RandomHorizontalFlip(0.5))
         return T.Compose(tr)
-    
+
     def collate_fn(self, batch):
         images = [x[0] for x in batch]
         targets = [x[1] for x in batch]
@@ -85,7 +85,7 @@ class COCODataModule(pl.LightningDataModule):
                     transform=self.get_transform(train=False)
                 )
             print('Test dataset size: ', len(self.test_dataset))
-    
+
     def train_dataloader(self):
         train_loader = DataLoader(
             self.train_dataset,

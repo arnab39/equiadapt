@@ -69,7 +69,7 @@ class LieParameterization(torch.nn.Module):
         son_bases = self.get_son_bases().to(params.device)
         A = torch.einsum('bs,sij->bij', params, son_bases)
         return torch.matrix_exp(A)
-    
+
     def get_on_rep(self, params: torch.Tensor, reflect_indicators: torch.Tensor):
         """
         Computes the representation for O(n) group, optionally including reflections.
@@ -82,7 +82,7 @@ class LieParameterization(torch.nn.Module):
             torch.Tensor: The representation of shape (batch_size, rep_dim, rep_dim).
         """
         son_rep = self.get_son_rep(params)
-        
+
         # This is a simplified and conceptual approach; actual reflection handling
         # would need to determine how to reflect (e.g., across which axis or plane)
         # and this might not directly apply as-is.
@@ -90,7 +90,7 @@ class LieParameterization(torch.nn.Module):
         reflection_matrix = torch.diag_embed(torch.tensor([1] * (self.group_dim - 1) + [-1]))
         on_rep = torch.matmul(son_rep, reflect_indicators * reflection_matrix + (1 - reflect_indicators) * identity_matrix)
         return on_rep
-    
+
     def get_sen_rep(self, params: torch.Tensor):
         """Computes the representation for SEn group.
 
@@ -101,14 +101,14 @@ class LieParameterization(torch.nn.Module):
             torch.Tensor: The representation of shape (batch_size, rep_dim, rep_dim).
         """
         son_param_dim = self.group_dim * (self.group_dim - 1) // 2
-        rho = torch.zeros(params.shape[0], self.group_dim + 1, 
+        rho = torch.zeros(params.shape[0], self.group_dim + 1,
                           self.group_dim + 1, device=params.device)
         rho[:, :self.group_dim, :self.group_dim] = self.get_son_rep(
             params[:, :son_param_dim].unsqueeze(0)).squeeze(0)
         rho[:, :self.group_dim, self.group_dim] = params[:, son_param_dim:]
         rho[:, self.group_dim, self.group_dim] = 1
         return rho
-    
+
     def get_en_rep(self, params: torch.Tensor, reflect_indicators: torch.Tensor):
         """Computes the representation for E(n) group.
 
@@ -146,7 +146,7 @@ class LieParameterization(torch.nn.Module):
         en_rep[:, self.group_dim, self.group_dim] = 1
 
         return en_rep
-        
+
 
     def get_group_rep(self, params):
         """Computes the representation for the specified Lie group.
@@ -167,5 +167,3 @@ class LieParameterization(torch.nn.Module):
             return self.get_en_rep(params)
         else:
             raise ValueError(f"Unsupported group type: {self.group_type}")
-
-    

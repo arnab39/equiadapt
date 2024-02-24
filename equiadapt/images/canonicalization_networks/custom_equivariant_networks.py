@@ -223,18 +223,18 @@ class RotoReflectionEquivariantConv(nn.Module):
         if self.bias is not None:
             x = x + self.bias[None, :, None, None, None]
         return x
-    
+
 class CustomEquivariantNetwork(nn.Module):
-    def __init__(self, 
-                 in_shape, 
-                 out_channels, 
-                 kernel_size, 
-                 group_type='rotation', 
-                 num_rotations=4, 
+    def __init__(self,
+                 in_shape,
+                 out_channels,
+                 kernel_size,
+                 group_type='rotation',
+                 num_rotations=4,
                  num_layers=1,
                  device='cuda' if torch.cuda.is_available() else 'cpu'):
         super().__init__()
-        
+
         if group_type == 'rotation':
             layer_list = [RotationEquivariantConvLift(in_shape[0], out_channels, kernel_size, num_rotations, device=device)]
             for i in range(num_layers - 1):
@@ -257,5 +257,5 @@ class CustomEquivariantNetwork(nn.Module):
         """
         feature_map = self.eqv_network(x)
         group_activatiobs = torch.mean(feature_map, dim=(1, 3, 4))
-        
+
         return group_activatiobs

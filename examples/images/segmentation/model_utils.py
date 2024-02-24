@@ -11,17 +11,17 @@ ALPHA = 0.8
 GAMMA = 2
 
 class MaskRCNNModel(nn.Module):
-    def __init__(self, 
-                architecture_type: str, 
+    def __init__(self,
+                architecture_type: str,
                 pretrained_ckpt_path:str = None,
                 num_classes: int = 91,
                 weights:str ='DEFAULT'):
         super().__init__()
-        
+
         assert architecture_type in ['resnet50_fpn_v2'], NotImplementedError('Only `maskrcnn_resnet50_fpn_v2` is supported for now.')
         if architecture_type == 'resnet50_fpn_v2':
             self.model = maskrcnn_resnet50_fpn_v2(weights=weights)
-            
+
         if num_classes != 91:
             in_features = self.model.roi_heads.box_predictor.cls_score.in_features
             # replace the pre-trained head with a new one
@@ -63,8 +63,8 @@ class MaskRCNNModel(nn.Module):
 
 class SAMModel(nn.Module):
 
-    def __init__(self, 
-                architecture_type: str, 
+    def __init__(self,
+                architecture_type: str,
                 pretrained_ckpt_path:str =None,
                 num_classes: int = 91,
                 weights:str ='DEFAULT'):
@@ -115,7 +115,7 @@ class SAMModel(nn.Module):
             outputs.append(output)
 
         return None, pred_masks, ious, outputs
-    
+
 class FocalLoss(nn.Module):
 
     def __init__(self, weight=None, size_average=True):
@@ -153,7 +153,7 @@ class DiceLoss(nn.Module):
         dice = (2. * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
 
         return 1 - dice
-    
+
 def get_dataset_specific_info(dataset_name, prediction_architecture_name):
     dataset_info = {
         'coco': {
@@ -188,7 +188,7 @@ def get_prediction_network(
         raise ValueError(f'{architecture} is not implemented as prediction network for now.')
 
     prediction_network = model_dict[architecture](architecture_type, pretrained_ckpt_path, num_classes, weights)
-    
+
     if freeze_encoder:
         for param in prediction_network.parameters():
             param.requires_grad = False

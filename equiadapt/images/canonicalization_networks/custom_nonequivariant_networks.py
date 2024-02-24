@@ -2,11 +2,11 @@ import torch
 from torch import nn
 
 class ConvNetwork(nn.Module):
-    def __init__(self, 
-                 in_shape, 
-                 out_channels, 
-                 kernel_size, 
-                 num_layers=2, 
+    def __init__(self,
+                 in_shape,
+                 out_channels,
+                 kernel_size,
+                 num_layers=2,
                  out_vector_size=128):
         super().__init__()
 

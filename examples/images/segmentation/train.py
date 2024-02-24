@@ -28,18 +28,18 @@ def train_images(hyperparams: DictConfig):
         print("Wandb disabled for logging...")
         os.environ["WANDB_MODE"] = "disabled"
         os.environ["WANDB_DIR"] = hyperparams['wandb']['wandb_dir']
-    os.environ["WANDB_CACHE_DIR"] = hyperparams['wandb']['wandb_cache_dir']   
-    
+    os.environ["WANDB_CACHE_DIR"] = hyperparams['wandb']['wandb_cache_dir']
+
     # initialize wandb
     wandb.init(config=OmegaConf.to_container(hyperparams, resolve=True), entity=hyperparams['wandb']['wandb_entity'], project=hyperparams['wandb']['wandb_project'], dir=hyperparams['wandb']['wandb_dir'])
     wandb_logger = WandbLogger(project=hyperparams['wandb']['wandb_project'], log_model="all")
 
     # set seed
     pl.seed_everything(hyperparams.experiment.seed)
-    
+
     # get model, callbacks, and image data
     model, image_data, callbacks = get_model_data_and_callbacks(hyperparams)
-        
+
     if hyperparams.canonicalization_type in ("group_equivariant", "opt_equivariant", "steerable"):
         wandb.watch(model.canonicalizer.canonicalization_network, log='all')
 
@@ -48,7 +48,7 @@ def train_images(hyperparams: DictConfig):
 
     if hyperparams.experiment.run_mode == "train":
         trainer.fit(model, datamodule=image_data)
-        
+
     elif hyperparams.experiment.run_mode == "auto_tune":
         trainer.tune(model, datamodule=image_data)
 

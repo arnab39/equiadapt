@@ -12,7 +12,7 @@ class CelebADataModule(pl.LightningDataModule):
         super().__init__()
         self.data_path = hyperparams.data_path
         self.hyperparams = hyperparams
-        
+
         if hyperparams.augment == 1:
             self.train_transform = transforms.Compose(
                 [
