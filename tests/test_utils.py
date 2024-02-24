@@ -10,4 +10,3 @@ def test_gram_schmidt() -> None:
     output = gram_schmidt(vectors)
 
     assert torch.allclose(output[0][0][0], torch.tensor(0.5740), atol=1e-4)
-
