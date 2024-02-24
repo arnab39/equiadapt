@@ -1,13 +1,24 @@
 import torch
-import torchvision
 import torch.nn as nn
-
+import torchvision
 from omegaconf import DictConfig
 
 from equiadapt.common.basecanonicalization import IdentityCanonicalization
-from equiadapt.images.canonicalization.discrete_group import GroupEquivariantImageCanonicalization, OptimizedGroupEquivariantImageCanonicalization
-from equiadapt.images.canonicalization.continuous_group import SteerableImageCanonicalization, OptimizedSteerableImageCanonicalization
-from equiadapt.images.canonicalization_networks import ESCNNEquivariantNetwork, ConvNetwork, CustomEquivariantNetwork, ESCNNSteerableNetwork
+from equiadapt.images.canonicalization.continuous_group import (
+    OptimizedSteerableImageCanonicalization,
+    SteerableImageCanonicalization,
+)
+from equiadapt.images.canonicalization.discrete_group import (
+    GroupEquivariantImageCanonicalization,
+    OptimizedGroupEquivariantImageCanonicalization,
+)
+from equiadapt.images.canonicalization_networks import (
+    ConvNetwork,
+    CustomEquivariantNetwork,
+    ESCNNEquivariantNetwork,
+    ESCNNSteerableNetwork,
+)
+
 
 class PredictionNetwork(nn.Module):
     def __init__(self, encoder: torch.nn.Module, feature_dim: int, num_classes: int):
@@ -19,7 +30,8 @@ class PredictionNetwork(nn.Module):
         reps = self.encoder(x)
         reps = reps.view(x.shape[0], -1)
         return self.predictor(reps)
-    
+
+
 def get_dataset_specific_info(dataset_name):
     dataset_info = {
         'rotated_mnist': (nn.CrossEntropyLoss(), (1, 28, 28), 10),
@@ -35,43 +47,49 @@ def get_dataset_specific_info(dataset_name):
         raise ValueError('Dataset not implemented for now.')
 
     return dataset_info[dataset_name]
-    
+
 
 def get_prediction_network(
-    architecture: str = 'resnet50', 
+    architecture: str = 'resnet50',
     dataset_name: str = 'cifar10',
     use_pretrained: bool = False,
     freeze_encoder: bool = False,
     input_shape: tuple = (3, 32, 32),
-    num_classes: int = 10
+    num_classes: int = 10,
 ):
     weights = 'DEFAULT' if use_pretrained else None
     model_dict = {
         'resnet50': torchvision.models.resnet50,
-        'vit': torchvision.models.vit_b_16
+        'vit': torchvision.models.vit_b_16,
     }
 
     if architecture not in model_dict:
-        raise ValueError(f'{architecture} is not implemented as prediction network for now.')
+        raise ValueError(
+            f'{architecture} is not implemented as prediction network for now.'
+        )
 
     encoder = model_dict[architecture](weights=weights)
 
-    if architecture == 'resnet50' and dataset_name in ('cifar10', 'cifar100', 'rotated_mnist'):
+    if architecture == 'resnet50' and dataset_name in (
+        'cifar10',
+        'cifar100',
+        'rotated_mnist',
+    ):
         if input_shape[-2:] == [32, 32] or dataset_name == 'rotated_mnist':
-            encoder.conv1 = nn.Conv2d(input_shape[0], 64, kernel_size=3, stride=1, padding=1, bias=False)
+            encoder.conv1 = nn.Conv2d(
+                input_shape[0], 64, kernel_size=3, stride=1, padding=1, bias=False
+            )
             encoder.maxpool = nn.Identity()
-    
+
     if freeze_encoder:
         for param in encoder.parameters():
             param.requires_grad = False
 
     if dataset_name != 'ImageNet':
         feature_dim = encoder.fc.in_features
-        encoder.fc = nn.Identity()       
+        encoder.fc = nn.Identity()
         prediction_network = PredictionNetwork(encoder, feature_dim, num_classes)
     else:
         prediction_network = encoder
-        
-    
 
     return prediction_network
