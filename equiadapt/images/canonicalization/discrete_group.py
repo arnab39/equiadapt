@@ -22,10 +22,9 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         # pad and crop the input image if it is not rotated MNIST
         is_grayscale = (in_shape[0] == 1)
         
-        self.pad = torch.nn.Identity() if is_grayscale else transforms.Pad(
-            math.ceil(in_shape[-2] * 0.4), padding_mode='edge'
-        )
+        self.pad = torch.nn.Identity() if is_grayscale else transforms.Pad(math.ceil(in_shape[-1] * 0.5), padding_mode='edge')
         self.crop = torch.nn.Identity() if is_grayscale else transforms.CenterCrop((in_shape[-2], in_shape[-1]))
+        
         self.crop_canonization = torch.nn.Identity() if is_grayscale else transforms.CenterCrop((
             math.ceil(in_shape[-2] * canonicalization_hyperparams.input_crop_ratio), 
             math.ceil(in_shape[-1] * canonicalization_hyperparams.input_crop_ratio)
@@ -197,6 +196,13 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
         self.artifact_err_wt = canonicalization_hyperparams.artifact_err_wt
         self.num_group = self.num_rotations if self.group_type == "rotation" else 2 * self.num_rotations
         self.out_vector_size = canonicalization_network.out_vector_size
+        
+        # group optimization specific cropping and padding (required for group_augment())
+        group_augment_in_shape = canonicalization_hyperparams.resize_shape
+        self.crop_group_augment = torch.nn.Identity() if in_shape[0] == 1 else transforms.CenterCrop(group_augment_in_shape)
+        self.pad_group_augment = torch.nn.Identity() if in_shape[0] == 1 else transforms.Pad(math.ceil(group_augment_in_shape * 0.5), padding_mode='edge')
+        
+        
         self.reference_vector = torch.nn.Parameter(
             torch.randn(1, self.out_vector_size), 
             requires_grad=canonicalization_hyperparams.learn_ref_vec
@@ -207,11 +213,11 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
     def rotate_and_maybe_reflect(self, x: torch.Tensor, degrees: torch.Tensor, reflect: bool = False):
         x_augmented_list = []
         for degree in degrees:
-            x_rot = self.pad(x)
+            x_rot = self.pad_group_augment(x)
             x_rot = K.geometry.rotate(x_rot, -degree)
             if reflect:
                 x_rot = K.geometry.hflip(x_rot)
-            x_rot = self.crop(x_rot)
+            x_rot = self.crop_group_augment(x_rot)
             x_augmented_list.append(x_rot)
         return x_augmented_list
         
@@ -243,14 +249,14 @@ class OptimizedGroupEquivariantImageCanonicalization(DiscreteGroupImageCanonical
             rotation_indices = torch.randint(0, self.num_rotations, (x_augmented.shape[0],)).to(self.device)
             
             # apply the rotation degree to the images
-            x_dummy = self.pad(x_augmented)
+            x_dummy = self.pad_group_augment(x_augmented)
             x_dummy = K.geometry.rotate(x_dummy, -rotation_indices * 360 / self.num_rotations)
-            x_dummy = self.crop(x_dummy)
+            x_dummy = self.crop_group_augment(x_dummy)
             
             # invert the image back to the original orientation
-            x_dummy = self.pad(x_dummy)
+            x_dummy = self.pad_group_augment(x_dummy)
             x_dummy = K.geometry.rotate(x_dummy, rotation_indices * 360 / self.num_rotations)
-            x_dummy = self.crop(x_dummy)
+            x_dummy = self.crop_group_augment(x_dummy)
             
             vector_out_dummy = self.canonicalization_network(x_dummy)           # size (batch_size * group_size, reference_vector_size)
             self.canonicalization_info_dict.update({"vector_out_dummy": vector_out_dummy})

@@ -47,7 +47,8 @@ def get_canonicalization_network(
     canonicalization_network_dict[canonicalization_type][
         canonicalization_hyperparams.network_type
         ](
-           in_shape = in_shape, 
+           in_shape = (in_shape[0], canonicalization_hyperparams.resize_shape, 
+                       canonicalization_hyperparams.resize_shape), 
            **canonicalization_hyperparams.network_hyperparams
         )
     
