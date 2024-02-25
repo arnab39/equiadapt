@@ -1,17 +1,20 @@
+from typing import List
+
 import torch
-from torch import nn
+from torch import Module, nn
+
 
 class ConvNetwork(nn.Module):
     def __init__(self, 
-                 in_shape, 
-                 out_channels, 
-                 kernel_size, 
-                 num_layers=2, 
-                 out_vector_size=128):
+                 in_shape: tuple, 
+                 out_channels: int, 
+                 kernel_size: int, 
+                 num_layers: int = 2, 
+                 out_vector_size: int = 128):
         super().__init__()
 
         in_channels = in_shape[0]
-        layers = []
+        layers: List[nn.Module] = []
         for i in range(num_layers):
             if i == 0:
                 layers.append(nn.Conv2d(in_channels, out_channels, kernel_size, 2))
@@ -36,7 +39,7 @@ class ConvNetwork(nn.Module):
                                     )
         self.out_vector_size = out_vector_size
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         x shape: (batch_size, in_channels, height, width)
         :return: (batch_size, 1)

@@ -146,7 +146,7 @@ dependencies:
     - requests==2.31.0
     - scipy==1.9.3
     - setproctitle==1.2.2
-    - setuptools==68.2.2
+    - types-setuptools==69.1.0.20240223
     - sympy==1.12
     - torch==2.2.0
     - torchvision==0.17.0

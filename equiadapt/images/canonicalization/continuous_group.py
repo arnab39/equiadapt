@@ -1,11 +1,14 @@
-import torch
+import math
+
 import kornia as K
+import torch
+from torch.nn import functional as F
+from torchvision import transforms
+
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 from equiadapt.common.utils import gram_schmidt
 from equiadapt.images.utils import get_action_on_image_features
-from torchvision import transforms
-import math
-from torch.nn import functional as F
+
 
 class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
     def __init__(self, 

@@ -1,6 +1,7 @@
-import torch
 import kornia as K
+import torch
 from torchvision import transforms
+
 
 def roll_by_gather(feature_map: torch.Tensor, shifts: torch.Tensor):
     device = shifts.device

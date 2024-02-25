@@ -1,11 +1,12 @@
 
+import os
+import random
+
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import Flowers102
-import os
 
-import random
 
 class Flowers102DataModule(pl.LightningDataModule):
     def __init__(self, hyperparams, download=False):

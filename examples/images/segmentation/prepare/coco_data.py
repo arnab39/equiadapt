@@ -1,15 +1,14 @@
 import os
 
-import torch
 import numpy as np
-from PIL import Image
-import pytorch_lightning as pl
-import torchvision.transforms as transforms
 import prepare.vision_transforms as T
-from torch.utils.data import DataLoader, Dataset
-
+import pytorch_lightning as pl
+import torch
+import torchvision.transforms as transforms
+from PIL import Image
 from pycocotools.coco import COCO
 from segment_anything.utils.transforms import ResizeLongestSide
+from torch.utils.data import DataLoader, Dataset
 
 
 class ResizeAndPad:

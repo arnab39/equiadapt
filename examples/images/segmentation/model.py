@@ -1,12 +1,11 @@
-import torch
 import pytorch_lightning as pl
+import torch
+from inference_utils import get_inference_method
+from model_utils import calc_iou, get_dataset_specific_info, get_prediction_network
+from omegaconf import DictConfig
 from torch.optim.lr_scheduler import MultiStepLR
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
-from omegaconf import DictConfig
-
-from inference_utils import get_inference_method
-from model_utils import get_dataset_specific_info, get_prediction_network, calc_iou
 from examples.images.common.utils import get_canonicalization_network, get_canonicalizer
 
 

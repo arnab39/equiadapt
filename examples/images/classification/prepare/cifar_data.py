@@ -1,11 +1,12 @@
 
+import os
+import random
+
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import CIFAR10, CIFAR100
-import os
 
-import random
 
 class CustomRotationTransform:
     """Rotate by one of the given angles."""

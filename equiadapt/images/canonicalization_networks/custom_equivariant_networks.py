@@ -1,8 +1,10 @@
+import math
+
+import kornia as K
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import kornia as K
-import math
+
 
 class RotationEquivariantConvLift(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, num_rotations=4, stride=1, padding=0, bias=True,

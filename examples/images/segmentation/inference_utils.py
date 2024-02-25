@@ -1,13 +1,14 @@
 import copy
-import torch, math
-import wandb
+import math
+from typing import Dict, Union
 
-from typing import Union, Dict
-
-from torchvision import transforms
+import torch
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
+from torchvision import transforms
 
+import wandb
 from equiadapt.images.utils import flip_boxes, flip_masks, rotate_boxes, rotate_masks
+
 
 def get_inference_method(canonicalizer: torch.nn.Module, 
                          prediction_network: torch.nn.Module, 

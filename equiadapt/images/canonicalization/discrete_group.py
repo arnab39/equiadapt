@@ -1,10 +1,20 @@
-import torch
-import kornia as K
-from equiadapt.common.basecanonicalization import DiscreteGroupCanonicalization
-from equiadapt.images.utils import flip_boxes, flip_masks, get_action_on_image_features, rotate_boxes, rotate_masks
-from torchvision import transforms
 import math
+from typing import List, Union
+
+import kornia as K
+import torch
 from torch.nn import functional as F
+from torchvision import transforms
+
+from equiadapt.common.basecanonicalization import DiscreteGroupCanonicalization
+from equiadapt.images.utils import (
+    flip_boxes,
+    flip_masks,
+    get_action_on_image_features,
+    rotate_boxes,
+    rotate_masks,
+)
+
 
 class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
     def __init__(self, 
@@ -106,7 +116,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         return x
         
     
-    def canonicalize(self, x: torch.Tensor, targets: torch.Tensor = None):
+    def canonicalize(self, x: torch.Tensor, targets: List = []):
         """
         This method takes an image as input and 
         returns the canonicalized image 
@@ -124,7 +134,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         
         x = self.crop(x)
         
-        if targets:
+        if len(targets):
             # canonicalize the targets (for instance segmentation, masks and boxes)
             image_width = x.shape[-1]
             

@@ -1,15 +1,15 @@
-import torch
 import escnn
+import torch
 from escnn import gspaces
 
 class ESCNNEquivariantNetwork(torch.nn.Module):
     def __init__(self, 
-                 in_shape, 
-                 out_channels, 
-                 kernel_size, 
-                 group_type='rotation', 
-                 num_rotations=4, 
-                 num_layers=1):
+                 in_shape: tuple, 
+                 out_channels: int, 
+                 kernel_size: int, 
+                 group_type: str = "rotation", 
+                 num_rotations: int = 4, 
+                 num_layers: int = 1):
         super().__init__()
 
         self.in_channels = in_shape[0]
@@ -48,7 +48,7 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
             
         self.eqv_network.append(escnn.nn.R2Conv(self.out_type, self.out_type, kernel_size),)
     
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         The forward takes an image as input and returns the activations of 
         each group element as output.
@@ -90,7 +90,7 @@ class ESCNNSteerableNetwork(torch.nn.Module):
         in_type = escnn.nn.FieldType(self.gspace, in_shape[0] * [self.gspace.trivial_repr])
         
         # Store the input type for wrapping the images into a geometric tensor during the forward pass
-        self.input_type = in_type
+        self.in_type = in_type
 
         # Initialize the modules list for the sequential network
         modules = []
@@ -110,23 +110,24 @@ class ESCNNSteerableNetwork(torch.nn.Module):
         # Combine all modules into a SequentialModule
         self.block = escnn.nn.SequentialModule(*modules)
 
-    def forward(self, x : torch.Tensor):
-        x = self.input_type(x)  # Wrap input images into a geometric tensor
-        x = self.block(x)
-        x = x.tensor  # Extract tensor from geometric tensor
-        x = torch.mean(x, dim=(-1, -2))  # Average over spatial dimensions
-        x = x.reshape(x.shape[0], 2, 2)  # Reshape to get vector/vectors of dimension 2
-        return x
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = escnn.nn.GeometricTensor(x, self.in_type)
+        out = self.block(x)
+        
+        feature_maps = out.tensor  # Extract tensor from geometric tensor
+        feature_maps = torch.mean(feature_maps, dim=(-1, -2))  # Average over spatial dimensions
+        feature_maps = feature_maps.reshape(feature_maps.shape[0], 2, 2)  # Reshape to get vector/vectors of dimension 2
+        return feature_maps
     
 
 # wide resnet equivariant network and utilities
 class ESCNNWideBottleneck(torch.nn.Module):
     def __init__(
         self,
-        in_type,
-        middle_type,
-        out_type,
-        kernel_size=3,
+        in_type: escnn.nn.FieldType,
+        middle_type: escnn.nn.FieldType,
+        out_type: escnn.nn.FieldType,
+        kernel_size: int = 3,
     ):
         super().__init__()
         self.in_type = in_type
@@ -147,7 +148,7 @@ class ESCNNWideBottleneck(torch.nn.Module):
             escnn.nn.R2Conv(self.out_type, self.in_type, 1),
         )
 
-    def forward(self, x):
+    def forward(self, x: escnn.nn.GeometricTensor) -> escnn.nn.GeometricTensor:
         out = self.conv_network(x)
         out += x
         return out
@@ -156,10 +157,10 @@ class ESCNNWideBottleneck(torch.nn.Module):
 class ESCNNWideBasic(torch.nn.Module):
     def __init__(
         self,
-        in_type,
-        middle_type,
-        out_type,
-        kernel_size=3,
+        in_type: escnn.nn.FieldType,
+        middle_type: escnn.nn.FieldType,
+        out_type: escnn.nn.FieldType,
+        kernel_size: int = 3,
     ):
         super().__init__()
         self.in_type = in_type
@@ -181,7 +182,7 @@ class ESCNNWideBasic(torch.nn.Module):
                 escnn.nn.R2Conv(self.in_type, self.out_type, 2*kernel_size-1),
             )
 
-    def forward(self, x):
+    def forward(self, x: escnn.nn.GeometricTensor) -> escnn.nn.GeometricTensor:
         out = self.conv_network(x)
         shortcut = self.shortcut(x) if self.shortcut is not None else x
         out += shortcut
@@ -206,12 +207,6 @@ class ESCNNWRNEquivariantNetwork(torch.nn.Module):
             self.gspace = gspaces.flipRot2dOnR2(num_rotations)
         else:
             raise ValueError('group_type must be rotation or roto-reflection for now.')
-        
-        # The input image is a scalar field, corresponding to the trivial representation
-        in_type = escnn.nn.FieldType(self.gspace, in_shape[0] * [self.gspace.trivial_repr])
-        
-        # Store the input type for wrapping the images into a geometric tensor during the forward pass
-        self.input_type = in_type
         
         # other initialization
         widen_factor = 2
@@ -251,7 +246,7 @@ class ESCNNWRNEquivariantNetwork(torch.nn.Module):
 
         self.eqv_network.append(escnn.nn.R2Conv(r4, r5, kernel_size),)
         
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         x shape: (batch_size, in_channels, height, width)
         :return: (batch_size, group_size)
