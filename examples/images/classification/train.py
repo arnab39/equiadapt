@@ -9,7 +9,7 @@ from omegaconf import DictConfig, OmegaConf
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
-from train_utils import get_model_data_and_callbacks, get_trainer, load_envs
+from examples.images.classification.train_utils import get_model_data_and_callbacks, get_trainer, load_envs
 
 def train_images(hyperparams: DictConfig):
     hyperparams['canonicalization_type'] = hyperparams['canonicalization']['canonicalization_type']
