@@ -282,6 +282,7 @@ class GNN(BaseEuclideangraphModel):
             `vel`: Velocities of nodes. Shape: (n_nodes * batch_size) x vel_dim
             `edge_attr`: Products of charges along edges. batch_size x n_edges x 1
         """
+        # TODO: loc currently have the wrong shape...
         nodes = torch.cat([loc, vel], dim=1) # (n_nodes * batch_size) x (coord_dim + vel_dim)
         h = self.embedding(nodes) # (n_nodes * batch_size) x hidden_dim
         # h, _ = self._modules["gcl_0"](h, edges, edge_attr=edge_attr)

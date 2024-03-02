@@ -15,10 +15,13 @@ class ContinuousGroupNBody(ContinuousGroupCanonicalization):
                  ):
         super().__init__(canonicalization_network)
 
+    def forward(self, nodes, loc, edges, vel, edge_attr, charges):
+        return self.canonicalize(nodes, loc, edges, vel, edge_attr, charges)
+
     def get_groupelement(self, nodes, loc, edges, vel, edge_attr, charges):
         group_element_dict = {}
         rotation_vectors, translation_vectors = self.canonicalization_network(nodes, loc, edges, vel, edge_attr, charges)
-        rotation_matrix = gram_schmidt(rotation_vectors)
+        rotation_matrix = self.modified_gram_schmidt(rotation_vectors)
 
                 # Check whether canonicalization_info_dict is already defined
         if not hasattr(self, 'canonicalization_info_dict'):
@@ -59,3 +62,13 @@ class ContinuousGroupNBody(ContinuousGroupCanonicalization):
             torch.bmm(position_prediction[:, None, :], rotation_matrix).squeeze() + translation_vectors
         )
         return loc
+    
+    def modified_gram_schmidt(self, vectors):
+        v1 = vectors[:, 0]
+        v1 = v1 / torch.norm(v1, dim=1, keepdim=True)
+        v2 = vectors[:, 1] - torch.sum(vectors[:, 1] * v1, dim=1, keepdim=True) * v1
+        v2 = v2 / torch.norm(v2, dim=1, keepdim=True)
+        v3 = vectors[:, 2] - torch.sum(vectors[:, 2] * v1, dim=1, keepdim=True) * v1
+        v3 = v3 - torch.sum(v3 * v2, dim=1, keepdim=True) * v2
+        v3 = v3 / torch.norm(v3, dim=1, keepdim=True)
+        return torch.stack([v1, v2, v3], dim=1)

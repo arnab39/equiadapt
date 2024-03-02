@@ -6,8 +6,10 @@ import os
 import json
 import numpy as np
 from torch.utils.data import Dataset
+import pathlib
 
-DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
+SRC_PATH = pathlib.Path(__file__).parent.parent
+DATA_PATH = SRC_PATH / "data"
 
 class NBodyDataset():
     def __init__(self, partition='train', max_samples=3000, dataset_name="nbody_small"):
