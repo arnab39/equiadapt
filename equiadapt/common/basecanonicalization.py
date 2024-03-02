@@ -13,7 +13,7 @@ class BaseCanonicalization(torch.nn.Module):
         self.canonicalization_network = canonicalization_network
         self.canonicalization_info_dict: Dict[str, torch.Tensor] = {}
        
-    def forward(self, x: torch.Tensor, targets: List = [Any], **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
+    def forward(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         Forward method for the canonicalization which takes the input data and
         returns the canonicalized version of the data
@@ -29,7 +29,7 @@ class BaseCanonicalization(torch.nn.Module):
         return self.canonicalize(x, targets, **kwargs)
 
     
-    def canonicalize(self, x: torch.Tensor, targets: List = [Any], **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
+    def canonicalize(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an input data and 
         returns its canonicalized version and
@@ -51,7 +51,7 @@ class IdentityCanonicalization(BaseCanonicalization):
     def __init__(self, canonicalization_network: torch.nn.Module = torch.nn.Identity()):
         super().__init__(canonicalization_network)
     
-    def canonicalize(self, x: torch.Tensor, targets: List = [Any], **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
+    def canonicalize(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         if targets:
             return x, targets
         return x
@@ -101,7 +101,7 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
         # return the group element one hot encoding
         return group_element_onehot
     
-    def canonicalize(self, x: torch.Tensor, targets: List = [Any], **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
+    def canonicalize(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an input data and 
         returns its canonicalized version and
@@ -151,7 +151,7 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
         """
         raise NotImplementedError()
     
-    def canonicalize(self, x: torch.Tensor, targets: List = [Any], **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
+    def canonicalize(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an input data and 
         returns its canonicalized version and
@@ -184,7 +184,7 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
     
           
     
-
+# TODO: add this to readme
 # Idea for the user interface:
 
 # 1. The user creates a canonicalization network or uses our provided networks

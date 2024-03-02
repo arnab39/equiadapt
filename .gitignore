@@ -50,6 +50,9 @@ coverage.xml
 
 # Jupyter Notebook
 .ipynb_checkpoints
+examples/images/classification/debug_opt_group_equivariant.ipynb
+tutorials/images/utils/sam_vit_h_4b8939.pth
+old_conda_env.yaml
 
 # pyenv
 .python-version

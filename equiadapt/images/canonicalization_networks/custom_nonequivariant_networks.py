@@ -1,7 +1,7 @@
 from typing import List
 
-import torch
-from torch import Module, nn
+import torch, torchvision
+from torch import nn
 
 
 class ConvNetwork(nn.Module):
@@ -48,3 +48,25 @@ class ConvNetwork(nn.Module):
         out = self.enc_network(x)
         out = out.reshape(batch_size, -1)
         return self.final_fc(out)
+    
+class ResNet18Network(nn.Module):
+    def __init__(self, 
+                 in_shape: tuple, 
+                 out_channels: int, 
+                 kernel_size: int, 
+                 num_layers: int = 2, 
+                 out_vector_size: int = 128):
+        super().__init__()
+        self.resnet18 = torchvision.models.resnet18(weights=None)
+        self.resnet18.fc = nn.Sequential(
+            nn.Linear(512, out_vector_size),
+        )
+
+        self.out_vector_size = out_vector_size
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x shape: (batch_size, in_channels, height, width)
+        :return: (batch_size, 1)
+        """
+        return self.resnet18(x)

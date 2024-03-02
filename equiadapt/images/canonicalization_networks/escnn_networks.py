@@ -234,8 +234,9 @@ class ESCNNWRNEquivariantNetwork(torch.nn.Module):
         )
 
         rs = [r2] * (num_layers // 3) + [r3] * (num_layers // 3) + [r4] * (num_layers // 3)
+        repetitions = num_layers // 3
         for ridx in range(num_layers - 1):
-            if ridx % 4 == 3:
+            if ridx % repetitions == repetitions - 1:
                 self.eqv_network.append(ESCNNWideBasic(rs[ridx], rs[ridx+1], rs[ridx+1], kernel_size),)
                 self.eqv_network.append(escnn.nn.InnerBatchNorm(rs[ridx+1], momentum=0.9),)
                 self.eqv_network.append(escnn.nn.ReLU(rs[ridx+1], inplace=True),)

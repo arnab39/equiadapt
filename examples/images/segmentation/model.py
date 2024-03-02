@@ -188,9 +188,6 @@ class ImageSegmentationPipeline(pl.LightningModule):
 
         })
         
-        # Log the validation metrics
-        self.log_dict(validation_metrics, prog_bar=True)
-        
          # Log the identity metric if the prior weight is non-zero
         if self.hyperparams.experiment.training.loss.prior_weight:
             metric_identity = self.canonicalizer.get_identity_metric()

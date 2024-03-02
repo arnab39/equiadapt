@@ -41,9 +41,12 @@ class MaskRCNNModel(nn.Module):
                     output[0]['labels'] = target['labels']
                     output[0]['boxes'] = target['boxes']
                     output[0]['masks'] = target['masks']
-                    output[0]['scores'] = torch.ones(len(target['masks']))
-                    ious.append(torch.ones(len(target['masks']), dtype=torch.float32))
-                    pred_masks.append(torch.ones(len(target['masks']), image.shape[-2], image.shape[-1], dtype=torch.float32, device=self.hyperparams.device))
+                    output[0]['scores'] = torch.ones(len(target['masks']), dtype=torch.float32, device=target['masks'].device)
+                    
+                    iou_predictions = output[0]['scores']
+                    ious.append(iou_predictions)
+                    
+                    pred_masks.append(torch.ones_like(target['masks'], dtype=torch.float32, device=target['masks'].device))
 
                 else:
                     masks = output[0]['masks']

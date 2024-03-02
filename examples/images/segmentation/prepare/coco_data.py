@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-import prepare.vision_transforms as T
+import examples.images.segmentation.prepare.vision_transforms as T
 import pytorch_lightning as pl
 import torch
 import torchvision.transforms as transforms

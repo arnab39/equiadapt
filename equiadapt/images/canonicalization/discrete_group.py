@@ -1,5 +1,5 @@
 import math
-from typing import List, Union
+from typing import Any, List, Tuple, Union
 
 import kornia as K
 import torch
@@ -116,7 +116,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         return x
         
     
-    def canonicalize(self, x: torch.Tensor, targets: List = []):
+    def canonicalize(self, x: torch.Tensor, targets: List = None) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an image as input and 
         returns the canonicalized image 
@@ -134,7 +134,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         
         x = self.crop(x)
         
-        if len(targets):
+        if targets:
             # canonicalize the targets (for instance segmentation, masks and boxes)
             image_width = x.shape[-1]
             
