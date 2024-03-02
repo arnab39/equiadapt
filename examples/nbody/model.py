@@ -10,7 +10,6 @@ import wandb
 class NBodyPipeline(pl.LightningModule):
     def __init__(self, hyperparams: DictConfig):
         super().__init__()
-        torch.autograd.set_detect_anomaly(True)
         self.hyperparams = hyperparams
         self.prediction_network = get_prediction_network(OmegaConf.create(hyperparams.pred_hyperparams))
         canonicalization_network = get_canonicalization_network(OmegaConf.create(hyperparams.canon_hyperparams))
@@ -38,8 +37,6 @@ class NBodyPipeline(pl.LightningModule):
             `charges`: batch_size x n_nodes x 1
             `loc_end`: batch_size x n_nodes x 3
         """
-
-        torch.autograd.set_detect_anomaly(True)
 
         batch_size, n_nodes, _ = batch[0].size()
         batch = [d.view(-1, d.size(2)) for d in batch] # converts to 2D matrices

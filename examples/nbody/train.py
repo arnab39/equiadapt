@@ -14,7 +14,7 @@ from examples.nbody.prepare.nbody_data import NBodyDataModule
 CANON_MODEL_HYPERPARAMETERS = {
     "architecture": "vndeepsets",
     "num_layers": 4,
-    "hidden_dim": 32,
+    "hidden_dim": 16,
     "layer_pooling": "sum",
     "final_pooling": "mean",
     "out_dim": 4,
@@ -45,7 +45,7 @@ HYPERPARAMS = {
     "use_wandb": False, 
     "checkpoint": False, 
     "num_epochs": 1000, 
-    "num_workers":0, 
+    "num_workers":11, 
     "auto_tune":False, 
     "seed": 0,
     "canon_hyperparams": CANON_MODEL_HYPERPARAMETERS,
@@ -81,11 +81,10 @@ def train_nbody():
         trainer = pl.Trainer(fast_dev_run=hyperparams.dryrun, max_epochs=hyperparams.num_epochs, accelerator="auto", auto_scale_batch_size=True, auto_lr_find=True, logger=wandb_logger, callbacks=callbacks, deterministic=False)
         trainer.tune(model, datamodule=nbody_data, enable_checkpointing=hyperparams.checkpoint)
     elif hyperparams.dryrun:
-        trainer = pl.Trainer(fast_dev_run=False, max_epochs=2, accelerator="auto", limit_train_batches=10, limit_val_batches=10, logger=wandb_logger, callbacks=callbacks, deterministic=False, enable_checkpointing=hyperparams.checkpoint)
+        trainer = pl.Trainer(fast_dev_run=False, max_epochs=2, accelerator="auto", limit_train_batches=10, limit_val_batches=10, logger=wandb_logger, callbacks=callbacks, deterministic=False, enable_checkpointing=hyperparams.checkpoint, log_every_n_steps=30)
     else:
-        trainer = pl.Trainer(fast_dev_run=hyperparams.dryrun, max_epochs=hyperparams.num_epochs, accelerator="auto", logger=wandb_logger, callbacks=callbacks, deterministic=False, enable_checkpointing=hyperparams.checkpoint)
+        trainer = pl.Trainer(fast_dev_run=hyperparams.dryrun, max_epochs=hyperparams.num_epochs, accelerator="auto", logger=wandb_logger, callbacks=callbacks, deterministic=False, enable_checkpointing=hyperparams.checkpoint, log_every_n_steps=30)
     
-    torch.autograd.set_detect_anomaly(True)
     
     trainer.fit(model, datamodule=nbody_data)
 

@@ -124,9 +124,9 @@ class NBodyDataModule(pl.LightningDataModule):
             self.test_dataset = NBodyDataset(partition="test")
 
     def train_dataloader(self):
-        train_loader = DataLoader(self.train_dataset, batch_size=self.hyperparams.batch_size, shuffle=True, drop_last=True)
+        train_loader = DataLoader(self.train_dataset, batch_size=self.hyperparams.batch_size, shuffle=True, drop_last=True, num_workers=11)
         return train_loader
 
     def val_dataloader(self):
-        train_loader = DataLoader(self.valid_dataset, batch_size=self.hyperparams.batch_size, shuffle=False, drop_last=False)
+        train_loader = DataLoader(self.valid_dataset, batch_size=self.hyperparams.batch_size, shuffle=False, drop_last=False, num_workers=11)
         return train_loader
