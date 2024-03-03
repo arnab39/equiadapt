@@ -1,5 +1,14 @@
-# EquivariantAdaptation
-Library to make any existing neural network architecture equivariant
+<p align="center">
+    <br>
+    <img src="utils/equiadapt_logo.png" width="400"/>
+    <br>
+<p>
+
+<h3 align="center">
+<p>Make any existing neural network architecture equivariant! :rocket:
+</h3>
+<br>
+
 
 # Understanding Canonicalization
 ![Equivariant adaptation of any prediction network](/utils/equiadapt_cat.jpeg "Equivariant adaptation of any prediction network")
