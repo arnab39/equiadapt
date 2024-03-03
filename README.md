@@ -6,7 +6,7 @@ Library to make any existing neural network architecture equivariant
 
 You can play with this concept in the provided [tutorial](tutorials/images/instance_segmentation_group_equivariant_canonicalization.ipynb) for equivariant adaptation of the Segment-Anything Model (SAM, [Kirillov et. al, 2023](https://arxiv.org/abs/2304.02643)) and images from Microsoft COCO ([Lin et. al, 2014](https://arxiv.org/abs/1405.0312)) dataset for instance segmentation.
 
-# Easy to integrate
+# Easy to integrate :rocket:
 
 Equiadapt enables users to obtain equivariant versions of existing neural networks with a few lines of code changes:
 ```diff
@@ -40,7 +40,7 @@ Equiadapt enables users to obtain equivariant versions of existing neural networ
 +         outputs = canonicalizer.invert_canonicalization(outputs)
 
           loss = F.cross_entropy(outputs, targets)
-+         loss = canonicalizer.add_prior_regularizer(loss)
++         loss += canonicalizer.get_prior_regularization_loss()
 
           loss.backward()
 

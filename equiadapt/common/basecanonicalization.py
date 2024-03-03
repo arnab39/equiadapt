@@ -182,28 +182,4 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
             group_elements_rep.shape[0], 1, 1).to(self.device)
         return 1.0 - torch.nn.functional.mse_loss(group_elements_rep, identity_element).mean()
     
-          
-    
-# TODO: add this to readme
-# Idea for the user interface:
-
-# 1. The user creates a canonicalization network or uses our provided networks
-#    and a wrap it using equiadapt wrappers.
-# example:  canonicalization_network = ESCNNEquivariantNetwork(in_shape, out_channels, kernel_size, group_type='rotation', num_rotations=4, num_layers=3)
-#           canonicalizer = GroupEquivariantImageCanonicalization(canonicalization_network, beta=1.0)
-#
-# 
-# 2. The user uses this wrapper with their code to canonicalize the input data
-#    example: model = ResNet18()
-#             x_canonized = canonicalizer(x)
-#             model_out = model(x_canonized)
-
-# 3. The user can also invert the canonicalization for equivariance or not do anything for invariance
-#   example: model_out = canonicalizer.invert_canonicalization(model_out)
-
-# 4. The user creates a loss function and a wrapper for it.
-#             loss = criterion(model_out, y)
-#             loss = canonicalizer.add_prior_regularizer(loss)
-#             loss.backward()
-    
     
