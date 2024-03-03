@@ -1,4 +1,4 @@
-name: /home/mila/s/siba-smarak.panigrahi/scratch/equiadapt
+name: equiadapt
 channels:
   - defaults
 dependencies:
@@ -127,5 +127,4 @@ dependencies:
   - asttokens
   - ipykernel
   - lightning
-prefix: /home/mila/s/siba-smarak.panigrahi/scratch/equiadapt
 
