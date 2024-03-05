@@ -1,0 +1,20 @@
+run_mode: "train" # Mode to run the model in, different run modes 1)dryrun 2)train 3)test 4)auto_tune
+seed: 0 # Seed for random number generation  
+deterministic: false # Whether to set deterministic mode (true) or not (false)
+device: "cuda" # Device, can be cuda or cpu
+num_nodes: 1
+num_gpus: 1
+training:
+  rotation_type: "z" # Type of rotation to use for training 1)so3 2)z 3) None
+  num_epochs: 250 # Number of training epochs
+  patience: 20 # Number of epochs with no improvement after which training will be stopped
+  min_delta: 0.0 # Minimum change in the monitored quantity to qualify as an improvement
+  optimizer: "SGD" # Optimizer to use for training 1)Adam 2)SGD
+  prediction_lr: 0.001 # Learning rate for the prediction
+  canonicalization_lr: 0.001 # Learning rate for the canonicalization network
+  lr_scheduler: "cosine" # Learning rate scheduler 1)cosine 2)step
+  augment: 0 # Whether to use data augmentation (1) or not (0)
+  loss:
+    prior_weight: 100.0 # Weight of the prior in the loss function if zero dont use it
+validation:
+  rotation_type: "so3" # Type of rotation to use for validation 1)so3 2)z 3) None

@@ -117,11 +117,12 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         
         x = self.pad(x)
         
+        x = K.geometry.rotate(x, -group_element_dict['rotation'])
+        
         if 'reflection' in group_element_dict.keys():
             reflect_indicator = group_element_dict['reflection'][:,None,None,None]
             x = (1 - reflect_indicator) * x + reflect_indicator * K.geometry.hflip(x)
 
-        x = K.geometry.rotate(x, -group_element_dict['rotation'])
         
         x = self.crop(x)
         

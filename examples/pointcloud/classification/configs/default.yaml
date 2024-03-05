@@ -1,0 +1,25 @@
+canonicalization_type: group_equivariant # will be set later in training script
+device: cuda
+
+# metadata specialised for each experiment
+core:
+  version: 0.0.1
+  tags:
+    - ${now:%Y-%m-%d}
+
+hydra:
+  run:
+    dir: ${oc.env:HYDRA_JOBS}/singlerun/${now:%Y-%m-%d}/
+
+  sweep:
+    dir: ${oc.env:HYDRA_JOBS}/multirun/${now:%Y-%m-%d}/
+    subdir: ${hydra.job.num}_${hydra.job.id}
+
+defaults:
+  - _self_
+  - dataset: default
+  - experiment: default
+  - prediction: default
+  - canonicalization: group_equivariant
+  - wandb: default
+  - checkpoint: default

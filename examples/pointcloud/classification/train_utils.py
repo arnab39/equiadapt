@@ -5,29 +5,13 @@ from typing import Dict, Optional
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
-from model import ImageClassifierPipeline
-from prepare import RotatedMNISTDataModule, CIFAR10DataModule, CIFAR100DataModule, STL10DataModule, Flowers102DataModule, CelebADataModule, ImageNetDataModule
-    
-def get_model_data_and_callbacks(hyperparams : DictConfig):
-    
-     # get image data
-    image_data = get_image_data(hyperparams.dataset)
-    
-    # checkpoint name
-    hyperparams.checkpoint.checkpoint_name = get_checkpoint_name(hyperparams)
-    
-    # checkpoint callbacks
-    callbacks = get_callbacks(hyperparams)
+from model import PointcloudClassificationPipeline
 
-    # get model pipeline 
-    model = get_model_pipeline(hyperparams)
-    
-    return  model, image_data, callbacks
 
 def get_model_pipeline(hyperparams: DictConfig):
 
     if hyperparams.experiment.run_mode == "test":
-        model = ImageClassifierPipeline.load_from_checkpoint(
+        model = PointcloudClassificationPipeline.load_from_checkpoint(
             checkpoint_path=hyperparams.checkpoint.checkpoint_path + "/" + \
                 hyperparams.checkpoint.checkpoint_name + ".ckpt",
             hyperparams=hyperparams
@@ -35,7 +19,7 @@ def get_model_pipeline(hyperparams: DictConfig):
         model.freeze()
         model.eval()
     else:
-        model = ImageClassifierPipeline(hyperparams)
+        model = PointcloudClassificationPipeline(hyperparams)
         
     return model
 
@@ -104,24 +88,6 @@ def get_checkpoint_name(hyperparams : DictConfig):
                          f"__epochs_{hyperparams.experiment.training.num_epochs}_" + f"__seed_{hyperparams.experiment.seed}"
                         
 
-def get_image_data(dataset_hyperparams: DictConfig):
-    
-    dataset_classes = {
-        "rotated_mnist": RotatedMNISTDataModule,
-        "cifar10": CIFAR10DataModule,
-        "cifar100": CIFAR100DataModule,
-        "stl10": STL10DataModule,
-        "celeba": CelebADataModule,
-        "flowers102": Flowers102DataModule,
-        "imagenet": ImageNetDataModule
-    }
-    
-    if dataset_hyperparams.dataset_name not in dataset_classes:
-        raise ValueError(f"{dataset_hyperparams.dataset_name} not implemented")
-    
-    return dataset_classes[dataset_hyperparams.dataset_name](dataset_hyperparams)
-
-
 def load_envs(env_file: Optional[str] = None) -> None:
     """
     Load all the environment variables defined in the `env_file`.
@@ -133,3 +99,6 @@ def load_envs(env_file: Optional[str] = None) -> None:
                      it searches for a `.env` file in the project.
     """
     dotenv.load_dotenv(dotenv_path=env_file, override=True)
+
+
+
