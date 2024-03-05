@@ -1,13 +1,21 @@
-import dotenv
-from omegaconf import DictConfig
 from typing import Dict, Optional
 
+import dotenv
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-
 from model import ImageClassifierPipeline
-from prepare import RotatedMNISTDataModule, CIFAR10DataModule, CIFAR100DataModule, STL10DataModule, Flowers102DataModule, CelebADataModule, ImageNetDataModule
-    
+from omegaconf import DictConfig
+from prepare import (
+    CelebADataModule,
+    CIFAR10DataModule,
+    CIFAR100DataModule,
+    Flowers102DataModule,
+    ImageNetDataModule,
+    RotatedMNISTDataModule,
+    STL10DataModule,
+)
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+
+
 def get_model_data_and_callbacks(hyperparams : DictConfig):
     
      # get image data
@@ -44,16 +52,7 @@ def get_trainer(
     callbacks: list,
     wandb_logger: pl.loggers.WandbLogger
 ):
-    if hyperparams.experiment.run_mode == "auto_tune":
-        trainer = pl.Trainer(
-            max_epochs=hyperparams.experiment.num_epochs, accelerator="auto", 
-            auto_scale_batch_size=True, auto_lr_find=True, logger=wandb_logger, 
-            callbacks=callbacks, deterministic=hyperparams.experiment.deterministic,
-            num_nodes=hyperparams.experiment.num_nodes, devices=hyperparams.experiment.num_gpus, 
-            strategy='ddp'
-        )
-        
-    elif hyperparams.experiment.run_mode == "dryrun":
+    if hyperparams.experiment.run_mode == "dryrun":
         trainer = pl.Trainer(
             fast_dev_run=5, max_epochs=hyperparams.experiment.training.num_epochs, accelerator="auto", 
             limit_train_batches=5, limit_val_batches=5, logger=wandb_logger, 
@@ -87,21 +86,32 @@ def get_callbacks(hyperparams: DictConfig):
     
     return [checkpoint_callback, early_stop_metric_callback]
 
-def get_recursive_hyperparams_identifier(hyperparams: Dict):
+def get_recursive_hyperparams_identifier(hyperparams: DictConfig):
     # get the identifier for the canonicalization network hyperparameters
     # recursively go through the dictionary and get the values and concatenate them
     identifier = ""
     for key, value in hyperparams.items():
         if isinstance(value, DictConfig):
-            identifier += f"_{get_recursive_hyperparams_identifier(value)}_"
-        else:
-            identifier += f"_{key}_{value}_"
+            identifier += f"{get_recursive_hyperparams_identifier(value)}"
+        # special manipulation for the keys (to avoid exceeding OS limit for file names)    
+        elif key not in ["canonicalization_type", "beta", "input_crop_ratio"]:
+            if key == "network_type":
+                identifier += f"_net_type_{value}_"
+            elif key == "out_vector_size":
+                identifier += f"_out_vec_{value}_"
+            elif key in ["kernel_size", "resize_shape", "group_type", "artifact_err_wt"]:
+                identifier += f"_{key.split('_')[0]}_{value}_"
+            elif key in ["num_layers", "out_channels", "num_rotations"]:
+                identifier += f"_{key.split('_')[-1]}_{value}_"
+            else:
+                identifier += f"_{key}_{value}_"
     return identifier
     
 def get_checkpoint_name(hyperparams : DictConfig):
-    
     return f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization)}".lstrip("_") + \
-                         f"__epochs_{hyperparams.experiment.training.num_epochs}_" + f"__seed_{hyperparams.experiment.seed}"
+                        f"_loss_wts_{int(hyperparams.experiment.training.loss.task_weight)}_{int(hyperparams.experiment.training.loss.prior_weight)}_{int(hyperparams.experiment.training.loss.group_contrast_weight)}" + \
+                        f"_lrs_{hyperparams.experiment.training.prediction_lr}_{hyperparams.experiment.training.canonicalization_lr}" + \
+                        f"_seed_{hyperparams.experiment.seed}"
                         
 
 def get_image_data(dataset_hyperparams: DictConfig):

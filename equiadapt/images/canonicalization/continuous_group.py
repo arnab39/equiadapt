@@ -1,11 +1,15 @@
-import torch
+import math
+from typing import Any, List, Tuple, Union
+
 import kornia as K
+import torch
+from torch.nn import functional as F
+from torchvision import transforms
+
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 from equiadapt.common.utils import gram_schmidt
 from equiadapt.images.utils import get_action_on_image_features
-from torchvision import transforms
-import math
-from torch.nn import functional as F
+
 
 class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
     def __init__(self, 
@@ -95,7 +99,7 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         return  group_element_dict, rotoreflection_matrices if self.group_type == 'roto-reflection' else rotation_matrices
     
     
-    def canonicalize(self, x: torch.Tensor):
+    def canonicalize(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an image as input and 
         returns the canonicalized image 

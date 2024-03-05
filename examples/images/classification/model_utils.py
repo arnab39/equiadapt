@@ -1,13 +1,6 @@
 import torch
-import torchvision
 import torch.nn as nn
-
-from omegaconf import DictConfig
-
-from equiadapt.common.basecanonicalization import IdentityCanonicalization
-from equiadapt.images.canonicalization.discrete_group import GroupEquivariantImageCanonicalization, OptimizedGroupEquivariantImageCanonicalization
-from equiadapt.images.canonicalization.continuous_group import SteerableImageCanonicalization, OptimizedSteerableImageCanonicalization
-from equiadapt.images.canonicalization_networks import ESCNNEquivariantNetwork, ConvNetwork, CustomEquivariantNetwork, ESCNNSteerableNetwork
+import torchvision
 
 class PredictionNetwork(nn.Module):
     def __init__(self, encoder: torch.nn.Module, feature_dim: int, num_classes: int):

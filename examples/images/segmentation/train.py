@@ -1,20 +1,21 @@
 import os
-import torch
-import wandb
 
 import hydra
 import omegaconf
-from omegaconf import DictConfig, OmegaConf
-
 import pytorch_lightning as pl
+import torch
+from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
-
 from train_utils import get_model_data_and_callbacks, get_trainer, load_envs
+
+import wandb
+
 
 def train_images(hyperparams: DictConfig):
     hyperparams['canonicalization_type'] = hyperparams['canonicalization']['canonicalization_type']
     hyperparams['device'] = 'cuda' if torch.cuda.is_available() else 'cpu'
-    hyperparams['dataset']['data_path'] = hyperparams['dataset']['data_path'] + "/" + hyperparams['dataset']['dataset_name']
+    hyperparams['dataset']['root_dir'] = hyperparams['dataset']['root_dir'] + "/" + hyperparams['dataset']['dataset_name']
+    hyperparams['dataset']['ann_dir'] = hyperparams['dataset']['root_dir'] + "/" + "annotations"
     hyperparams['checkpoint']['checkpoint_path'] = hyperparams['checkpoint']['checkpoint_path'] + "/" + \
                                 hyperparams['dataset']['dataset_name'] + "/" + hyperparams['canonicalization_type'] \
                                 + "/" + hyperparams['prediction']['prediction_network_architecture']

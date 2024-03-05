@@ -1,10 +1,24 @@
-import torch 
+import torch
 from omegaconf import DictConfig
 
 from equiadapt.common.basecanonicalization import IdentityCanonicalization
-from equiadapt.images.canonicalization.discrete_group import GroupEquivariantImageCanonicalization, OptimizedGroupEquivariantImageCanonicalization
-from equiadapt.images.canonicalization.continuous_group import SteerableImageCanonicalization, OptimizedSteerableImageCanonicalization
-from equiadapt.images.canonicalization_networks import ESCNNEquivariantNetwork, ConvNetwork, CustomEquivariantNetwork, ESCNNSteerableNetwork
+from equiadapt.images.canonicalization.continuous_group import (
+    OptimizedSteerableImageCanonicalization,
+    SteerableImageCanonicalization,
+)
+from equiadapt.images.canonicalization.discrete_group import (
+    GroupEquivariantImageCanonicalization,
+    OptimizedGroupEquivariantImageCanonicalization,
+)
+from equiadapt.images.canonicalization_networks import (
+    ConvNetwork,
+    ResNet18Network,
+    CustomEquivariantNetwork,
+    ESCNNEquivariantNetwork,
+    ESCNNSteerableNetwork,
+    ESCNNWRNEquivariantNetwork,
+)
+
 
 def get_canonicalization_network(
     canonicalization_type: str,
@@ -24,6 +38,7 @@ def get_canonicalization_network(
     canonicalization_network_dict = {
         'group_equivariant': {
             'escnn': ESCNNEquivariantNetwork,
+            'equivariant_wrn': ESCNNWRNEquivariantNetwork,
             'custom': CustomEquivariantNetwork,
         },
         'steerable': {
@@ -31,6 +46,7 @@ def get_canonicalization_network(
         },
         'opt_group_equivariant':{
             'cnn': ConvNetwork,
+            'resnet18': ResNet18Network,
         },
         'opt_steerable': {
             'cnn': ConvNetwork,
@@ -46,7 +62,8 @@ def get_canonicalization_network(
     canonicalization_network_dict[canonicalization_type][
         canonicalization_hyperparams.network_type
         ](
-           in_shape = in_shape, 
+           in_shape = (in_shape[0], canonicalization_hyperparams.resize_shape, 
+                       canonicalization_hyperparams.resize_shape), 
            **canonicalization_hyperparams.network_hyperparams
         )
     

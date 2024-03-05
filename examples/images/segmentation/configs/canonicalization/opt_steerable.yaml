@@ -1,9 +1,9 @@
 canonicalization_type: opt_steerable
-network_type: 'cnn' # Options for canonization method 1) cnn 2) wideresnet
+network_type: cnn # Options for canonization method 1) cnn 2) wideresnet
 network_hyperparams:
   kernel_size: 5 # Kernel size for the canonization network
   out_channels: 16 # Number of output channels for the canonization network
   num_layers: 3 # Number of layers in the canonization network
   out_vector_size: 4 # Dimension of the output vector
-group_type: "rotation" # Type of group for the canonization network
+group_type: rotation # Type of group for the canonization network
 input_crop_ratio: 0.8 # Ratio at which we crop the input to the canonicalization

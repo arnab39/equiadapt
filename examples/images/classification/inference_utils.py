@@ -1,14 +1,17 @@
-import torch, math
+import math
+from typing import Dict, Union
+
+import torch
+from omegaconf import DictConfig
+from torchvision import transforms
+
 import wandb
 
-from typing import Union, Dict
-
-from torchvision import transforms
 
 def get_inference_method(canonicalizer: torch.nn.Module, 
                          prediction_network: torch.nn.Module, 
                          num_classes: int, 
-                         inference_hyperparams: Union[Dict, wandb.Config], 
+                         inference_hyperparams: DictConfig, 
                          in_shape: tuple = (3, 32, 32)):
     if inference_hyperparams.method == 'vanilla':
         return VanillaInference(canonicalizer, prediction_network, num_classes)
@@ -64,7 +67,7 @@ class GroupInference(VanillaInference):
                  canonicalizer: torch.nn.Module, 
                  prediction_network: torch.nn.Module, 
                  num_classes: int,
-                 inference_hyperparams: Union[Dict, wandb.Config], 
+                 inference_hyperparams: DictConfig, 
                  in_shape: tuple = (3, 32, 32)):
         
         super().__init__(canonicalizer, prediction_network, num_classes)
@@ -83,7 +86,7 @@ class GroupInference(VanillaInference):
         for rot, degree in enumerate(degrees):
             
             x_pad = self.pad(x)
-            x_rot = transforms.functional.rotate(x_pad, int(degree))
+            x_rot = transforms.functional.rotate(x_pad, degree.item())
             x_rot = self.crop(x_rot)
                     
             logits_dict[rot] = self.forward(x_rot)
@@ -94,7 +97,7 @@ class GroupInference(VanillaInference):
 
                 x_pad = self.pad(x)
                 x_reflect = transforms.functional.hflip(x_pad)
-                x_rotoreflect = transforms.functional.rotate(x_reflect, int(degree))
+                x_rotoreflect = transforms.functional.rotate(x_reflect, degree.item())
                 x_rotoreflect = self.crop(x_rotoreflect)
 
                 logits_dict[rot + len(degrees)] = self.forward(x_rotoreflect)
@@ -109,7 +112,7 @@ class GroupInference(VanillaInference):
         acc_per_group_element = torch.tensor([(logits.argmax(dim=-1) == y).float().mean() for logits in logits_dict.values()])
 
         metrics = {"test/group_acc": torch.mean(acc_per_group_element)}
-        metrics.update({f'test/acc_group_element_{i}': max(acc_per_group_element[i], 0.0) for i in range(self.num_group_elements)})
+        metrics.update({f'test/acc_group_element_{i}': acc_per_group_element[i] for i in range(self.num_group_elements)})
         
         preds = logits_dict[0].argmax(dim=-1)
 
@@ -124,7 +127,7 @@ class GroupInference(VanillaInference):
         acc_per_class = [0.0 if math.isnan(acc) else acc for acc in acc_per_class]
 
         # Update metrics with accuracy per class
-        metrics.update({f'test/acc_class_{i}': max(acc, 0.0) for i, acc in enumerate(acc_per_class)})
+        metrics.update({f'test/acc_class_{i}': acc for i, acc in enumerate(acc_per_class)})
 
         return metrics
             

@@ -1,24 +1,24 @@
 import copy
-import torch, math
-import wandb
+import math
+from typing import Dict, Union
 
-from typing import Union, Dict
-
-from torchvision import transforms
+import torch
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
+from torchvision import transforms
 
+import wandb
 from equiadapt.images.utils import flip_boxes, flip_masks, rotate_boxes, rotate_masks
+
 
 def get_inference_method(canonicalizer: torch.nn.Module, 
                          prediction_network: torch.nn.Module, 
-                         num_classes: int, 
                          inference_hyperparams: Union[Dict, wandb.Config], 
                          in_shape: tuple = (3, 1024, 1024)):
     if inference_hyperparams.method == 'vanilla':
-        return VanillaInference(canonicalizer, prediction_network, num_classes)
+        return VanillaInference(canonicalizer, prediction_network)
     elif inference_hyperparams.method == 'group':
         return GroupInference(
-            canonicalizer, prediction_network, num_classes, 
+            canonicalizer, prediction_network, 
             inference_hyperparams, in_shape
         )
     else:
@@ -84,13 +84,13 @@ class GroupInference(VanillaInference):
             
             # apply group element on images
             images_pad = self.pad(images)
-            images_rot = transforms.functional.rotate(images_pad, int(degree))
+            images_rot = transforms.functional.rotate(images_pad, degree.item())
             images_rot = self.crop(images_rot)
             
             # apply group element on bounding boxes and masks
             for t in range(len(targets_transformed)):
                 targets_transformed[t]["boxes"] = rotate_boxes(targets_transformed[t]["boxes"], -degree, image_width)
-                targets_transformed[t]["masks"] = rotate_masks(targets_transformed[t]["masks"], degree)
+                targets_transformed[t]["masks"] = rotate_masks(targets_transformed[t]["masks"], degree.item())
 
             # get predictions for the transformed images
             _, _, _, outputs = self.forward(images_rot, targets_transformed)
@@ -108,7 +108,7 @@ class GroupInference(VanillaInference):
 
                 images_pad = self.pad(images)
                 images_reflect = transforms.functional.hflip(images_pad)
-                images_rotoreflect = transforms.functional.rotate(images_reflect, int(degree))
+                images_rotoreflect = transforms.functional.rotate(images_reflect, degree.item())
                 images_rotoreflect = self.crop(images_rotoreflect)
 
                 # apply group element on bounding boxes and masks
@@ -132,28 +132,30 @@ class GroupInference(VanillaInference):
         return map_dict
     
     def get_inference_metrics(self, images: torch.Tensor, targets: torch.Tensor):
+        metrics = {}
         
         map_dict = self.get_group_element_wise_maps(images, targets)
         
         # Use list comprehension to calculate accuracy for each group element
-        metrics.update({
-                f'test/map_group_element_{i}': max(map_dict[i]['map'], 0.0),
-                f'test/map_small_group_element_{i}': max(map_dict[i]['map_small'], 0.0),
-                f'test/map_medium_group_element_{i}': max(map_dict[i]['map_medium'], 0.0),
-                f'test/map_large_group_element_{i}': max(map_dict[i]['map_large'], 0.0),
-                f'test/map_50_group_element_{i}': max(map_dict[i]['map_50'], 0.0),
-                f'test/map_75_group_element_{i}': max(map_dict[i]['map_75'], 0.0),
-                f'test/mar_1_group_element_{i}': max(map_dict[i]['mar_1'], 0.0),
-                f'test/mar_10_group_element_{i}': max(map_dict[i]['mar_10'], 0.0),
-                f'test/mar_100_group_element_{i}': max(map_dict[i]['mar_100'], 0.0),
-                f'test/mar_small_group_element_{i}': max(map_dict[i]['mar_small'], 0.0),
-                f'test/mar_medium_group_element_{i}': max(map_dict[i]['mar_medium'], 0.0),
-                f'test/mar_large_group_element_{i}': max(map_dict[i]['mar_large'], 0.0),
-            } for i in range(self.num_group_elements))
+        for i in range(self.num_group_elements):
+            metrics.update({
+                    f'test/map_group_element_{i}': max(map_dict[i]['map'], 0.0),
+                    f'test/map_small_group_element_{i}': max(map_dict[i]['map_small'], 0.0),
+                    f'test/map_medium_group_element_{i}': max(map_dict[i]['map_medium'], 0.0),
+                    f'test/map_large_group_element_{i}': max(map_dict[i]['map_large'], 0.0),
+                    f'test/map_50_group_element_{i}': max(map_dict[i]['map_50'], 0.0),
+                    f'test/map_75_group_element_{i}': max(map_dict[i]['map_75'], 0.0),
+                    f'test/mar_1_group_element_{i}': max(map_dict[i]['mar_1'], 0.0),
+                    f'test/mar_10_group_element_{i}': max(map_dict[i]['mar_10'], 0.0),
+                    f'test/mar_100_group_element_{i}': max(map_dict[i]['mar_100'], 0.0),
+                    f'test/mar_small_group_element_{i}': max(map_dict[i]['mar_small'], 0.0),
+                    f'test/mar_medium_group_element_{i}': max(map_dict[i]['mar_medium'], 0.0),
+                    f'test/mar_large_group_element_{i}': max(map_dict[i]['mar_large'], 0.0),
+                })
         
         map_per_group_element = torch.tensor([map_dict[i]['map'] for i in range(self.num_group_elements)])
 
-        metrics = {"test/group_map": torch.mean(map_per_group_element)}
+        metrics.update({"test/group_map": torch.mean(map_per_group_element)})
         metrics.update({f'test/map_group_element_{i}': max(map_per_group_element[i], 0.0) for i in range(self.num_group_elements)})
 
         # Calculate the overall map

@@ -1,27 +1,41 @@
-program: train.py
+program: examples/images/classification/train.py
 method: grid
-name: rotated mnist testing
+name: stl10 testing (optimization)
 parameters:
+  canonicalization:
+    value: opt_group_equivariant
   dataset.dataset_name:
-    value: 'rotated_mnist'
+    value: stl10
+  dataset.batch_size:
+    value: 128
   experiment.seed:
     values: [0, 1]
+  experiment.training.canonicalization_lr:
+    values: [0.01, 0.001]
   experiment.training.num_epochs:
-    values: [50, 100]
+    value: 200
   experiment.training.loss.prior_weight:
-    value: 0
+    values: [100, 1000]
+  experiment.training.loss.group_contrast_weight:
+    values: [1, 0.1, 0.01, 0.001]
   experiment.inference.num_rotations:
     value: 8
   wandb.use_wandb:
     value: 1
-  canonicalization.network_hyperparams.kernel_size:
-    values: [3, 5]
-  canonicalization.network_hyperparams.num_layers:
-    values: [3, 5]
-  canonicalization.network_hyperparams.num_rotations:
+  canonicalization.learn_ref_vec:
+    values: [True, False]
+  canonicalization.artifact_err_wt:
+    values: [100, 1000, 10000]
+  canonicalization.resize_shape:
+    value: 96
+  canonicalization.num_rotations:
     value: 8
+  canonicalization.network_hyperparams.kernel_size:
+    value: 7
+  canonicalization.network_hyperparams.num_layers:
+    values: [3, 4, 5]
   canonicalization.network_hyperparams.out_channels:
-    values: [16, 32, 64]
+    value: 32
 
 command:
     - ${env}

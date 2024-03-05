@@ -1,12 +1,12 @@
-import torch
 import pytorch_lightning as pl
-from torch.optim.lr_scheduler import MultiStepLR
-
-from omegaconf import DictConfig
-
+import torch
 from inference_utils import get_inference_method
 from model_utils import get_dataset_specific_info, get_prediction_network
-from common.utils import get_canonicalization_network, get_canonicalizer
+from omegaconf import DictConfig
+from torch.optim.lr_scheduler import MultiStepLR
+
+from examples.images.common.utils import get_canonicalization_network, get_canonicalizer
+
 
 # define the LightningModule
 class ImageClassifierPipeline(pl.LightningModule):
@@ -106,6 +106,7 @@ class ImageClassifierPipeline(pl.LightningModule):
         
         # Log the training metrics
         self.log_dict(training_metrics, prog_bar=True)
+        assert not torch.isnan(loss), "Loss is NaN"
         
         return {'loss': loss, 'acc': acc}
         

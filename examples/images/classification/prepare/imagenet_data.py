@@ -1,15 +1,14 @@
 
-import pytorch_lightning as pl
-
 import os
-import torch
 import random
-import torchvision
-from torch import nn
 from typing import List
-from PIL import Image, ImageOps
-import torchvision.transforms as transforms
 
+import pytorch_lightning as pl
+import torch
+import torchvision
+import torchvision.transforms as transforms
+from PIL import Image, ImageOps
+from torch import nn
 
 DEFAULT_CROP_RATIO = 224/256
 
