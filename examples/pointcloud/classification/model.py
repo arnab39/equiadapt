@@ -42,11 +42,12 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             points (torch.Tensor): pointcloud of shape (B, 3, N)
             rotation_type (str): type of rotation to apply. Options are 1) z 2) so3 
         '''
-        trot = None
         if rotation_type == "z":
             trot = RotateAxisAngle(angle=torch.rand(points.shape[0]) * 360, axis="Z", degrees=True, device=self.device)
         elif rotation_type == "so3":
             trot = Rotate(R=random_rotations(points.shape[0]), device=self.device)
+        elif rotation_type == "none":
+            trot = None
         else:
             raise NotImplementedError(f"Unknown rotation type {rotation_type}")
         if trot is not None:
@@ -81,8 +82,18 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         
         # Loss
         loss = self.get_loss(logits, targets)
-
+        
         metrics = {"train/loss": loss}
+        
+        if self.hyperparams.experiment.training.loss.prior_weight:
+            prior_loss = self.canonicalizer.get_prior_regularization_loss()
+            loss += prior_loss * self.hyperparams.experiment.training.loss.prior_weight
+            metric_identity = self.canonicalizer.get_identity_metric()
+            metrics.update({
+                    "train/prior_loss": prior_loss, 
+                    "train/identity_metric": metric_identity
+                })
+
         self.log_dict(metrics, on_epoch=True, prog_bar=True)
 
         return loss
@@ -120,11 +131,11 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         test_acc = metrics.accuracy_score(test_true, test_pred)
         avg_per_class_acc = metrics.balanced_accuracy_score(test_true, test_pred)
         self.log_dict(
-            {"valid/acc": test_acc,
-             "valid/avg_per_class_acc": avg_per_class_acc},
+            {"val/acc": test_acc,
+             "val/avg_per_class_acc": avg_per_class_acc},
             prog_bar=True)
         
-        return {"valid/acc": test_acc, "valid/avg_per_class_acc": avg_per_class_acc}
+        return {"val/acc": test_acc, "val/avg_per_class_acc": avg_per_class_acc}
 
     def get_loss(self, predictions, targets, smoothing=False, ignore_index=255):
         targets = targets.contiguous().view(-1)
@@ -144,6 +155,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
     
     def configure_optimizers(self):
+        torch.autograd.set_detect_anomaly(True)
         if self.hyperparams.experiment.training.optimizer == "Adam":
             optimizer = torch.optim.Adam([
                     {'params': self.prediction_network.parameters(), 'lr': self.hyperparams.experiment.training.prediction_lr},

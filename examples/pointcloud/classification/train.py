@@ -21,7 +21,6 @@ def train_pointcloud(hyperparams: DictConfig):
                                 hyperparams['dataset']['dataset_name'] + "/" + hyperparams['canonicalization_type'] \
                                 + "/" + hyperparams['prediction']['prediction_network_architecture']
 
-    breakpoint()
     # set system environment variables for wandb
     if hyperparams['wandb']['use_wandb']:
         print("Using wandb for logging...")

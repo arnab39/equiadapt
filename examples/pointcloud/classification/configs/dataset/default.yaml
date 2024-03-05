@@ -2,6 +2,6 @@ dataset_name: "modelnet40" # Name of the dataset to use
 data_path: ${oc.env:DATA_PATH} # Path to the dataset
 augment: 1 # Whether to use data augmentation (1) or not (0)
 num_workers: 4 # Number of workers for data loading
-batch_size: 32 # Number of samples per batch
+batch_size: 64 # Number of samples per batch
 num_points: 1024 # Number of points per sample
 normal_channel: False # Whether to use normal channel in the input
