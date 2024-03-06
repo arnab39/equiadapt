@@ -5,6 +5,7 @@ import torch
 import kornia as K
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 from equiadapt.common.utils import gram_schmidt
+from typing import Any, List, Tuple, Union
 
 class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization):
     def __init__(self, 
@@ -29,7 +30,7 @@ class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization)
     
     
     
-    def canonicalize(self, x: torch.Tensor):
+    def canonicalize(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an image as input and 
         returns the canonicalized image 
@@ -42,14 +43,15 @@ class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization)
         """
         self.device = x.device
         
-        # get the group element dictionary with keys as 'rotation' and 'reflection'
+        # get the group element dictionary 
         group_element_dict = self.get_groupelement(x) 
         
         rotation_matrices = group_element_dict['rotation']
         
+        # get the inverse of the rotation matrices
         rotation_matrix_inverse = rotation_matrices.transpose(1, 2)
 
-        # not applying translations
+        # apply the inverse rotation matrices to the input point cloud
         x_canonicalized = torch.bmm(x.transpose(1, 2), rotation_matrix_inverse).transpose(1, 2)
 
         return x_canonicalized
@@ -63,7 +65,6 @@ class EquivariantPointcloudCanonicalization(ContinuousGroupPointcloudCanonicaliz
                  ):
         super().__init__(canonicalization_network,
                          canonicalization_hyperparams)
-        self.group_type = canonicalization_network.group_type
     
     
     def get_groupelement(self, x: torch.Tensor):

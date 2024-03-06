@@ -64,6 +64,8 @@ class IdentityCanonicalization(BaseCanonicalization):
     
     def get_identity_metric(self) -> torch.Tensor:
         return torch.tensor(1.0)
+    
+    
  
 class DiscreteGroupCanonicalization(BaseCanonicalization):
     def __init__(self, 

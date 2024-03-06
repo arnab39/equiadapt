@@ -63,7 +63,10 @@ class PointcloudClassificationPipeline(pl.LightningModule):
     
     def training_step(self, batch):
         points, targets = batch
-        points, targets = points.float(), targets.long().squeeze()
+        targets = targets.squeeze()
+        
+        training_metrics = {}
+        loss = 0.0
         
         points = self.maybe_transform_points(
             points, self.hyperparams.experiment.training.rotation_type
@@ -77,24 +80,30 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         # Canonicalize the pointcloud
         canonicalized_points = self.canonicalizer(points)
         
-        # Get the outputs from the prediction network
-        logits = self.prediction_network(canonicalized_points)
+        # calculate the task loss which is the cross-entropy loss for classification
+        if self.hyperparams.experiment.training.loss.task_weight:      
+            # Get the outputs from the prediction network
+            logits = self.prediction_network(canonicalized_points)
+            
+            # Get the task loss
+            task_loss = self.get_loss(logits, targets)
+            
+            loss += task_loss * self.hyperparams.experiment.training.loss.task_weight
+            
+            training_metrics.update({"train/task_loss": task_loss,})
         
-        # Loss
-        loss = self.get_loss(logits, targets)
-        
-        metrics = {"train/loss": loss}
-        
-        if self.hyperparams.experiment.training.loss.prior_weight:
+        if self.hyperparams.experiment.training.loss.prior_weight and self.hyperparams.canonicalization_type != 'identity':
             prior_loss = self.canonicalizer.get_prior_regularization_loss()
             loss += prior_loss * self.hyperparams.experiment.training.loss.prior_weight
             metric_identity = self.canonicalizer.get_identity_metric()
-            metrics.update({
+            training_metrics.update({
                     "train/prior_loss": prior_loss, 
                     "train/identity_metric": metric_identity
                 })
+        
+        training_metrics.update({"train/loss": loss,})
 
-        self.log_dict(metrics, on_epoch=True, prog_bar=True)
+        self.log_dict(training_metrics, on_epoch=True, prog_bar=True)
 
         return loss
 
@@ -104,7 +113,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
     def validation_step(self, batch):
         points, targets = batch
-        points, targets = points.float(), targets.long()
+        targets = targets.squeeze()
 
         points = self.maybe_transform_points(
             points, self.hyperparams.experiment.validation.rotation_type
@@ -136,6 +145,45 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             prog_bar=True)
         
         return {"val/acc": test_acc, "val/avg_per_class_acc": avg_per_class_acc}
+    
+    def on_test_epoch_start(self):
+        self.test_pred = []
+        self.test_true = []
+    
+    def test_step(self, batch):
+        points, targets = batch
+        targets = targets.squeeze()
+
+        points = self.maybe_transform_points(
+            points, self.hyperparams.experiment.test.rotation_type
+        )
+
+        points = points.transpose(2, 1)
+
+        # Canonicalize the pointcloud
+        canonicalized_points = self.canonicalizer(points)
+        
+        # Get the outputs from the prediction network
+        logits = self.prediction_network(canonicalized_points)
+
+        preds = logits.max(dim=1)[1]
+        
+        self.test_true.append(targets.cpu().numpy())
+        self.test_pred.append(preds.detach().cpu().numpy())
+
+        return preds
+
+    def on_test_epoch_end(self):
+        test_true = np.concatenate(self.test_true)
+        test_pred = np.concatenate(self.test_pred)
+        test_acc = metrics.accuracy_score(test_true, test_pred)
+        avg_per_class_acc = metrics.balanced_accuracy_score(test_true, test_pred)
+        self.log_dict(
+            {"test/acc": test_acc,
+             "test/avg_per_class_acc": avg_per_class_acc},
+            prog_bar=True)
+        
+        return {"test/acc": test_acc, "test/avg_per_class_acc": avg_per_class_acc}
 
     def get_loss(self, predictions, targets, smoothing=False, ignore_index=255):
         targets = targets.contiguous().view(-1)
@@ -155,7 +203,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
     
     def configure_optimizers(self):
-        torch.autograd.set_detect_anomaly(True)
+        # torch.autograd.set_detect_anomaly(True)
         if self.hyperparams.experiment.training.optimizer == "Adam":
             optimizer = torch.optim.Adam([
                     {'params': self.prediction_network.parameters(), 'lr': self.hyperparams.experiment.training.prediction_lr},

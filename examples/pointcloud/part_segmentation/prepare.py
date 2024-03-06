@@ -5,6 +5,46 @@ from torch.utils.data import Dataset, DataLoader
 warnings.filterwarnings('ignore')
 import pytorch_lightning as pl
 
+import numpy as np
+
+def download_shapenetpart(root_dir):
+    DATA_DIR = root_dir
+    if not os.path.exists(DATA_DIR):
+        os.mkdir(DATA_DIR)
+    if not os.path.exists(os.path.join(DATA_DIR, 'shapenet_part_seg_hdf5_data')):
+        www = 'https://shapenet.cs.stanford.edu/media/shapenet_part_seg_hdf5_data.zip'
+        zipfile = os.path.basename(www)
+        os.system('wget --no-check-certificate %s; unzip %s' % (www, zipfile))
+        os.system('mv %s %s' % ('hdf5_data', os.path.join(DATA_DIR, 'shapenet_part_seg_hdf5_data')))
+        os.system('rm %s' % (zipfile))
+
+
+def load_data_partseg(root_dir, partition):
+    download_shapenetpart(root_dir)
+    DATA_DIR = root_dir
+    all_data = []
+    all_label = []
+    all_seg = []
+    if partition == 'trainval':
+        file = glob.glob(os.path.join(DATA_DIR, 'shapenet_part_seg_hdf5_data', '*train*.h5')) \
+               + glob.glob(os.path.join(DATA_DIR, 'shapenet_part_seg_hdf5_data', '*val*.h5'))
+    else:
+        file = glob.glob(os.path.join(DATA_DIR, 'shapenet_part_seg_hdf5_data', '*%s*.h5'%partition))
+    for h5_name in file:
+        f = h5py.File(h5_name, 'r+')
+        data = f['data'][:].astype('float32')
+        label = f['label'][:].astype('int64')
+        seg = f['pid'][:].astype('int64')
+        f.close()
+        all_data.append(data)
+        all_label.append(label)
+        all_seg.append(seg)
+    all_data = np.concatenate(all_data, axis=0)
+    all_label = np.concatenate(all_label, axis=0)
+    all_seg = np.concatenate(all_seg, axis=0)
+    return all_data, all_label, all_seg
+
+
 def pc_normalize(pc):
     centroid = np.mean(pc, axis=0)
     pc = pc - centroid
@@ -12,84 +52,39 @@ def pc_normalize(pc):
     pc = pc / m
     return pc
 
-def farthest_point_sample(point, npoint):
-    """
-    Input:
-        xyz: pointcloud data, [N, D]
-        npoint: number of samples
-    Return:
-        centroids: sampled pointcloud index, [npoint, D]
-    """
-    N, D = point.shape
-    xyz = point[:,:3]
-    centroids = np.zeros((npoint,))
-    distance = np.ones((N,)) * 1e10
-    farthest = np.random.randint(0, N)
-    for i in range(npoint):
-        centroids[i] = farthest
-        centroid = xyz[farthest, :]
-        dist = np.sum((xyz - centroid) ** 2, -1)
-        mask = dist < distance
-        distance[mask] = dist[mask]
-        farthest = np.argmax(distance, -1)
-    point = point[centroids.astype(np.int32)]
-    return point
 
-class ModelNetDataset(Dataset):
-    def __init__(self, root, npoints=1024, split='train', uniform=False, normal_channel=True, cache_size=15000):
-        self.root = root
-        self.npoints = npoints
-        self.uniform = uniform
-        self.catfile = os.path.join(self.root, 'modelnet40_shape_names.txt')
-
-        self.cat = [line.rstrip() for line in open(self.catfile)]
-        self.classes = dict(zip(self.cat, range(len(self.cat))))
-        self.normal_channel = normal_channel
-
-        shape_ids = {}
-        shape_ids['train'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_train.txt'))]
-        shape_ids['test'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_test.txt'))]
-
-        assert (split == 'train' or split == 'test')
-        shape_names = ['_'.join(x.split('_')[0:-1]) for x in shape_ids[split]]
-        # list of (shape_name, shape_txt_file_path) tuple
-        self.datapath = [(shape_names[i], os.path.join(self.root, shape_names[i], shape_ids[split][i]) + '.txt') for i
-                         in range(len(shape_ids[split]))]
-        print('The size of %s data is %d'%(split,len(self.datapath)))
-
-        self.cache_size = cache_size  # how many data points to cache in memory
-        self.cache = {}  # from index to (point_set, cls) tuple
+class ShapeNetPart(Dataset):
+    def __init__(self, root_dir, num_points, partition='train', normalize=False):
+        self.data, self.label, self.seg = load_data_partseg(root_dir, partition)
+        self.cat2id = {'airplane': 0, 'bag': 1, 'cap': 2, 'car': 3, 'chair': 4, 
+                       'earphone': 5, 'guitar': 6, 'knife': 7, 'lamp': 8, 'laptop': 9, 
+                       'motor': 10, 'mug': 11, 'pistol': 12, 'rocket': 13, 'skateboard': 14, 'table': 15}
+        self.seg_num = [4, 2, 2, 4, 4, 3, 3, 2, 4, 2, 6, 2, 3, 3, 3, 3]
+        self.index_start = [0, 4, 6, 8, 12, 16, 19, 22, 24, 28, 30, 36, 38, 41, 44, 47]
+        self.num_points = num_points
+        self.partition = partition        
+        self.normalize = normalize
+        self.seg_num_all = 50
+        self.seg_start_index = 0
+            
+      
+    def __getitem__(self, item):
+        pointcloud = self.data[item][:self.num_points]
+        label = self.label[item]
+        seg = self.seg[item][:self.num_points]
+        if self.partition == 'trainval':
+            indices = list(range(pointcloud.shape[0]))
+            np.random.shuffle(indices)
+            pointcloud = pointcloud[indices]
+            seg = seg[indices]
+        if self.normalize:
+            pointcloud = pc_normalize(pointcloud)
+        return pointcloud, label, seg
 
     def __len__(self):
-        return len(self.datapath)
+        return self.data.shape[0]
 
-    def _get_item(self, index):
-        if index in self.cache:
-            point_set, cls = self.cache[index]
-        else:
-            fn = self.datapath[index]
-            cls = self.classes[self.datapath[index][0]]
-            cls = np.array([cls]).astype(np.int32)
-            point_set = np.loadtxt(fn[1], delimiter=',').astype(np.float32)
-            if self.uniform:
-                point_set = farthest_point_sample(point_set, self.npoints)
-            else:
-                point_set = point_set[0:self.npoints,:]
-
-            point_set[:, 0:3] = pc_normalize(point_set[:, 0:3])
-
-            if not self.normal_channel:
-                point_set = point_set[:, 0:3]
-
-            if len(self.cache) < self.cache_size:
-                self.cache[index] = (point_set, cls)
-
-        return point_set, cls
-
-    def __getitem__(self, index):
-        return self._get_item(index)
-
-class ModelNetDataModule(pl.LightningDataModule):
+class ShapeNetDataModule(pl.LightningDataModule):
     def __init__(self, hyperparams):
         super().__init__()
         self.data_path = hyperparams.data_path
@@ -98,17 +93,17 @@ class ModelNetDataModule(pl.LightningDataModule):
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
             self.train_dataset = ModelNetDataset(
-                root=self.data_path, npoints=self.hyperparams.num_points, split="train",
-                normal_channel=self.hyperparams.normal_channel
+                root=self.data_path, npoints=self.hyperparams.num_points, 
+                partition="trainval", normalize=self.hyperparams.normalize
             )
             self.valid_dataset = ModelNetDataset(
-                root=self.data_path, npoints=self.hyperparams.num_points, split="test",
-                normal_channel=self.hyperparams.normal_channel
+                root=self.data_path, npoints=self.hyperparams.num_points,
+                partition="test", normalize=self.hyperparams.normalize
             )
         if stage == "test":
             self.test_dataset = ModelNetDataset(
-                root=self.data_path, npoints=self.hyperparams.num_points, split="test",
-                normal_channel=self.hyperparams.normal_channel
+                root=self.data_path, npoints=self.hyperparams.num_points, 
+                partition="test", normalize=self.hyperparams.normalize
             )
 
     def train_dataloader(self):
@@ -117,6 +112,7 @@ class ModelNetDataModule(pl.LightningDataModule):
             batch_size=self.hyperparams.batch_size,
             shuffle=True,
             num_workers=self.hyperparams.num_workers,
+            drop_last=True,
         )
         return train_loader
 
@@ -124,8 +120,9 @@ class ModelNetDataModule(pl.LightningDataModule):
         valid_loader = DataLoader(
             self.valid_dataset,
             batch_size=self.hyperparams.batch_size,
-            shuffle=False,
+            shuffle=True,
             num_workers=self.hyperparams.num_workers,
+            drop_last=False,
         )
         return valid_loader
 
@@ -135,5 +132,6 @@ class ModelNetDataModule(pl.LightningDataModule):
             batch_size=self.hyperparams.batch_size,
             shuffle=False,
             num_workers=self.hyperparams.num_workers,
+            drop_last=False,
         )
         return test_loader

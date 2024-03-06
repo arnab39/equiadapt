@@ -53,7 +53,7 @@ def get_canonicalizer(
         return IdentityCanonicalization(canonicalization_network)
     
     canonicalizer_dict = {
-        'equivariant': EquivariantPointcloudCanonicalization,
+        'group_equivariant': EquivariantPointcloudCanonicalization,
     }
     
     if canonicalization_type not in canonicalizer_dict:

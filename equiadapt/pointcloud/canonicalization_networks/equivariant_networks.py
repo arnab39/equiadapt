@@ -65,10 +65,10 @@ class VNSmall(torch.nn.Module):
 
         point_cloud = point_cloud.unsqueeze(1)
         feat = get_graph_feature_cross(point_cloud, k=self.n_knn)
-        point_cloud = self.conv_pos(feat)
-        point_cloud = self.pool(point_cloud)
+        out = self.conv_pos(feat)
+        out = self.pool(out)
         
-        out = self.bn1(self.conv1(point_cloud))
+        out = self.bn1(self.conv1(out))
         out = self.conv2(out)
         out = self.dropout(out)
 

@@ -1,5 +1,5 @@
 from omegaconf import DictConfig
-from examples.pointcloud.common.networks import PointNet, DGCNN
+from examples.pointcloud.common.networks import DGCNN_partseg
 
 def get_prediction_network(
     architecture: str,
@@ -9,8 +9,7 @@ def get_prediction_network(
     The function returns the prediction network based on the architecture type
     """
     model_dict = {
-        'pointnet': PointNet,
-        'dgcnn': DGCNN,
+        'dgcnn': DGCNN_partseg
     }
     
     if architecture not in model_dict:

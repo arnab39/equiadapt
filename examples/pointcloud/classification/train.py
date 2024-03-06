@@ -50,7 +50,7 @@ def train_pointcloud(hyperparams: DictConfig):
     # get model pipeline 
     model = get_model_pipeline(hyperparams)
 
-    if hyperparams.canonicalization_type in ("equivariant", "opt_equivariant"):
+    if hyperparams.canonicalization_type in ("group_equivariant", "opt_equivariant"):
         wandb.watch(model.canonicalizer.canonicalization_network, log='all')
 
     # get trainer
@@ -61,8 +61,6 @@ def train_pointcloud(hyperparams: DictConfig):
         
     elif hyperparams.experiment.run_mode == "auto_tune":
         trainer.tune(model, datamodule=pointcloud_data)       
-    else:
-        raise ValueError("Invalid run mode")
     
     trainer.test(model, datamodule=pointcloud_data)
 

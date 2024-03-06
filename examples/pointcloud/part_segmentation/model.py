@@ -61,8 +61,12 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         return points
     
     def training_step(self, batch):
-        points, targets = batch
-        points, targets = points.float(), targets.long().squeeze()
+        points, targets, seg = batch
+        seg = seg - seg_start_index
+        label_one_hot = np.zeros((label.shape[0], 16))
+        for idx in range(label.shape[0]):
+            label_one_hot[idx, label[idx]] = 1
+        label_one_hot = torch.from_numpy(label_one_hot.astype(np.float32))
         
         points = self.maybe_transform_points(
             points, self.hyperparams.experiment.training.rotation_type

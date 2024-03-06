@@ -3,29 +3,24 @@ import torch
 
 def gram_schmidt(vectors: torch.Tensor) -> torch.Tensor:
     """
-    Applies the Gram-Schmidt process to orthogonalize a set of vectors in a batch-wise manner.
+    Applies the Gram-Schmidt process to orthogonalize a set of three vectors in a batch-wise manner.
 
     Args:
         vectors (torch.Tensor): A batch of vectors of shape (batch_size, n_vectors, vector_dim),
-                                where n_vectors is the number of vectors to orthogonalize.
+                                where n_vectors is the number of vectors to orthogonalize (here 3).
 
     Returns:
         torch.Tensor: The orthogonalized vectors of the same shape as the input.
     """
-    _, n_vectors, _ = vectors.shape
-    orthogonal_vectors = vectors.clone()  # Clone to avoid modifying the input
-
-    for i in range(1, n_vectors):
-        for j in range(i):
-            # Project vector i on vector j, then subtract this projection from vector i
-            projection = (torch.sum(orthogonal_vectors[:, i] * orthogonal_vectors[:, j], dim=1, keepdim=True) /
-                          torch.sum(orthogonal_vectors[:, j] * orthogonal_vectors[:, j], dim=1, keepdim=True))
-            orthogonal_vectors[:, i] -= projection * orthogonal_vectors[:, j]
-
-    # Normalize the vectors after orthogonalization is complete to ensure numerical stability
-    orthogonal_vectors = orthogonal_vectors / torch.norm(orthogonal_vectors, dim=2, keepdim=True)
-
-    return orthogonal_vectors
+    v1 = vectors[:, 0]
+    v1 = v1 / torch.norm(v1, dim=1, keepdim=True)
+    v2 = (vectors[:, 1] - torch.sum(vectors[:, 1] * v1, dim=1, keepdim=True) * v1)
+    v2 = v2 / torch.norm(v2, dim=1, keepdim=True)
+    v3 = (vectors[:, 2] - torch.sum(vectors[:, 2] * v1, dim=1, keepdim=True) * v1 - torch.sum(vectors[:, 2] * v2,
+                                                                                                dim=1,
+                                                                                                keepdim=True) * v2)
+    v3 = v3 / torch.norm(v3, dim=1, keepdim=True)
+    return torch.stack([v1, v2, v3], dim=1)
 
 
 class LieParameterization(torch.nn.Module):
