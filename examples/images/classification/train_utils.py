@@ -131,6 +131,7 @@ def get_image_data(dataset_hyperparams: DictConfig):
     
     return dataset_classes[dataset_hyperparams.dataset_name](dataset_hyperparams)
 
+
 def load_envs(env_file: Optional[str] = None) -> None:
     """
     Load all the environment variables defined in the `env_file`.
