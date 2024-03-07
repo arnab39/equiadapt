@@ -27,8 +27,8 @@ Equiadapt enables users to obtain equivariant versions of existing neural networ
 
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-+ canonicalization_network = ESCNNEquivariantNetwork(...)
-+ canonicalizer = GroupEquivariantImageCanonicalization(canonicalization_network, ...)
++ canonicalization_network = ESCNNEquivariantNetwork(...) ### create a canonicalization network
++ canonicalizer = GroupEquivariantImageCanonicalization(canonicalization_network, ...) ### wrap it using equiadapt's canonicalization wrapper
 
   model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet50', pretrained=True).to(device)
   optimizer = torch.optim.Adam(model.parameters())
@@ -44,12 +44,12 @@ Equiadapt enables users to obtain equivariant versions of existing neural networ
 
           optimizer.zero_grad()
 
-+         inputs_canonicalized = canonicalizer(inputs)
-          outputs = prediction_network(inputs_canonicalized)
-+         outputs = canonicalizer.invert_canonicalization(outputs)
++         inputs_canonicalized = canonicalizer(inputs) ### canonicalize the inputs
+          outputs = prediction_network(inputs_canonicalized) ### pass the canonicalized input data
++         outputs = canonicalizer.invert_canonicalization(outputs) ### optional (if you to invert the outputs for your equivariant task)
 
           loss = F.cross_entropy(outputs, targets)
-+         loss += canonicalizer.get_prior_regularization_loss()
++         loss += canonicalizer.get_prior_regularization_loss() ### prior regularization is recommended for pretrained networks
 
           loss.backward()
 
