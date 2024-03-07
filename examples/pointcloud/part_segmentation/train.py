@@ -9,7 +9,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 from argparse import ArgumentParser
 
-from prepare import ModelNetDataModule
+from prepare import ShapeNetDataModule
 from train_utils import get_model_pipeline, get_callbacks, get_checkpoint_name, get_trainer, load_envs
 
 
@@ -21,7 +21,6 @@ def train_pointcloud(hyperparams: DictConfig):
                                 hyperparams['dataset']['dataset_name'] + "/" + hyperparams['canonicalization_type'] \
                                 + "/" + hyperparams['prediction']['prediction_network_architecture']
 
-    breakpoint()
     # set system environment variables for wandb
     if hyperparams['wandb']['use_wandb']:
         print("Using wandb for logging...")
@@ -40,7 +39,7 @@ def train_pointcloud(hyperparams: DictConfig):
     pl.seed_everything(hyperparams.experiment.seed)
 
      # get pointcloud data
-    pointcloud_data = ModelNetDataModule(hyperparams.dataset)
+    pointcloud_data = ShapeNetDataModule(hyperparams.dataset)
     
     # checkpoint name
     hyperparams.checkpoint.checkpoint_name = get_checkpoint_name(hyperparams)
@@ -51,7 +50,7 @@ def train_pointcloud(hyperparams: DictConfig):
     # get model pipeline 
     model = get_model_pipeline(hyperparams)
 
-    if hyperparams.canonicalization_type in ("equivariant", "opt_equivariant"):
+    if hyperparams.canonicalization_type in ("group_equivariant", "opt_equivariant"):
         wandb.watch(model.canonicalizer.canonicalization_network, log='all')
 
     # get trainer

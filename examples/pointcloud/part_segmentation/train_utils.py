@@ -6,6 +6,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 from model import PointcloudClassificationPipeline
+from pytorch_lightning.strategies import DDPStrategy
 
 
 def get_model_pipeline(hyperparams: DictConfig):
@@ -48,7 +49,7 @@ def get_trainer(
             max_epochs=hyperparams.experiment.training.num_epochs, accelerator="auto", 
             logger=wandb_logger, callbacks=callbacks, deterministic=hyperparams.experiment.deterministic,
             num_nodes=hyperparams.experiment.num_nodes, devices=hyperparams.experiment.num_gpus, 
-            strategy='ddp'
+            strategy=DDPStrategy(find_unused_parameters=True)
         )
 
     return trainer
@@ -59,11 +60,11 @@ def get_callbacks(hyperparams: DictConfig):
     checkpoint_callback = ModelCheckpoint(
         dirpath=hyperparams.checkpoint.checkpoint_path,
         filename=hyperparams.checkpoint.checkpoint_name,
-        monitor="val/acc",
+        monitor="val/iou",
         mode="max",
         save_on_train_epoch_end=False,
     )
-    early_stop_metric_callback = EarlyStopping(monitor="val/acc", 
+    early_stop_metric_callback = EarlyStopping(monitor="val/iou", 
                     min_delta=hyperparams.experiment.training.min_delta, 
                     patience=hyperparams.experiment.training.patience, 
                     verbose=True, 
@@ -86,7 +87,7 @@ def get_checkpoint_name(hyperparams : DictConfig):
     
     return f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization)}".lstrip("_") + \
                          f"__epochs_{hyperparams.experiment.training.num_epochs}_" + f"__seed_{hyperparams.experiment.seed}"
-                        
+                     
 
 def load_envs(env_file: Optional[str] = None) -> None:
     """
