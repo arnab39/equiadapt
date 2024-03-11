@@ -52,6 +52,8 @@ coverage.xml
 .ipynb_checkpoints
 examples/images/classification/debug_opt_group_equivariant.ipynb
 tutorials/images/utils/sam_vit_h_4b8939.pth
+tutorials/images/understanding_continuous_canonicalization.ipynb
+tutorials/images/understanding_discrete_canonicalization_old.ipynb
 old_conda_env.yaml
 
 # pyenv

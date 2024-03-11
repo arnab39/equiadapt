@@ -192,7 +192,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             }
             return {"optimizer": optimizer, "lr_scheduler": scheduler_dict}
         else:
-            print(f'using Adam optimizer')
+            print(f'using AdamW optimizer')
             optimizer = torch.optim.AdamW([
                     {'params': self.prediction_network.parameters(), 'lr': self.hyperparams.experiment.training.prediction_lr},
                     {'params': self.canonicalizer.parameters(), 'lr': self.hyperparams.experiment.training.canonicalization_lr},

@@ -4,8 +4,7 @@ from typing import Any, Dict, List, Tuple, Union
 import torch
 
 # Base skeleton for the canonicalization class
-# DiscreteGroupCanonicalization and ContinuousGroupCanonicalization 
-# will inherit from this class
+# DiscreteGroupCanonicalization and ContinuousGroupCanonicalization will inherit from this class
 
 class BaseCanonicalization(torch.nn.Module):
     def __init__(self, canonicalization_network: torch.nn.Module):
@@ -20,21 +19,29 @@ class BaseCanonicalization(torch.nn.Module):
         
         Args:
             x: input data
+            targets: (optional) additional targets that need to be canonicalized, 
+                    such as boxes for promptable instance segmentation
             **kwargs: additional arguments
         
         Returns:
             canonicalized_x: canonicalized version of the input data
         """
         
+        # call the canonicalize method to obtain canonicalized version of the input data
         return self.canonicalize(x, targets, **kwargs)
 
     
     def canonicalize(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
-        This method takes an input data and 
-        returns its canonicalized version and
-        a dictionary containing the information
-        about the canonicalization
+        This method takes an input data with, optionally, targets that need to be canonicalized 
+        Args:
+            x: input data
+            targets: (optional) additional targets that need to be canonicalized,
+                    such as boxes for promptable instance segmentation
+            **kwargs: additional arguments
+            
+        Returns:
+            the canonicalized version of the data and targets 
         """
         raise NotImplementedError()
     
@@ -43,6 +50,14 @@ class BaseCanonicalization(torch.nn.Module):
         """
         This method takes the output of the canonicalized data 
         and returns the output for the original data orientation
+        
+        Args: 
+            canonicalized_outputs: output of the prediction network for canonicalized data
+            
+        Returns:
+            outputs: output of the prediction network for the original data orientation,
+                by using the group element used to canonicalize the original data
+            
         """
         raise NotImplementedError()
     

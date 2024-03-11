@@ -5,10 +5,8 @@ import pytorch_lightning as pl
 from model import ImageClassifierPipeline
 from omegaconf import DictConfig
 from prepare import (
-    CelebADataModule,
     CIFAR10DataModule,
     CIFAR100DataModule,
-    Flowers102DataModule,
     ImageNetDataModule,
     RotatedMNISTDataModule,
     STL10DataModule,
@@ -121,8 +119,6 @@ def get_image_data(dataset_hyperparams: DictConfig):
         "cifar10": CIFAR10DataModule,
         "cifar100": CIFAR100DataModule,
         "stl10": STL10DataModule,
-        "celeba": CelebADataModule,
-        "flowers102": Flowers102DataModule,
         "imagenet": ImageNetDataModule
     }
     

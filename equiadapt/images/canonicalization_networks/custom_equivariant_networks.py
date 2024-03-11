@@ -3,7 +3,7 @@ import math
 import kornia as K
 import torch
 import torch.nn as nn
-from custom_group_equivariant_layers import RotationEquivariantConvLift, RotationEquivariantConv, RotoReflectionEquivariantConvLift, RotoReflectionEquivariantConv
+from .custom_group_equivariant_layers import RotationEquivariantConvLift, RotationEquivariantConv, RotoReflectionEquivariantConvLift, RotoReflectionEquivariantConv
 
 
     

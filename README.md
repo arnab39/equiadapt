@@ -142,17 +142,21 @@ If you find this library or the associated papers useful, please cite the follow
 
 ```
 @inproceedings{mondal2023equivariant,
-	author = {Mondal, Arnab Kumar and Panigrahi, Siba Smarak and Kaba, Oumar and Mudumba, Sai Rajeswar and Ravanbakhsh, Siamak},
-	booktitle = {Advances in Neural Information Processing Systems},
-	editor = {A. Oh and T. Neumann and A. Globerson and K. Saenko and M. Hardt and S. Levine},
-	pages = {50293--50309},
-	publisher = {Curran Associates, Inc.},
-	title = {Equivariant Adaptation of Large Pretrained Models},
-	volume = {36},
-	year = {2023}
+  author = {Mondal, Arnab Kumar and Panigrahi, Siba Smarak and Kaba, Oumar and Mudumba, Sai Rajeswar and Ravanbakhsh, Siamak},
+  booktitle = {Advances in Neural Information Processing Systems},
+  editor = {A. Oh and T. Neumann and A. Globerson and K. Saenko and M. Hardt and S. Levine},
+  pages = {50293--50309},
+  publisher = {Curran Associates, Inc.},
+  title = {Equivariant Adaptation of Large Pretrained Models},
+  url = {https://proceedings.neurips.cc/paper_files/paper/2023/file/9d5856318032ef3630cb580f4e24f823-Paper-Conference.pdf},
+  volume = {36},
+  year = {2023}
 }
-
 ```
+
+# Contributing
+
+This repository is a work in progress. We are actively working on improving the codebase and adding more features. If you are interested in contributing, please raise an issue or submit a pull request. We will be happy to help you get started.
 
 # Contact
 
