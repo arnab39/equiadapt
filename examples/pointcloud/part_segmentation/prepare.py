@@ -1,11 +1,11 @@
 import numpy as np
 import warnings
-import os
 from torch.utils.data import Dataset, DataLoader
 warnings.filterwarnings('ignore')
 import pytorch_lightning as pl
-
-import numpy as np
+import h5py
+import os
+import glob
 
 def download_shapenetpart(root_dir):
     DATA_DIR = root_dir
@@ -53,7 +53,7 @@ def pc_normalize(pc):
     return pc
 
 
-class ShapeNetPart(Dataset):
+class ShapeNetPartDataset(Dataset):
     def __init__(self, root_dir, num_points, partition='train', normalize=False):
         self.data, self.label, self.seg = load_data_partseg(root_dir, partition)
         self.cat2id = {'airplane': 0, 'bag': 1, 'cap': 2, 'car': 3, 'chair': 4, 
@@ -92,17 +92,17 @@ class ShapeNetDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
-            self.train_dataset = ModelNetDataset(
-                root=self.data_path, npoints=self.hyperparams.num_points, 
+            self.train_dataset = ShapeNetPartDataset(
+                root_dir=self.data_path, num_points=self.hyperparams.num_points, 
                 partition="trainval", normalize=self.hyperparams.normalize
             )
-            self.valid_dataset = ModelNetDataset(
-                root=self.data_path, npoints=self.hyperparams.num_points,
+            self.valid_dataset = ShapeNetPartDataset(
+                root_dir=self.data_path, num_points=self.hyperparams.num_points,
                 partition="test", normalize=self.hyperparams.normalize
             )
         if stage == "test":
-            self.test_dataset = ModelNetDataset(
-                root=self.data_path, npoints=self.hyperparams.num_points, 
+            self.test_dataset = ShapeNetPartDataset(
+                root_dir=self.data_path, num_points=self.hyperparams.num_points, 
                 partition="test", normalize=self.hyperparams.normalize
             )
 

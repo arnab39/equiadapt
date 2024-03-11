@@ -9,6 +9,10 @@ from model_utils import get_prediction_network
 from examples.pointcloud.common.utils import get_canonicalization_network, get_canonicalizer, random_point_dropout, random_scale_point_cloud, random_shift_point_cloud
 import sklearn.metrics as metrics
 
+class_choices = ['airplane', 'bag', 'cap', 'car', 'chair', 'earphone', 'guitar', 'knife', 'lamp', 'laptop', 'motorbike', 'mug', 'pistol', 'rocket', 'skateboard', 'table']
+seg_num = [4, 2, 2, 4, 4, 3, 3, 2, 4, 2, 6, 2, 3, 3, 3, 3]
+index_start = [0, 4, 6, 8, 12, 16, 19, 22, 24, 28, 30, 36, 38, 41, 44, 47]
+
 
 class PointcloudClassificationPipeline(pl.LightningModule):
     def __init__(self, hyperparams):
@@ -47,6 +51,8 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             trot = RotateAxisAngle(angle=torch.rand(points.shape[0]) * 360, axis="Z", degrees=True, device=self.device)
         elif rotation_type == "so3":
             trot = Rotate(R=random_rotations(points.shape[0]), device=self.device)
+        elif rotation_type == "none":
+            trot = None
         else:
             raise NotImplementedError(f"Unknown rotation type {rotation_type}")
         if trot is not None:
@@ -60,13 +66,19 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         points = random_shift_point_cloud(points)
         return points
     
-    def training_step(self, batch):
-        points, targets, seg = batch
-        seg = seg - seg_start_index
+    def get_label_one_hot(self, label):
         label_one_hot = np.zeros((label.shape[0], 16))
         for idx in range(label.shape[0]):
             label_one_hot[idx, label[idx]] = 1
-        label_one_hot = torch.from_numpy(label_one_hot.astype(np.float32))
+        label_one_hot = torch.from_numpy(label_one_hot.astype(np.float32)).to(label.device)
+        return label_one_hot
+    
+    def training_step(self, batch):
+        points, targets, seg = batch
+        label_one_hot =  self.get_label_one_hot(targets)
+        
+        training_metrics = {}
+        loss = 0.0
         
         points = self.maybe_transform_points(
             points, self.hyperparams.experiment.training.rotation_type
@@ -80,24 +92,43 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         # Canonicalize the pointcloud
         canonicalized_points = self.canonicalizer(points)
         
-        # Get the outputs from the prediction network
-        logits = self.prediction_network(canonicalized_points)
-        
-        # Loss
-        loss = self.get_loss(logits, targets)
+        # calculate the task loss which is the cross-entropy loss for classification
+        if self.hyperparams.experiment.training.loss.task_weight:   
+            # Get the outputs from the prediction network
+            seg_pred = self.prediction_network(canonicalized_points, label_one_hot)
+            seg_pred = seg_pred.transpose(2, 1).contiguous()
+            
+            # Loss
+            task_loss = self.get_loss(seg_pred.view(-1, seg_pred.size(-1)), seg.view(-1))     
+            loss += task_loss * self.hyperparams.experiment.training.loss.task_weight      
+            training_metrics.update({"train/task_loss": task_loss,})
 
-        metrics = {"train/loss": loss}
-        self.log_dict(metrics, on_epoch=True, prog_bar=True)
+        if self.hyperparams.experiment.training.loss.prior_weight and self.hyperparams.canonicalization_type != 'identity':
+            prior_loss = self.canonicalizer.get_prior_regularization_loss()
+            loss += prior_loss * self.hyperparams.experiment.training.loss.prior_weight
+            metric_identity = self.canonicalizer.get_identity_metric()
+            training_metrics.update({
+                    "train/prior_loss": prior_loss, 
+                    "train/identity_metric": metric_identity
+                })
+        
+        training_metrics.update({"train/loss": loss,})
+        
+        self.log_dict(training_metrics, on_epoch=True, prog_bar=True)
 
         return loss
 
     def on_validation_epoch_start(self):
-        self.test_pred = []
-        self.test_true = []      
+        self.test_pred_cls = []
+        self.test_true_cls = []
+        self.test_pred_seg = []
+        self.test_true_seg = []
+        self.test_label_seg = []    
 
     def validation_step(self, batch):
-        points, targets = batch
-        points, targets = points.float(), targets.long()
+        points, targets, seg = batch
+        
+        label_one_hot =  self.get_label_one_hot(targets)
 
         points = self.maybe_transform_points(
             points, self.hyperparams.experiment.validation.rotation_type
@@ -109,26 +140,95 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         canonicalized_points = self.canonicalizer(points)
         
         # Get the outputs from the prediction network
-        logits = self.prediction_network(canonicalized_points)
+        seg_pred = self.prediction_network(canonicalized_points, label_one_hot)
+        seg_pred = seg_pred.transpose(2, 1).contiguous()
 
-        preds = logits.max(dim=1)[1]
+        pred = seg_pred.max(dim=2)[1]
         
-        self.test_true.append(targets.cpu().numpy())
-        self.test_pred.append(preds.detach().cpu().numpy())
+        seg_np = seg.cpu().numpy()
+        pred_np = pred.detach().cpu().numpy()
+        
+        self.test_true_cls.append(seg_np.reshape(-1))
+        self.test_pred_cls.append(pred_np.reshape(-1))
+        self.test_true_seg.append(seg_np)
+        self.test_pred_seg.append(pred_np)
+        self.test_label_seg.append(targets.detach().cpu().numpy().reshape(-1))
 
-        return preds
+        return pred
 
     def on_validation_epoch_end(self):
-        test_true = np.concatenate(self.test_true)
-        test_pred = np.concatenate(self.test_pred)
+        test_true = np.concatenate(self.test_true_cls)
+        test_pred = np.concatenate(self.test_pred_cls)
         test_acc = metrics.accuracy_score(test_true, test_pred)
         avg_per_class_acc = metrics.balanced_accuracy_score(test_true, test_pred)
-        self.log_dict(
-            {"valid/acc": test_acc,
-             "valid/avg_per_class_acc": avg_per_class_acc},
-            prog_bar=True)
+        test_true_seg = np.concatenate(self.test_true_seg, axis=0)
+        test_pred_seg = np.concatenate(self.test_pred_seg, axis=0)
+        test_label_seg = np.concatenate(self.test_label_seg)
+        test_ious = calculate_shape_IoU(test_pred_seg, test_true_seg, test_label_seg, class_choice=None)
+        validation_metrics = {
+            "val/acc": test_acc,
+            "val/avg_per_class_acc": avg_per_class_acc,
+            "val/iou": np.mean(test_ious)
+        }
+        self.log_dict(validation_metrics, on_epoch=True, prog_bar=True)
         
-        return {"valid/acc": test_acc, "valid/avg_per_class_acc": avg_per_class_acc}
+        return validation_metrics
+    
+    def on_test_epoch_start(self):
+        self.test_pred_cls = []
+        self.test_true_cls = []
+        self.test_pred_seg = []
+        self.test_true_seg = []
+        self.test_label_seg = []
+        
+    def test_step(self, batch):
+        points, targets, seg = batch
+        
+        label_one_hot =  self.get_label_one_hot(targets)
+
+        points = self.maybe_transform_points(
+            points, self.hyperparams.experiment.validation.rotation_type
+        )
+
+        points = points.transpose(2, 1)
+
+        # Canonicalize the pointcloud
+        canonicalized_points = self.canonicalizer(points)
+        
+        # Get the outputs from the prediction network
+        seg_pred = self.prediction_network(canonicalized_points, label_one_hot)
+        seg_pred = seg_pred.transpose(2, 1).contiguous()
+
+        pred = seg_pred.max(dim=2)[1]
+        
+        seg_np = seg.cpu().numpy()
+        pred_np = pred.detach().cpu().numpy()
+        
+        self.test_true_cls.append(seg_np.reshape(-1))
+        self.test_pred_cls.append(pred_np.reshape(-1))
+        self.test_true_seg.append(seg_np)
+        self.test_pred_seg.append(pred_np)
+        self.test_label_seg.append(targets.detach().cpu().numpy().reshape(-1))
+
+        return pred
+
+    def on_test_epoch_end(self):
+        test_true = np.concatenate(self.test_true_cls)
+        test_pred = np.concatenate(self.test_pred_cls)
+        test_acc = metrics.accuracy_score(test_true, test_pred)
+        avg_per_class_acc = metrics.balanced_accuracy_score(test_true, test_pred)
+        test_true_seg = np.concatenate(self.test_true_seg, axis=0)
+        test_pred_seg = np.concatenate(self.test_pred_seg, axis=0)
+        test_label_seg = np.concatenate(self.test_label_seg)
+        test_ious = calculate_shape_IoU(test_pred_seg, test_true_seg, test_label_seg, class_choice=None)
+        test_metrics = {
+            "test/acc": test_acc,
+            "test/avg_per_class_acc": avg_per_class_acc,
+            "test/iou": np.mean(test_ious)
+        }
+        self.log_dict(test_metrics, on_epoch=True, prog_bar=True)
+        
+        return test_metrics
 
     def get_loss(self, predictions, targets, smoothing=False, ignore_index=255):
         targets = targets.contiguous().view(-1)
@@ -179,6 +279,30 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         else:
             raise NotImplementedError
 
+
+
+def calculate_shape_IoU(pred_np, seg_np, label, class_choice, visual=False):
+    if not visual:
+        label = label.squeeze()
+    shape_ious = []
+    for shape_idx in range(seg_np.shape[0]):
+        if not class_choice:
+            start_index = index_start[label[shape_idx]]
+            num = seg_num[label[shape_idx]]
+            parts = range(start_index, start_index + num)
+        else:
+            parts = range(seg_num[label[0]])
+        part_ious = []
+        for part in parts:
+            I = np.sum(np.logical_and(pred_np[shape_idx] == part, seg_np[shape_idx] == part))
+            U = np.sum(np.logical_or(pred_np[shape_idx] == part, seg_np[shape_idx] == part))
+            if U == 0:
+                iou = 1  # If the union of groundtruth and prediction points is empty, then count part IoU as 1
+            else:
+                iou = I / float(U)
+            part_ious.append(iou)
+        shape_ious.append(np.mean(part_ious))
+    return shape_ious  
 
 
 
