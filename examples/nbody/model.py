@@ -11,10 +11,10 @@ class NBodyPipeline(pl.LightningModule):
     def __init__(self, hyperparams: DictConfig):
         super().__init__()
         self.hyperparams = hyperparams
-        self.prediction_network = get_prediction_network(OmegaConf.create(hyperparams.pred_hyperparams))
-        canonicalization_network = get_canonicalization_network(OmegaConf.create(hyperparams.canon_hyperparams))
+        self.prediction_network = get_prediction_network(hyperparams)
+        canonicalization_network = get_canonicalization_network(hyperparams)
 
-        self.canonicalizer = ContinuousGroupNBody(canonicalization_network, OmegaConf.create(hyperparams.canon_hyperparams))
+        self.canonicalizer = ContinuousGroupNBody(canonicalization_network, hyperparams)
 
         self.learning_rate = hyperparams.learning_rate if hasattr(hyperparams, "learning_rate") else None
         self.weight_decay = hyperparams.weight_decay if hasattr(hyperparams, "weight_decay") else 0.0

@@ -10,50 +10,50 @@ import torch
 
 from examples.nbody.prepare.nbody_data import NBodyDataModule
 
+HYPERPARAMS = {"model": "NBodyPipeline", 
+               "canon_model_type": "vndeepsets", 
+               "pred_model_type": "GNN", 
+               "batch_size": 100, 
+               "dryrun": False, 
+               "use_wandb": False, 
+               "checkpoint": False, 
+               "num_epochs": 1000, 
+               "num_workers":0, 
+               "auto_tune":False, 
+               "seed": 0}
 
-CANON_MODEL_HYPERPARAMETERS = {
-    "architecture": "vndeepsets",
-    "num_layers": 4,
-    "hidden_dim": 16,
-    "layer_pooling": "sum",
-    "final_pooling": "mean",
-    "out_dim": 4,
-    "batch_size": 100,
-    "nonlinearity": "relu",
-    "canon_feature": "p",
-    "canon_translation": False,
-    "angular_feature": "pv",
-    "dropout": 0,
-}
 
-PRED_MODEL_HYPERPARAMETERS = {
-    "architecture": "GNN",
-    "num_layers": 4,
-    "hidden_dim": 32,
+NBODY_HYPERPARAMS = {
+    "learning_rate": 1e-3, #1e-3
+    "weight_decay": 1e-12,
+    "patience": 1000,
+    "hidden_dim": 32, #32
     "input_dim": 6,
     "in_node_nf": 1,
     "in_edge_nf": 2,
-}
-
-HYPERPARAMS = {
-    "model": "nbody",
-    "learning_rate": 1e-3,
-    "weight_decay": 1e-12,
-    "patience": 1000,
-    "batch_size": 100, 
-    "dryrun": False, 
-    "use_wandb": False, 
-    "checkpoint": False, 
-    "num_epochs": 1000, 
-    "num_workers":11, 
-    "auto_tune":False, 
-    "seed": 0,
-    "canon_hyperparams": CANON_MODEL_HYPERPARAMETERS,
-    "pred_hyperparams": PRED_MODEL_HYPERPARAMETERS,
+    "num_layers": 4, #4
+    "out_dim": 4,
+    "canon_num_layers": 4,
+    "canon_hidden_dim": 16,
+    "canon_layer_pooling": "mean",
+    "canon_final_pooling": "mean",
+    "canon_nonlinearity": "relu",
+    "canon_feature": "p",
+    "canon_translation": False,
+    "canon_angular_feature": 0,
+    "canon_dropout": 0.5,
+    "freeze_canon": False,
+    "layer_pooling": "sum",
+    "final_pooling": "mean",
+    "nonlinearity": "relu",
+    "angular_feature": "pv",
+    "dropout": 0, #0
+    "nheads": 8,
+    "ff_hidden": 32
 }
 
 def train_nbody():
-    hyperparams = HYPERPARAMS
+    hyperparams = HYPERPARAMS | NBODY_HYPERPARAMS
 
     if not hyperparams["use_wandb"]:
         print('Wandb disable for logging.')
@@ -63,8 +63,8 @@ def train_nbody():
         os.environ["WANDB_MODE"] = "online"
         
     wandb.login()
-    wandb.init(config=hyperparams, entity="symmetry_group", project="canonical_network-nbody-transformer")
-    wandb_logger = WandbLogger(project="canonical_network-nbody-transformer")
+    wandb.init(config=hyperparams, entity="symmetry_group", project="equiadapt")
+    wandb_logger = WandbLogger(project="equiadapt")
 
     hyperparams = wandb.config
     pl.seed_everything(hyperparams.seed)
