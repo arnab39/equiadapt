@@ -32,7 +32,6 @@ repos:
 #     args: [
 #       --in-place,
 #       --remove-all-unused-imports,
-#       --remove-unused-variables,
 #     ]
 
 # - repo: https://github.com/PyCQA/isort
