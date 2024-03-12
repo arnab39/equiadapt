@@ -5,11 +5,11 @@ from torch import nn
 
 
 class ConvNetwork(nn.Module):
-    def __init__(self, 
-                 in_shape: tuple, 
-                 out_channels: int, 
-                 kernel_size: int, 
-                 num_layers: int = 2, 
+    def __init__(self,
+                 in_shape: tuple,
+                 out_channels: int,
+                 kernel_size: int,
+                 num_layers: int = 2,
                  out_vector_size: int = 128):
         super().__init__()
 
@@ -48,13 +48,13 @@ class ConvNetwork(nn.Module):
         out = self.enc_network(x)
         out = out.reshape(batch_size, -1)
         return self.final_fc(out)
-    
+
 class ResNet18Network(nn.Module):
-    def __init__(self, 
-                 in_shape: tuple, 
-                 out_channels: int, 
-                 kernel_size: int, 
-                 num_layers: int = 2, 
+    def __init__(self,
+                 in_shape: tuple,
+                 out_channels: int,
+                 kernel_size: int,
+                 num_layers: int = 2,
                  out_vector_size: int = 128):
         super().__init__()
         self.resnet18 = torchvision.models.resnet18(weights=None)

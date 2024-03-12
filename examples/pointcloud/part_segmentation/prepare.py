@@ -56,18 +56,18 @@ def pc_normalize(pc):
 class ShapeNetPartDataset(Dataset):
     def __init__(self, root_dir, num_points, partition='train', normalize=False):
         self.data, self.label, self.seg = load_data_partseg(root_dir, partition)
-        self.cat2id = {'airplane': 0, 'bag': 1, 'cap': 2, 'car': 3, 'chair': 4, 
-                       'earphone': 5, 'guitar': 6, 'knife': 7, 'lamp': 8, 'laptop': 9, 
+        self.cat2id = {'airplane': 0, 'bag': 1, 'cap': 2, 'car': 3, 'chair': 4,
+                       'earphone': 5, 'guitar': 6, 'knife': 7, 'lamp': 8, 'laptop': 9,
                        'motor': 10, 'mug': 11, 'pistol': 12, 'rocket': 13, 'skateboard': 14, 'table': 15}
         self.seg_num = [4, 2, 2, 4, 4, 3, 3, 2, 4, 2, 6, 2, 3, 3, 3, 3]
         self.index_start = [0, 4, 6, 8, 12, 16, 19, 22, 24, 28, 30, 36, 38, 41, 44, 47]
         self.num_points = num_points
-        self.partition = partition        
+        self.partition = partition
         self.normalize = normalize
         self.seg_num_all = 50
         self.seg_start_index = 0
-            
-      
+
+
     def __getitem__(self, item):
         pointcloud = self.data[item][:self.num_points]
         label = self.label[item]
@@ -93,7 +93,7 @@ class ShapeNetDataModule(pl.LightningDataModule):
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
             self.train_dataset = ShapeNetPartDataset(
-                root_dir=self.data_path, num_points=self.hyperparams.num_points, 
+                root_dir=self.data_path, num_points=self.hyperparams.num_points,
                 partition="trainval", normalize=self.hyperparams.normalize
             )
             self.valid_dataset = ShapeNetPartDataset(
@@ -102,7 +102,7 @@ class ShapeNetDataModule(pl.LightningDataModule):
             )
         if stage == "test":
             self.test_dataset = ShapeNetPartDataset(
-                root_dir=self.data_path, num_points=self.hyperparams.num_points, 
+                root_dir=self.data_path, num_points=self.hyperparams.num_points,
                 partition="test", normalize=self.hyperparams.normalize
             )
 

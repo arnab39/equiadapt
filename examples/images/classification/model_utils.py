@@ -61,10 +61,10 @@ def get_prediction_network(
     if dataset_name != 'ImageNet':
         if architecture == 'resnet50':
             feature_dim = encoder.fc.in_features
-            encoder.fc = nn.Identity() 
+            encoder.fc = nn.Identity()
         elif architecture == 'vit':
             feature_dim = encoder.heads.head.in_features
-            encoder.heads.head = nn.Identity()  
+            encoder.heads.head = nn.Identity()
         prediction_network = PredictionNetwork(encoder, feature_dim, num_classes)
     else:
         prediction_network = encoder

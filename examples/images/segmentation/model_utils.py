@@ -9,8 +9,8 @@ ALPHA = 0.8
 GAMMA = 2
 
 class MaskRCNNModel(nn.Module):
-    def __init__(self, 
-                architecture_type: str, 
+    def __init__(self,
+                architecture_type: str,
                 pretrained_ckpt_path: str = "",
                 num_classes: int = 91,
                 weights:str = "DEFAULT"):
@@ -42,10 +42,10 @@ class MaskRCNNModel(nn.Module):
                     output[0]['boxes'] = target['boxes']
                     output[0]['masks'] = target['masks']
                     output[0]['scores'] = torch.ones(len(target['masks']), dtype=torch.float32, device=target['masks'].device)
-                    
+
                     iou_predictions = output[0]['scores']
                     ious.append(iou_predictions)
-                    
+
                     pred_masks.append(torch.ones_like(target['masks'], dtype=torch.float32, device=target['masks'].device))
 
                 else:
@@ -64,8 +64,8 @@ class MaskRCNNModel(nn.Module):
 
 class SAMModel(nn.Module):
 
-    def __init__(self, 
-                architecture_type: str, 
+    def __init__(self,
+                architecture_type: str,
                 pretrained_ckpt_path: str, # Segment-Anything Model requires a pretrained checkpoint path
                 num_classes: int = 91,
                 weights: str = "DEFAULT"):

@@ -67,7 +67,7 @@ class VNSmall(torch.nn.Module):
         feat = get_graph_feature_cross(point_cloud, k=self.n_knn)
         out = self.conv_pos(feat)
         out = self.pool(out)
-        
+
         out = self.bn1(self.conv1(out))
         out = self.conv2(out)
         out = self.dropout(out)
@@ -76,4 +76,3 @@ class VNSmall(torch.nn.Module):
         # out = self.dropout(out)
 
         return out.mean(dim=-1)[:, :3]
-

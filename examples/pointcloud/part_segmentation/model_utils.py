@@ -11,7 +11,7 @@ def get_prediction_network(
     model_dict = {
         'dgcnn': DGCNN_partseg
     }
-    
+
     if architecture not in model_dict:
         raise ValueError(f'{architecture} is not implemented as prediction network for now.')
 
