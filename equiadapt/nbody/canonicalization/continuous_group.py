@@ -40,7 +40,6 @@ class ContinuousGroupNBody(ContinuousGroupCanonicalization):
         self.device = nodes.device
 
         group_element_dict = self.get_groupelement(nodes, loc, edges, vel, edge_attr, charges)
-        rotation_matrix = group_element_dict["rotation_matrix"]
         translation_vectors = group_element_dict["translation_vectors"]
         rotation_matrix_inverse = group_element_dict["rotation_matrix_inverse"]
 

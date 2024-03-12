@@ -3,54 +3,27 @@ from collections import namedtuple
 from omegaconf import OmegaConf
 import torch
 
+
 def get_canonicalization_network(hyperparams):
-    architecture = hyperparams.canon_model_type
-    model_hyperparams = {
-            "num_layers": hyperparams.canon_num_layers,
-            "hidden_dim": hyperparams.canon_hidden_dim,
-            "layer_pooling": hyperparams.canon_layer_pooling,
-            "final_pooling": hyperparams.canon_final_pooling,
-            "out_dim": 4,
-            "batch_size": hyperparams.batch_size,
-            "nonlinearity": hyperparams.canon_nonlinearity,
-            "canon_feature": hyperparams.canon_feature,
-            "canon_translation": hyperparams.canon_translation,
-            "angular_feature": hyperparams.canon_angular_feature,
-            "dropout": hyperparams.canon_dropout,
-        }
-    model_hyperparams = OmegaConf.create(dict(model_hyperparams))
-    
+    architecture = hyperparams.architecture
     model_dict = {
-    #"EGNN": lambda: EGNN_vel(hyperparams),
-    "vndeepsets": lambda: VNDeepSets(model_hyperparams),
+    "vndeepsets": lambda: VNDeepSets(hyperparams),
     }
 
-    if architecture not in model_dict:
-        raise ValueError(f'{architecture} is not implemented as prediction network for now.')
-    
     return model_dict[architecture]()
 
 
 def get_prediction_network(hyperparams):
-    architecture = hyperparams.pred_model_type
-    model_hyperparams = {
-            "num_layers": hyperparams.num_layers,
-            "hidden_dim": hyperparams.hidden_dim,
-            "input_dim": hyperparams.input_dim,
-            "in_node_nf": hyperparams.in_node_nf,
-            "in_edge_nf": hyperparams.in_edge_nf,
-        }
-    model_hyperparams = OmegaConf.create(dict(model_hyperparams))
+    architecture = hyperparams.architecture
     model_dict = {
-            "GNN": lambda: GNN(model_hyperparams),
-            "EGNN": lambda: EGNN_vel(model_hyperparams),
-            "vndeepsets": lambda: VNDeepSets(model_hyperparams),
-            "Transformer": lambda: Transformer(model_hyperparams),
+            "GNN": lambda: GNN(hyperparams),
+            "EGNN": lambda: EGNN_vel(hyperparams),
+            "vndeepsets": lambda: VNDeepSets(hyperparams),
+            "Transformer": lambda: Transformer(hyperparams),
         }
-
     if architecture not in model_dict:
         raise ValueError(f'{architecture} is not implemented as prediction network for now.')
-    
+
     return model_dict[architecture]()
 
 def get_edges(batch_size, n_nodes):

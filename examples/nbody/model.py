@@ -11,8 +11,8 @@ class NBodyPipeline(pl.LightningModule):
     def __init__(self, hyperparams: DictConfig):
         super().__init__()
         self.hyperparams = hyperparams
-        self.prediction_network = get_prediction_network(hyperparams)
-        canonicalization_network = get_canonicalization_network(hyperparams)
+        self.prediction_network = get_prediction_network(hyperparams.pred_hyperparams)
+        canonicalization_network = get_canonicalization_network(hyperparams.canon_hyperparams)
 
         self.canonicalizer = ContinuousGroupNBody(canonicalization_network, hyperparams)
 
