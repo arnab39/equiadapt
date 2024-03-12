@@ -8,4 +8,4 @@ network_hyperparams:
   num_rotations: 4 # Number of rotations for the canonization network
 beta: 1.0 # Beta parameter for the canonization network
 input_crop_ratio: 0.8 # Ratio at which we crop the input to the canonicalization
-resize_shape: 32 # Resize shape for the input
+resize_shape: 96 # Resize shape for the input

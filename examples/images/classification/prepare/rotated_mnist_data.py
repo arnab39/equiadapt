@@ -1,11 +1,13 @@
-import os
 import argparse
+import os
 import urllib.request as url_req
 import zipfile
+
 import numpy as np
+import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-import pytorch_lightning as pl
+
 
 def obtain(dir_path):
     os.makedirs(dir_path, exist_ok=True)

@@ -1,6 +1,7 @@
-import torch
 import kornia as K
+import torch
 from torchvision import transforms
+
 
 def roll_by_gather(feature_map: torch.Tensor, shifts: torch.Tensor):
     device = shifts.device
@@ -12,7 +13,7 @@ def roll_by_gather(feature_map: torch.Tensor, shifts: torch.Tensor):
 
 def get_action_on_image_features(feature_map: torch.Tensor,
                                  group_info_dict: dict,
-                                 group_element_dict: dict, 
+                                 group_element_dict: dict,
                                  induced_rep_type: str ='regular'):
     """
     This function takes the feature map and the action and returns the feature map
@@ -26,18 +27,18 @@ def get_action_on_image_features(feature_map: torch.Tensor,
         assert feature_map.shape[1] % num_group == 0
         angles = group_element_dict['group']['rotation']
         x_out = K.geometry.rotate(feature_map, angles)
-        
+
         if 'reflection' in group_element_dict['group']:
-            reflect_indicator = group_element_dict['group']['reflection'] 
+            reflect_indicator = group_element_dict['group']['reflection']
             x_out_reflected = K.geometry.hflip(x_out)
             x_out = x_out * reflect_indicator[:,None,None,None] + \
                 x_out_reflected * (1 - reflect_indicator[:,None,None,None])
-        
+
         x_out = x_out.reshape(batch_size, C // num_group, num_group, H, W)
         shift = angles / 360. * num_rotations
         if 'reflection' in group_element_dict['group']:
             x_out = torch.cat([
-                roll_by_gather(x_out[:,:,:num_rotations], shift), 
+                roll_by_gather(x_out[:,:,:num_rotations], shift),
                 roll_by_gather(x_out[:,:,num_rotations:], -shift)
             ], dim=2)
         else:
@@ -48,7 +49,7 @@ def get_action_on_image_features(feature_map: torch.Tensor,
         angles = group_element_dict['group'][0]
         x_out = K.geometry.rotate(feature_map, angles)
         if 'reflection' in group_element_dict['group']:
-            reflect_indicator = group_element_dict['group']['reflection']                
+            reflect_indicator = group_element_dict['group']['reflection']
             x_out_reflected = K.geometry.hflip(x_out)
             x_out = x_out * reflect_indicator[:,None,None,None] + \
                 x_out_reflected * (1 - reflect_indicator[:,None,None,None])
@@ -61,11 +62,11 @@ def get_action_on_image_features(feature_map: torch.Tensor,
 
 def flip_boxes(boxes, width):
     boxes[:, [0, 2]] = width - boxes[:, [2, 0]]
-    return boxes 
+    return boxes
 
 def flip_masks(masks):
     return masks.flip(-1)
-    
+
 def rotate_masks(masks, angle):
     return transforms.functional.rotate(masks, angle)
 

@@ -1,11 +1,12 @@
 
+import os
+import random
+
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import CIFAR10, CIFAR100
-import os
 
-import random
 
 class CustomRotationTransform:
     """Rotate by one of the given angles."""
@@ -63,7 +64,7 @@ class CIFAR10DataModule(pl.LightningDataModule):
             self.train_transform = transforms.Compose([
                     transforms.RandomCrop(32, padding=4),
                     transforms.Resize(224),
-                
+
                     transforms.ToTensor(),
                     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
                 ])
@@ -152,7 +153,7 @@ class CIFAR100DataModule(pl.LightningDataModule):
 
                     transforms.RandomHorizontalFlip(),
                     transforms.AutoAugment(policy=transforms.autoaugment.AutoAugmentPolicy.CIFAR10),
-                    
+
                     transforms.ToTensor(),
                     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
                 ])
@@ -161,7 +162,7 @@ class CIFAR100DataModule(pl.LightningDataModule):
             self.train_transform = transforms.Compose([
                     transforms.RandomCrop(32, padding=4),
                     transforms.Resize(224),
-                    
+
                     transforms.ToTensor(),
                     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
                 ])

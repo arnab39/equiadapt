@@ -1,0 +1,6 @@
+dataset_name: "modelnet40" # Name of the dataset to use
+data_path: ${oc.env:DATA_PATH} # Path to the dataset
+num_workers: 4 # Number of workers for data loading
+batch_size: 64 # Number of samples per batch
+num_points: 1024 # Number of points per sample
+normalize: False # Whether to normalize the input data (1) or not (0)

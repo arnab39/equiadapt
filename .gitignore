@@ -50,6 +50,11 @@ coverage.xml
 
 # Jupyter Notebook
 .ipynb_checkpoints
+examples/images/classification/debug_opt_group_equivariant.ipynb
+tutorials/images/utils/sam_vit_h_4b8939.pth
+tutorials/images/understanding_continuous_canonicalization.ipynb
+tutorials/images/understanding_discrete_canonicalization_old.ipynb
+old_conda_env.yaml
 
 # pyenv
 .python-version
@@ -104,11 +109,15 @@ dmypy.json
 # Ignore .vscode in all folders
 **/.vscode
 
-# Ignore scripts to run experiments in mila 
+# Ignore scripts to run experiments in mila
 mila_scripts/
 
 escnn
 *__pycache__/
-*_output/
+rotmnist_sweep_output/
+cifar10_sweep_output/
 wandb/
-*.png
+
+# Docs
+docs/api/
+docs/_build/

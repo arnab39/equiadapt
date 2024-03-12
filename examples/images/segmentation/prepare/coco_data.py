@@ -1,15 +1,14 @@
 import os
 
-import torch
 import numpy as np
-from PIL import Image
+import examples.images.segmentation.prepare.vision_transforms as T
 import pytorch_lightning as pl
+import torch
 import torchvision.transforms as transforms
-import prepare.vision_transforms as T
-from torch.utils.data import DataLoader, Dataset
-
+from PIL import Image
 from pycocotools.coco import COCO
 from segment_anything.utils.transforms import ResizeLongestSide
+from torch.utils.data import DataLoader, Dataset
 
 
 class ResizeAndPad:
@@ -51,7 +50,7 @@ class COCODataModule(pl.LightningDataModule):
     def __init__(self, hyperparams):
         super().__init__()
         self.hyperparams = hyperparams
-    
+
     def get_transform(self, train=True):
         tr = []
         tr.append(T.PILToTensor())
@@ -60,7 +59,7 @@ class COCODataModule(pl.LightningDataModule):
         if train and self.hyperparams.augment == 'flip':
             tr.append(T.RandomHorizontalFlip(0.5))
         return T.Compose(tr)
-    
+
     def collate_fn(self, batch):
         images = [x[0] for x in batch]
         targets = [x[1] for x in batch]
@@ -85,7 +84,7 @@ class COCODataModule(pl.LightningDataModule):
                     transform=self.get_transform(train=False)
                 )
             print('Test dataset size: ', len(self.test_dataset))
-    
+
     def train_dataloader(self):
         train_loader = DataLoader(
             self.train_dataset,

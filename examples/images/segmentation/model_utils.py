@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-
 from segment_anything import sam_model_registry
 from torchvision.models.detection import maskrcnn_resnet50_fpn_v2
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
@@ -11,17 +9,17 @@ ALPHA = 0.8
 GAMMA = 2
 
 class MaskRCNNModel(nn.Module):
-    def __init__(self, 
-                architecture_type: str, 
-                pretrained_ckpt_path:str = None,
+    def __init__(self,
+                architecture_type: str,
+                pretrained_ckpt_path: str = "",
                 num_classes: int = 91,
-                weights:str ='DEFAULT'):
+                weights:str = "DEFAULT"):
         super().__init__()
-        
+
         assert architecture_type in ['resnet50_fpn_v2'], NotImplementedError('Only `maskrcnn_resnet50_fpn_v2` is supported for now.')
         if architecture_type == 'resnet50_fpn_v2':
             self.model = maskrcnn_resnet50_fpn_v2(weights=weights)
-            
+
         if num_classes != 91:
             in_features = self.model.roi_heads.box_predictor.cls_score.in_features
             # replace the pre-trained head with a new one
@@ -43,9 +41,12 @@ class MaskRCNNModel(nn.Module):
                     output[0]['labels'] = target['labels']
                     output[0]['boxes'] = target['boxes']
                     output[0]['masks'] = target['masks']
-                    output[0]['scores'] = torch.ones(len(target['masks']))
-                    ious.append(torch.ones(len(target['masks']), dtype=torch.float32))
-                    pred_masks.append(torch.ones(len(target['masks']), image.shape[-2], image.shape[-1], dtype=torch.float32, device=self.hyperparams.device))
+                    output[0]['scores'] = torch.ones(len(target['masks']), dtype=torch.float32, device=target['masks'].device)
+
+                    iou_predictions = output[0]['scores']
+                    ious.append(iou_predictions)
+
+                    pred_masks.append(torch.ones_like(target['masks'], dtype=torch.float32, device=target['masks'].device))
 
                 else:
                     masks = output[0]['masks']
@@ -63,13 +64,12 @@ class MaskRCNNModel(nn.Module):
 
 class SAMModel(nn.Module):
 
-    def __init__(self, 
-                architecture_type: str, 
-                pretrained_ckpt_path:str =None,
+    def __init__(self,
+                architecture_type: str,
+                pretrained_ckpt_path: str, # Segment-Anything Model requires a pretrained checkpoint path
                 num_classes: int = 91,
-                weights:str ='DEFAULT'):
+                weights: str = "DEFAULT"):
         super().__init__()
-        assert pretrained_ckpt_path is not None, ValueError('SAM requires a pretrained checkpoint path.')
         self.model = sam_model_registry[architecture_type](checkpoint=pretrained_ckpt_path)
 
     def forward(self, images, targets):
@@ -115,7 +115,7 @@ class SAMModel(nn.Module):
             outputs.append(output)
 
         return None, pred_masks, ious, outputs
-    
+
 class FocalLoss(nn.Module):
 
     def __init__(self, weight=None, size_average=True):
@@ -153,7 +153,7 @@ class DiceLoss(nn.Module):
         dice = (2. * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
 
         return 1 - dice
-    
+
 def get_dataset_specific_info(dataset_name, prediction_architecture_name):
     dataset_info = {
         'coco': {
@@ -185,10 +185,10 @@ def get_prediction_network(
     }
 
     if architecture not in model_dict:
-        raise ValueError(f'{architecture} is not implemented as prediction network for now.')
+        raise ValueError(f"{architecture} is not implemented as prediction network for now.")
 
     prediction_network = model_dict[architecture](architecture_type, pretrained_ckpt_path, num_classes, weights)
-    
+
     if freeze_encoder:
         for param in prediction_network.parameters():
             param.requires_grad = False

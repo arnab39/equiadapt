@@ -1,11 +1,12 @@
 
+import os
+import random
+
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import STL10
-import os
 
-import random
 
 class CustomRotationTransform:
     """Rotate by one of the given angles."""
@@ -16,7 +17,7 @@ class CustomRotationTransform:
     def __call__(self, x):
         angle = random.choice(self.angles)
         return transforms.functional.rotate(x, angle)
-        
+
 class STL10DataModule(pl.LightningDataModule):
     def __init__(self, hyperparams, download=False):
         super().__init__()
@@ -43,7 +44,7 @@ class STL10DataModule(pl.LightningDataModule):
                     transforms.Pad(4),
                     transforms.RandomCrop(96),
                     transforms.Resize(224),
-                    
+
                     CustomRotationTransform([0, 45, 90, 135, 180, 225, 270, 315]),
                     # transforms.RandomRotation(180),
                     transforms.RandomHorizontalFlip(),

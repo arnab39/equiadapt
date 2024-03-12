@@ -1,0 +1,7 @@
+prediction_network_architecture: "dgcnn" # Architecture of the prediction network 1) dgcnn 2) pointnet
+use_pretrained: 0 # Whether to use pretrained weights (1) or not (0)
+network_hyperparams:
+    num_classes: 40 # Number of classes in the dataset
+    emb_dims: 1024 # Dimension of the embeddings
+    k: 20 # Number of nearest neighbors to use for the prediction network
+    dropout: 0.5 # Dropout probability

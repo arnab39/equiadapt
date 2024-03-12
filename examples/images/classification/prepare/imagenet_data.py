@@ -1,15 +1,14 @@
 
-import pytorch_lightning as pl
-
 import os
-import torch
 import random
-import torchvision
-from torch import nn
 from typing import List
-from PIL import Image, ImageOps
-import torchvision.transforms as transforms
 
+import pytorch_lightning as pl
+import torch
+import torchvision
+import torchvision.transforms as transforms
+from PIL import Image, ImageOps
+from torch import nn
 
 DEFAULT_CROP_RATIO = 224/256
 
@@ -66,7 +65,7 @@ class Transform:
                 transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                     std=[0.229, 0.224, 0.225])
             ])
-        
+
 
     def __call__(self, x):
         return self.transform(x)
@@ -95,7 +94,7 @@ class ImageNetDataModule(pl.LightningDataModule):
     def test_dataloader(self):
         return self.loaders['val']
 
-    
+
     def get_imagenet_pytorch_dataloaders(self, data_dir=None, batch_size=None, num_workers=None):
         paths = {
             'train': data_dir + '/train',
