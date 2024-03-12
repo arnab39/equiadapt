@@ -64,7 +64,7 @@ class CIFAR10DataModule(pl.LightningDataModule):
             self.train_transform = transforms.Compose([
                     transforms.RandomCrop(32, padding=4),
                     transforms.Resize(224),
-                
+
                     transforms.ToTensor(),
                     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
                 ])
@@ -153,7 +153,7 @@ class CIFAR100DataModule(pl.LightningDataModule):
 
                     transforms.RandomHorizontalFlip(),
                     transforms.AutoAugment(policy=transforms.autoaugment.AutoAugmentPolicy.CIFAR10),
-                    
+
                     transforms.ToTensor(),
                     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
                 ])
@@ -162,7 +162,7 @@ class CIFAR100DataModule(pl.LightningDataModule):
             self.train_transform = transforms.Compose([
                     transforms.RandomCrop(32, padding=4),
                     transforms.Resize(224),
-                    
+
                     transforms.ToTensor(),
                     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
                 ])

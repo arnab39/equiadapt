@@ -1,7 +1,7 @@
 dataset_name: coco # Name of the dataset to use
 root_dir: ${oc.env:DATA_PATH} # Root directory of the dataset
 ann_dir: "" # Directory containing annotations
-augment: flip # Whether to train with flip augmentation 
+augment: flip # Whether to train with flip augmentation
 img_size: 1024 # Size of the input images
 num_workers: 0 # Number of workers for data loading
 batch_size: 128 # Number of samples per batch

@@ -65,7 +65,7 @@ class Transform:
                 transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                     std=[0.229, 0.224, 0.225])
             ])
-        
+
 
     def __call__(self, x):
         return self.transform(x)
@@ -94,7 +94,7 @@ class ImageNetDataModule(pl.LightningDataModule):
     def test_dataloader(self):
         return self.loaders['val']
 
-    
+
     def get_imagenet_pytorch_dataloaders(self, data_dir=None, batch_size=None, num_workers=None):
         paths = {
             'train': data_dir + '/train',
