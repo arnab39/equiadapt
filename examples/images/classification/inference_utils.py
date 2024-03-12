@@ -8,10 +8,10 @@ from torchvision import transforms
 import wandb
 
 
-def get_inference_method(canonicalizer: torch.nn.Module, 
-                         prediction_network: torch.nn.Module, 
-                         num_classes: int, 
-                         inference_hyperparams: DictConfig, 
+def get_inference_method(canonicalizer: torch.nn.Module,
+                         prediction_network: torch.nn.Module,
+                         num_classes: int,
+                         inference_hyperparams: DictConfig,
                          in_shape: tuple = (3, 32, 32)):
     if inference_hyperparams.method == 'vanilla':
         return VanillaInference(canonicalizer, prediction_network, num_classes)
@@ -67,7 +67,7 @@ class GroupInference(VanillaInference):
                  canonicalizer: torch.nn.Module,
                  prediction_network: torch.nn.Module,
                  num_classes: int,
-                 inference_hyperparams: DictConfig, 
+                 inference_hyperparams: DictConfig,
                  in_shape: tuple = (3, 32, 32)):
 
         super().__init__(canonicalizer, prediction_network, num_classes)
@@ -113,7 +113,7 @@ class GroupInference(VanillaInference):
 
         metrics = {"test/group_acc": torch.mean(acc_per_group_element)}
         metrics.update({f'test/acc_group_element_{i}': acc_per_group_element[i] for i in range(self.num_group_elements)})
-        
+
         preds = logits_dict[0].argmax(dim=-1)
 
         # Calculate the accuracy

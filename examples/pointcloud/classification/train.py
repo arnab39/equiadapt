@@ -30,24 +30,24 @@ def train_pointcloud(hyperparams: DictConfig):
         os.environ["WANDB_MODE"] = "disabled"
         os.environ["WANDB_DIR"] = hyperparams['wandb']['wandb_dir']
     os.environ["WANDB_CACHE_DIR"] = hyperparams['wandb']['wandb_cache_dir']
-    
+
     # initialize wandb
     wandb.init(config=OmegaConf.to_container(hyperparams, resolve=True), entity=hyperparams['wandb']['wandb_entity'], project=hyperparams['wandb']['wandb_project'], dir=hyperparams['wandb']['wandb_dir'])
     wandb_logger = WandbLogger(project=hyperparams['wandb']['wandb_project'], log_model="all")
-    
+
     # set seed
     pl.seed_everything(hyperparams.experiment.seed)
 
      # get pointcloud data
     pointcloud_data = ModelNetDataModule(hyperparams.dataset)
-    
+
     # checkpoint name
     hyperparams.checkpoint.checkpoint_name = get_checkpoint_name(hyperparams)
-    
+
     # checkpoint callbacks
     callbacks = get_callbacks(hyperparams)
 
-    # get model pipeline 
+    # get model pipeline
     model = get_model_pipeline(hyperparams)
 
     if hyperparams.canonicalization_type in ("group_equivariant", "opt_equivariant"):
@@ -58,10 +58,10 @@ def train_pointcloud(hyperparams: DictConfig):
 
     if hyperparams.experiment.run_mode == "train":
         trainer.fit(model, datamodule=pointcloud_data)
-        
+
     elif hyperparams.experiment.run_mode == "auto_tune":
-        trainer.tune(model, datamodule=pointcloud_data)       
-    
+        trainer.tune(model, datamodule=pointcloud_data)
+
     trainer.test(model, datamodule=pointcloud_data)
 
 # load the variables from .env file

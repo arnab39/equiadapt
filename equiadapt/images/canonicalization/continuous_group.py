@@ -97,8 +97,8 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         group_element_dict['rotation'] = rotation_matrices
 
         return  group_element_dict, rotoreflection_matrices if self.group_type == 'roto-reflection' else rotation_matrices
-    
-    
+
+
     def canonicalize(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an image as input and
@@ -116,7 +116,7 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         group_element_dict = self.get_groupelement(x)
 
         rotation_matrices = group_element_dict['rotation']
-        
+
         # To apply inverse rotation for canonicalization
         rotation_matrices[:, [0, 1], [1, 0]] *= -1
 
@@ -275,15 +275,15 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
         # Apply transformations
         # padding the input image to avoid boundary artifacts
         x = self.pad(x)
-        
+
         # Note: F.affine_grid expects theta of shape (N, 2, 3) for 2D affine transformations
         grid = F.affine_grid(rotation_matrices, x.size(), align_corners=False)
-        
+
         augmented_images = F.grid_sample(x, grid, align_corners=False)
-        
+
         # crop the augmented images to the original size
         augmented_images = self.crop(augmented_images)
-        
+
         # Necessary to get the correct rotation matrix for the augmented images
         # F.grid_sample and K.geometry.warp_affine use different conventions for the transformation matrix
         rotation_matrices[:, [0, 1], [1, 0]] *= -1

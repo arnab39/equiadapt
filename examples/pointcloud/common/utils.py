@@ -17,23 +17,23 @@ def get_canonicalization_network(
     """
     if canonicalization_type ==  'identity':
         return torch.nn.Identity()
-    
+
     canonicalization_network_dict = {
         'group_equivariant': {
             'vector_neuron_small': VNSmall,
         },
     }
-    
+
     if canonicalization_type not in canonicalization_network_dict:
-        raise ValueError(f'{canonicalization_type} is not implemented')   
+        raise ValueError(f'{canonicalization_type} is not implemented')
     if canonicalization_hyperparams.network_type not in canonicalization_network_dict[canonicalization_type]:
         raise ValueError(f'{canonicalization_hyperparams.network_type} is not implemented for {canonicalization_type}')
-    
+
     canonicalization_network = \
     canonicalization_network_dict[canonicalization_type][
         canonicalization_hyperparams.network_type
         ](canonicalization_hyperparams.network_hyperparams)
-    
+
     return canonicalization_network
 
 def get_canonicalizer(
@@ -48,22 +48,22 @@ def get_canonicalizer(
         canonicalization_type (str): defines the type of canonicalization network
         options are 1) vector_neuron
     """
-    
+
     if canonicalization_type == 'identity':
         return IdentityCanonicalization(canonicalization_network)
-    
+
     canonicalizer_dict = {
         'group_equivariant': EquivariantPointcloudCanonicalization,
     }
-    
+
     if canonicalization_type not in canonicalizer_dict:
         raise ValueError(f'{canonicalization_type} needs a canonicalization network implementation.')
-    
+
     canonicalizer = canonicalizer_dict[canonicalization_type](
         canonicalization_network=canonicalization_network,
         canonicalization_hyperparams=canonicalization_hyperparams,
     )
-    
+
     return canonicalizer
 
 

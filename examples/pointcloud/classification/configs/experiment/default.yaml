@@ -1,5 +1,5 @@
 run_mode: "train" # Mode to run the model in, different run modes 1)dryrun 2)train 3)test 4)auto_tune
-seed: 0 # Seed for random number generation  
+seed: 0 # Seed for random number generation
 deterministic: false # Whether to set deterministic mode (true) or not (false)
 device: "cuda" # Device, can be cuda or cpu
 num_nodes: 1

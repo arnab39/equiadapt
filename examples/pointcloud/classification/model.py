@@ -14,33 +14,33 @@ class PointcloudClassificationPipeline(pl.LightningModule):
     def __init__(self, hyperparams):
         super().__init__()
         self.hyperparams = hyperparams
-        
+
         canonicalization_network = get_canonicalization_network(
-            hyperparams.canonicalization_type, 
+            hyperparams.canonicalization_type,
             hyperparams.canonicalization
         )
-        
+
         self.canonicalizer = get_canonicalizer(
-            hyperparams.canonicalization_type, 
-            canonicalization_network, 
+            hyperparams.canonicalization_type,
+            canonicalization_network,
             hyperparams.canonicalization
         )
-        
+
         self.prediction_network = get_prediction_network(
             hyperparams.prediction.prediction_network_architecture,
             hyperparams.prediction
         )
-        
+
         self.save_hyperparameters()
 
 
     def maybe_transform_points(self, points, rotation_type):
         '''
         Apply random rotation to the pointcloud
-        
+
         Args:
             points (torch.Tensor): pointcloud of shape (B, 3, N)
-            rotation_type (str): type of rotation to apply. Options are 1) z 2) so3 
+            rotation_type (str): type of rotation to apply. Options are 1) z 2) so3
         '''
         if rotation_type == "z":
             trot = RotateAxisAngle(angle=torch.rand(points.shape[0]) * 360, axis="Z", degrees=True, device=self.device)
@@ -51,56 +51,56 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         else:
             raise NotImplementedError(f"Unknown rotation type {rotation_type}")
         if trot is not None:
-            points = trot.transform_points(points)          
+            points = trot.transform_points(points)
         return points
-        
-        
+
+
     def augment_points(self, points):
         points = random_point_dropout(points)
         points = random_scale_point_cloud(points)
         points = random_shift_point_cloud(points)
         return points
-    
+
     def training_step(self, batch):
         points, targets = batch
         targets = targets.squeeze()
-        
+
         training_metrics = {}
         loss = 0.0
-        
+
         points = self.maybe_transform_points(
             points, self.hyperparams.experiment.training.rotation_type
         )
 
         if self.hyperparams.experiment.training.augment:
             points = self.augment_points(points)
-            
+
         points = points.transpose(2, 1)
 
         # Canonicalize the pointcloud
         canonicalized_points = self.canonicalizer(points)
-        
+
         # calculate the task loss which is the cross-entropy loss for classification
-        if self.hyperparams.experiment.training.loss.task_weight:      
+        if self.hyperparams.experiment.training.loss.task_weight:
             # Get the outputs from the prediction network
             logits = self.prediction_network(canonicalized_points)
-            
+
             # Get the task loss
             task_loss = self.get_loss(logits, targets)
-            
+
             loss += task_loss * self.hyperparams.experiment.training.loss.task_weight
-            
+
             training_metrics.update({"train/task_loss": task_loss,})
-        
+
         if self.hyperparams.experiment.training.loss.prior_weight and self.hyperparams.canonicalization_type != 'identity':
             prior_loss = self.canonicalizer.get_prior_regularization_loss()
             loss += prior_loss * self.hyperparams.experiment.training.loss.prior_weight
             metric_identity = self.canonicalizer.get_identity_metric()
             training_metrics.update({
-                    "train/prior_loss": prior_loss, 
+                    "train/prior_loss": prior_loss,
                     "train/identity_metric": metric_identity
                 })
-        
+
         training_metrics.update({"train/loss": loss,})
 
         self.log_dict(training_metrics, on_epoch=True, prog_bar=True)
@@ -109,7 +109,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
     def on_validation_epoch_start(self):
         self.test_pred = []
-        self.test_true = []      
+        self.test_true = []
 
     def validation_step(self, batch):
         points, targets = batch
@@ -123,12 +123,12 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         # Canonicalize the pointcloud
         canonicalized_points = self.canonicalizer(points)
-        
+
         # Get the outputs from the prediction network
         logits = self.prediction_network(canonicalized_points)
 
         preds = logits.max(dim=1)[1]
-        
+
         self.test_true.append(targets.cpu().numpy())
         self.test_pred.append(preds.detach().cpu().numpy())
 
@@ -143,13 +143,13 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             {"val/acc": test_acc,
              "val/avg_per_class_acc": avg_per_class_acc}, # type: ignore
             prog_bar=True)
-        
+
         return {"val/acc": test_acc, "val/avg_per_class_acc": avg_per_class_acc}
-    
+
     def on_test_epoch_start(self):
         self.test_pred = []
         self.test_true = []
-    
+
     def test_step(self, batch):
         points, targets = batch
         targets = targets.squeeze()
@@ -162,12 +162,12 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         # Canonicalize the pointcloud
         canonicalized_points = self.canonicalizer(points)
-        
+
         # Get the outputs from the prediction network
         logits = self.prediction_network(canonicalized_points)
 
         preds = logits.max(dim=1)[1]
-        
+
         self.test_true.append(targets.cpu().numpy())
         self.test_pred.append(preds.detach().cpu().numpy())
 
@@ -182,7 +182,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             {"test/acc": test_acc,
              "test/avg_per_class_acc": avg_per_class_acc}, # type: ignore
             prog_bar=True)
-        
+
         return {"test/acc": test_acc, "test/avg_per_class_acc": avg_per_class_acc}
 
     def get_loss(self, predictions, targets, smoothing=False, ignore_index=255):
@@ -196,12 +196,12 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
             loss = -(one_hot * log_prb).sum(dim=1).mean()
         else:
-            loss = F.cross_entropy(predictions, targets, reduction='mean', 
+            loss = F.cross_entropy(predictions, targets, reduction='mean',
                                    ignore_index=ignore_index)
 
         return loss
 
-    
+
     def configure_optimizers(self):
         # torch.autograd.set_detect_anomaly(True)
         if self.hyperparams.experiment.training.optimizer == "Adam":
@@ -216,16 +216,16 @@ class PointcloudClassificationPipeline(pl.LightningModule):
                     {'params': self.prediction_network.parameters(), 'lr': self.hyperparams.experiment.training.prediction_lr * 100},
                     {'params': self.canonicalizer.parameters(), 'lr': self.hyperparams.experiment.training.canonicalization_lr * 100},
                 ], momentum=0.9, weight_decay=1e-4)
-            
+
             if self.hyperparams.experiment.training.lr_scheduler == "cosine":
-                scheduler = CosineAnnealingLR(optimizer, 
-                                              T_max=self.hyperparams.experiment.training.num_epochs, 
+                scheduler = CosineAnnealingLR(optimizer,
+                                              T_max=self.hyperparams.experiment.training.num_epochs,
                                               eta_min=1e-3)
             elif self.hyperparams.experiment.training.lr_scheduler == "step":
                 scheduler = StepLR(optimizer, step_size=20, gamma=0.7)
             else:
                 raise NotImplementedError(f"Unknown learning rate decay schedule {self.hyperparams.experiment.training.lr_scheduler}")
-            
+
             scheduler_dict = {
                 "scheduler": scheduler,
                 "interval": "epoch",
@@ -234,14 +234,3 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             return {"optimizer": optimizer, "lr_scheduler": scheduler_dict}
         else:
             raise NotImplementedError
-
-
-
-
-
-
-
-
-
-
-

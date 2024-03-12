@@ -11,7 +11,7 @@ import glob
 def translate_pointcloud(pointcloud):
     xyz1 = np.random.uniform(low=2./3., high=3./2., size=[3])
     xyz2 = np.random.uniform(low=-0.2, high=0.2, size=[3])
-       
+
     translated_pointcloud = np.add(np.multiply(pointcloud, xyz1), xyz2).astype('float32')
     return translated_pointcloud
 
@@ -25,8 +25,8 @@ def download_modelnet40(root_dir):
         os.system('wget --no-check-certificate %s; unzip %s' % (www, zipfile))
         os.system('mv %s %s' % ('modelnet40_ply_hdf5_2048', DATA_DIR))
         os.system('rm %s' % (zipfile))
-        
-        
+
+
 def load_data_cls(root_dir, partition):
     download_modelnet40(root_dir)
     DATA_DIR = root_dir
@@ -57,7 +57,7 @@ class ModelNetDataset(Dataset):
         self.data, self.label = load_data_cls(root_dir, partition)
         self.num_points = num_points
         self.partition = partition
-        self.normalize = normalize        
+        self.normalize = normalize
 
     def __getitem__(self, item):
         pointcloud = self.data[item][:self.num_points]
@@ -83,16 +83,16 @@ class ModelNetDataModule(pl.LightningDataModule):
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
             self.train_dataset = ModelNetDataset(
-                root_dir=self.data_path, num_points=self.hyperparams.num_points, 
+                root_dir=self.data_path, num_points=self.hyperparams.num_points,
                 partition="train", normalize=self.hyperparams.normalize
             )
             self.valid_dataset = ModelNetDataset(
-                root_dir=self.data_path, num_points=self.hyperparams.num_points, 
+                root_dir=self.data_path, num_points=self.hyperparams.num_points,
                 partition="test", normalize=self.hyperparams.normalize
             )
         if stage == "test":
             self.test_dataset = ModelNetDataset(
-                root_dir=self.data_path, num_points=self.hyperparams.num_points, 
+                root_dir=self.data_path, num_points=self.hyperparams.num_points,
                 partition="test", normalize=self.hyperparams.normalize
             )
 
