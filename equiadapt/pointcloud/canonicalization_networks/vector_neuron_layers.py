@@ -40,7 +40,7 @@ class VNBilinear(nn.Module):
 class VNSoftplus(nn.Module):
     def __init__(self, in_channels, share_nonlinearity=False, negative_slope=0.0):
         super(VNSoftplus, self).__init__()
-        if share_nonlinearity == True:
+        if share_nonlinearity:
             self.map_to_dir = nn.Linear(in_channels, 1, bias=False)
         else:
             self.map_to_dir = nn.Linear(in_channels, in_channels, bias=False)
@@ -70,7 +70,7 @@ class VNSoftplus(nn.Module):
 class VNLeakyReLU(nn.Module):
     def __init__(self, in_channels, share_nonlinearity=False, negative_slope=0.2):
         super(VNLeakyReLU, self).__init__()
-        if share_nonlinearity == True:
+        if share_nonlinearity:
             self.map_to_dir = nn.Linear(in_channels, 1, bias=False)
         else:
             self.map_to_dir = nn.Linear(in_channels, in_channels, bias=False)
@@ -106,7 +106,7 @@ class VNLinearLeakyReLU(nn.Module):
         self.map_to_feat = nn.Linear(in_channels, out_channels, bias=False)
         self.batchnorm = VNBatchNorm(out_channels, dim=dim)
 
-        if share_nonlinearity == True:
+        if share_nonlinearity:
             self.map_to_dir = nn.Linear(in_channels, 1, bias=False)
         else:
             self.map_to_dir = nn.Linear(in_channels, out_channels, bias=False)

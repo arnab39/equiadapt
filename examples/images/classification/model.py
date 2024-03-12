@@ -206,7 +206,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             }
             return {"optimizer": optimizer, "lr_scheduler": scheduler_dict}
         else:
-            print(f"using AdamW optimizer")
+            print("using AdamW optimizer")
             optimizer = torch.optim.AdamW(
                 [
                     {

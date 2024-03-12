@@ -19,7 +19,7 @@ def get_graph_feature(x, k=20, idx=None, dim9=False):
     num_points = x.size(2)
     x = x.view(batch_size, -1, num_points)
     if idx is None:
-        if dim9 == False:  # dynamic knn graph
+        if not dim9:  # dynamic knn graph
             idx = knn(x, k=k)
         else:  # fixed knn graph with input point coordinates
             idx = knn(x[:, 6:], k=k)
@@ -34,7 +34,7 @@ def get_graph_feature(x, k=20, idx=None, dim9=False):
 
     x = x.transpose(
         2, 1
-    ).contiguous()  # (batch_size, num_points, num_dims)  -> (batch_size*num_points, num_dims) #   batch_size * num_points * k + range(0, batch_size*num_points)
+    ).contiguous()  # (batch_size, num_points, num_dims)  -> (batch_size*num_points, num_dims) # batch_size * num_points * k + range(0, batch_size*num_points)
     feature = x.view(batch_size * num_points, -1)[idx, :]
     feature = feature.view(batch_size, num_points, k, num_dims)
     x = x.view(batch_size, num_points, 1, num_dims).repeat(1, 1, k, 1)

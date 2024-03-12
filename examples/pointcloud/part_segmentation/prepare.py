@@ -2,11 +2,12 @@ import numpy as np
 import warnings
 from torch.utils.data import Dataset, DataLoader
 
-warnings.filterwarnings("ignore")
 import pytorch_lightning as pl
 import h5py
 import os
 import glob
+
+warnings.filterwarnings("ignore")
 
 
 def download_shapenetpart(root_dir):

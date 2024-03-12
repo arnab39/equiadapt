@@ -126,11 +126,16 @@ def get_recursive_hyperparams_identifier(hyperparams: DictConfig):
 
 
 def get_checkpoint_name(hyperparams: DictConfig):
+    task_weight = int(hyperparams.experiment.training.loss.task_weight)
+    prior_weight = int(hyperparams.experiment.training.loss.prior_weight)
+    group_contrast_weight = int(
+        hyperparams.experiment.training.loss.group_contrast_weight
+    )
     return (
         f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization)}".lstrip(
             "_"
         )
-        + f"_loss_wts_{int(hyperparams.experiment.training.loss.task_weight)}_{int(hyperparams.experiment.training.loss.prior_weight)}_{int(hyperparams.experiment.training.loss.group_contrast_weight)}"
+        + f"_loss_wts_{task_weight}_{prior_weight}_{group_contrast_weight}"
         + f"_lrs_{hyperparams.experiment.training.prediction_lr}_{hyperparams.experiment.training.canonicalization_lr}"
         + f"_seed_{hyperparams.experiment.seed}"
     )
