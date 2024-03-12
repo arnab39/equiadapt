@@ -19,8 +19,8 @@ class ResizeAndPad:
         self.to_tensor = transforms.ToTensor()
 
     def __call__(self, image, target):
-        masks = [mask.numpy() for mask in target['masks']]
-        bboxes = target['boxes'].numpy()
+        masks = [mask.numpy() for mask in target["masks"]]
+        bboxes = target["boxes"].numpy()
 
         # Resize image and masks
         _, og_h, og_w = image.shape
@@ -39,10 +39,13 @@ class ResizeAndPad:
 
         # Adjust bounding boxes
         bboxes = self.transform.apply_boxes(bboxes, (og_h, og_w))
-        bboxes = [[bbox[0] + pad_w, bbox[1] + pad_h, bbox[2] + pad_w, bbox[3] + pad_h] for bbox in bboxes]
+        bboxes = [
+            [bbox[0] + pad_w, bbox[1] + pad_h, bbox[2] + pad_w, bbox[3] + pad_h]
+            for bbox in bboxes
+        ]
 
-        target['masks'] = torch.stack(masks)
-        target['boxes'] = torch.as_tensor(bboxes, dtype=torch.float32)
+        target["masks"] = torch.stack(masks)
+        target["boxes"] = torch.as_tensor(bboxes, dtype=torch.float32)
         return image, target
 
 
@@ -56,7 +59,7 @@ class COCODataModule(pl.LightningDataModule):
         tr.append(T.PILToTensor())
         tr.append(T.ConvertImageDtype(torch.float))
         tr.append(ResizeAndPad(self.hyperparams.img_size))
-        if train and self.hyperparams.augment == 'flip':
+        if train and self.hyperparams.augment == "flip":
             tr.append(T.RandomHorizontalFlip(0.5))
         return T.Compose(tr)
 
@@ -68,22 +71,28 @@ class COCODataModule(pl.LightningDataModule):
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
             self.train_dataset = COCODataset(
-                    root_dir=os.path.join(self.hyperparams.root_dir, 'train2017'),
-                    annotation_file=os.path.join(self.hyperparams.ann_dir, 'instances_train2017.json'),
-                    transform=self.get_transform(train=True)
-                )
+                root_dir=os.path.join(self.hyperparams.root_dir, "train2017"),
+                annotation_file=os.path.join(
+                    self.hyperparams.ann_dir, "instances_train2017.json"
+                ),
+                transform=self.get_transform(train=True),
+            )
             self.valid_dataset = COCODataset(
-                    root_dir=os.path.join(self.hyperparams.root_dir, 'val2017'),
-                    annotation_file=os.path.join(self.hyperparams.ann_dir, 'instances_val2017.json'),
-                    transform=self.get_transform(train=False)
-                )
+                root_dir=os.path.join(self.hyperparams.root_dir, "val2017"),
+                annotation_file=os.path.join(
+                    self.hyperparams.ann_dir, "instances_val2017.json"
+                ),
+                transform=self.get_transform(train=False),
+            )
         if stage == "test":
             self.test_dataset = COCODataset(
-                    root_dir=os.path.join(self.hyperparams.root_dir, 'val2017'),
-                    annotation_file=os.path.join(self.hyperparams.ann_dir, 'instances_val2017.json'),
-                    transform=self.get_transform(train=False)
-                )
-            print('Test dataset size: ', len(self.test_dataset))
+                root_dir=os.path.join(self.hyperparams.root_dir, "val2017"),
+                annotation_file=os.path.join(
+                    self.hyperparams.ann_dir, "instances_val2017.json"
+                ),
+                transform=self.get_transform(train=False),
+            )
+            print("Test dataset size: ", len(self.test_dataset))
 
     def train_dataloader(self):
         train_loader = DataLoader(
@@ -115,6 +124,7 @@ class COCODataModule(pl.LightningDataModule):
         )
         return test_loader
 
+
 class COCODataset(Dataset):
 
     def __init__(self, root_dir, annotation_file, transform=None, sam_transform=None):
@@ -124,7 +134,11 @@ class COCODataset(Dataset):
         self.image_ids = list(self.coco.imgs.keys())
 
         # Filter out image_ids without any annotations
-        self.image_ids = [image_id for image_id in self.image_ids if len(self.coco.getAnnIds(imgIds=image_id)) > 0]
+        self.image_ids = [
+            image_id
+            for image_id in self.image_ids
+            if len(self.coco.getAnnIds(imgIds=image_id)) > 0
+        ]
 
     def __len__(self):
         return len(self.image_ids)
@@ -132,7 +146,7 @@ class COCODataset(Dataset):
     def __getitem__(self, idx):
         image_id = self.image_ids[idx]
         image_info = self.coco.loadImgs(image_id)[0]
-        image_path = os.path.join(self.root_dir, image_info['file_name'])
+        image_path = os.path.join(self.root_dir, image_info["file_name"])
         image = Image.open(image_path).convert("RGB")
 
         ann_ids = self.coco.getAnnIds(imgIds=image_id)
@@ -145,25 +159,27 @@ class COCODataset(Dataset):
         areas = []
 
         for ann in anns:
-            x, y, w, h = ann['bbox']
+            x, y, w, h = ann["bbox"]
             # there are degenerate boxes in the dataset, skip them
-            if ann['area'] <= 0 or w < 1 or h < 1:
+            if ann["area"] <= 0 or w < 1 or h < 1:
                 continue
-            bboxes.append([x, y, x + w, y + h]) # NOTE: origin is left top corner
-            labels.append(ann['category_id'])
+            bboxes.append([x, y, x + w, y + h])  # NOTE: origin is left top corner
+            labels.append(ann["category_id"])
             mask = self.coco.annToMask(ann)
             masks.append(mask)
-            image_ids.append(ann['image_id'])
-            areas.append(ann['area'])
-            iscrowds.append(ann['iscrowd'])
+            image_ids.append(ann["image_id"])
+            areas.append(ann["area"])
+            iscrowds.append(ann["iscrowd"])
 
         target = {}
-        target['boxes'] = torch.as_tensor(bboxes, dtype=torch.float32)
-        target['labels'] = torch.as_tensor(labels, dtype=torch.int64)
-        target['masks'] = torch.as_tensor(np.array(masks), dtype=torch.uint8)
-        target['image_id'] = torch.as_tensor(image_ids[0], dtype=torch.int64)
-        target['area'] = (target['boxes'][:, 3] - target['boxes'][:, 1]) * (target['boxes'][:, 2] - target['boxes'][:, 0])
-        target['iscrowd'] = torch.as_tensor(iscrowds, dtype=torch.int64)
+        target["boxes"] = torch.as_tensor(bboxes, dtype=torch.float32)
+        target["labels"] = torch.as_tensor(labels, dtype=torch.int64)
+        target["masks"] = torch.as_tensor(np.array(masks), dtype=torch.uint8)
+        target["image_id"] = torch.as_tensor(image_ids[0], dtype=torch.int64)
+        target["area"] = (target["boxes"][:, 3] - target["boxes"][:, 1]) * (
+            target["boxes"][:, 2] - target["boxes"][:, 0]
+        )
+        target["iscrowd"] = torch.as_tensor(iscrowds, dtype=torch.int64)
 
         if self.transform is not None:
             image, target = self.transform(image, target)

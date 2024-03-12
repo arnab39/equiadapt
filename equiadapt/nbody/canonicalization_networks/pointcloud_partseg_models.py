@@ -1,10 +1,15 @@
-
 import pytorch_lightning as pl
 from pytorch3d.transforms import RotateAxisAngle, Rotate, random_rotations
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
 
 from canonical_network.utils import *
-from canonical_network.models.pointcloud_networks import STNkd, STN3d, VNSTNkd, Transform_Net, VNSmall
+from canonical_network.models.pointcloud_networks import (
+    STNkd,
+    STN3d,
+    VNSTNkd,
+    Transform_Net,
+    VNSmall,
+)
 from canonical_network.models.vn_layers import *
 
 SEGMENTATION_CLASSES = {
@@ -26,7 +31,7 @@ SEGMENTATION_CLASSES = {
     "Knife": [22, 23],
 }
 
-SEGMENTATION_LABEL_TO_PART = {} # {0:Airplane, 1:Airplane, ...49:Table}
+SEGMENTATION_LABEL_TO_PART = {}  # {0:Airplane, 1:Airplane, ...49:Table}
 for cat in SEGMENTATION_CLASSES.keys():
     for label in SEGMENTATION_CLASSES[cat]:
         SEGMENTATION_LABEL_TO_PART[label] = cat
@@ -44,7 +49,9 @@ class BasePointcloudModel(pl.LightningModule):
         self.train_rotation = hyperparams.train_rotation
         self.valid_rotation = hyperparams.valid_rotation
         self.num_points = hyperparams.num_points
-        self.learning_rate = hyperparams.learning_rate if hasattr(hyperparams, "learning_rate") else None
+        self.learning_rate = (
+            hyperparams.learning_rate if hasattr(hyperparams, "learning_rate") else None
+        )
         self.hyperparams = hyperparams
 
     def get_predictions(self, outputs):
@@ -55,42 +62,82 @@ class BasePointcloudModel(pl.LightningModule):
 
     def configure_optimizers(self):
         if self.hyperparams.optimizer == "Adam":
-            optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=self.hyperparams.decay_rate)
+            optimizer = torch.optim.Adam(
+                self.parameters(),
+                lr=self.learning_rate,
+                weight_decay=self.hyperparams.decay_rate,
+            )
             print("Using Adam optimizer")
             return optimizer
         elif self.hyperparams.optimizer == "SGD":
             self.learning_rate *= 100
-            optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9, weight_decay=self.hyperparams.decay_rate)
+            optimizer = torch.optim.SGD(
+                self.parameters(),
+                lr=self.learning_rate,
+                momentum=0.9,
+                weight_decay=self.hyperparams.decay_rate,
+            )
             print("Using SGD optimizer with custom learning rate scheduler")
             return optimizer
         elif self.hyperparams.optimizer == "SGD_built_in":
             self.learning_rate *= 100
-            optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9, weight_decay=self.hyperparams.decay_rate)
+            optimizer = torch.optim.SGD(
+                self.parameters(),
+                lr=self.learning_rate,
+                momentum=0.9,
+                weight_decay=self.hyperparams.decay_rate,
+            )
             if self.hyperparams.decay_type == "cosine":
-                scheduler = CosineAnnealingLR(optimizer, T_max=self.hyperparams.num_epochs, eta_min=1e-3)
+                scheduler = CosineAnnealingLR(
+                    optimizer, T_max=self.hyperparams.num_epochs, eta_min=1e-3
+                )
             elif self.hyperparams.decay_type == "step":
-                scheduler = MultiStepLR(optimizer,
-                                        milestones=[self.trainer.max_epochs // 6, self.trainer.max_epochs // 3,
-                                                    self.trainer.max_epochs // 2], gamma=0.1)
+                scheduler = MultiStepLR(
+                    optimizer,
+                    milestones=[
+                        self.trainer.max_epochs // 6,
+                        self.trainer.max_epochs // 3,
+                        self.trainer.max_epochs // 2,
+                    ],
+                    gamma=0.1,
+                )
             else:
-                raise NotImplementedError(f"Unknown learning rate decay {self.hyperparams.decay_type}")
+                raise NotImplementedError(
+                    f"Unknown learning rate decay {self.hyperparams.decay_type}"
+                )
             scheduler_dict = {
                 "scheduler": scheduler,
                 "interval": "epoch",
             }
-            print(f"Using SGD optimizer with {self.hyperparams.lr_decay} learning rate scheduler")
+            print(
+                f"Using SGD optimizer with {self.hyperparams.lr_decay} learning rate scheduler"
+            )
             return {"optimizer": optimizer, "lr_scheduler": scheduler_dict}
         else:
             raise NotImplementedError
 
     def on_train_epoch_start(self):
         if self.hyperparams.optimizer == "SGD":
-            lr = max(self.learning_rate * (self.hyperparams.lr_decay ** (self.current_epoch // self.hyperparams.step_size)), LEARNING_RATE_CLIP)
+            lr = max(
+                self.learning_rate
+                * (
+                    self.hyperparams.lr_decay
+                    ** (self.current_epoch // self.hyperparams.step_size)
+                ),
+                LEARNING_RATE_CLIP,
+            )
             for param_group in self.optimizers().param_groups:
-                param_group['lr'] = lr
-            momentum = max(MOMENTUM_ORIGINAL * (MOMENTUM_DECCAY ** (self.current_epoch // self.hyperparams.step_size)), 0.01)
+                param_group["lr"] = lr
+            momentum = max(
+                MOMENTUM_ORIGINAL
+                * (
+                    MOMENTUM_DECCAY
+                    ** (self.current_epoch // self.hyperparams.step_size)
+                ),
+                0.01,
+            )
             self.apply(lambda x: bn_momentum_adjust(x, momentum))
-        lr = self.optimizers().param_groups[0]['lr']
+        lr = self.optimizers().param_groups[0]["lr"]
         print(f"Learning rate in epoch {self.current_epoch} is {lr}")
 
     def training_step(self, batch, batch_idx):
@@ -100,7 +147,12 @@ class BasePointcloudModel(pl.LightningModule):
         # Augmentations
         trot = None
         if self.train_rotation == "z":
-            trot = RotateAxisAngle(angle=torch.rand(points.shape[0]) * 360, axis="Z", degrees=True, device=self.device)
+            trot = RotateAxisAngle(
+                angle=torch.rand(points.shape[0]) * 360,
+                axis="Z",
+                degrees=True,
+                device=self.device,
+            )
         elif self.train_rotation == "so3":
             trot = Rotate(R=random_rotations(points.shape[0]), device=self.device)
         if trot is not None:
@@ -135,7 +187,12 @@ class BasePointcloudModel(pl.LightningModule):
 
         trot = None
         if self.valid_rotation == "z":
-            trot = RotateAxisAngle(angle=torch.rand(points.shape[0]) * 360, axis="Z", degrees=True, device=self.device)
+            trot = RotateAxisAngle(
+                angle=torch.rand(points.shape[0]) * 360,
+                axis="Z",
+                degrees=True,
+                device=self.device,
+            )
         elif self.valid_rotation == "so3":
             trot = Rotate(R=random_rotations(points.shape[0]), device=self.device)
         if trot is not None:
@@ -155,13 +212,20 @@ class BasePointcloudModel(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
 
-        accuracy, class_avg_accuracy, class_avg_iou, instance_avg_iou = self.get_metrics()
+        accuracy, class_avg_accuracy, class_avg_iou, instance_avg_iou = (
+            self.get_metrics()
+        )
         self.log_dict(
-            {"valid/accuracy": accuracy, "valid/class_avg_iou": class_avg_iou, "valid/instance_avg_iou": instance_avg_iou},
-            prog_bar=True)
+            {
+                "valid/accuracy": accuracy,
+                "valid/class_avg_iou": class_avg_iou,
+                "valid/instance_avg_iou": instance_avg_iou,
+            },
+            prog_bar=True,
+        )
 
     def get_loss(self, outputs, targets, smoothing=True):
-        ''' Calculate cross entropy loss and apply label smoothing. '''
+        """Calculate cross entropy loss and apply label smoothing."""
         predictions = self.get_predictions(outputs)
         predictions = predictions.flatten(0, 1)
         targets = targets.flatten(0, 1)
@@ -175,7 +239,7 @@ class BasePointcloudModel(pl.LightningModule):
 
             loss = -(one_hot * log_prb).sum(dim=1).mean()
         else:
-            loss = F.cross_entropy(predictions, targets, reduction='mean')
+            loss = F.cross_entropy(predictions, targets, reduction="mean")
 
         return loss
 
@@ -189,15 +253,18 @@ class BasePointcloudModel(pl.LightningModule):
         for i in range(cur_batch_size):
             cat = SEGMENTATION_LABEL_TO_PART[targets[i, 0]]
             logits = cur_pred_val_logits[i, :, :]
-            cur_pred_val[i, :] = np.argmax(logits[:, SEGMENTATION_CLASSES[cat]], 1) + SEGMENTATION_CLASSES[cat][0]
+            cur_pred_val[i, :] = (
+                np.argmax(logits[:, SEGMENTATION_CLASSES[cat]], 1)
+                + SEGMENTATION_CLASSES[cat][0]
+            )
 
         correct = np.sum(cur_pred_val == targets)
         self.total_correct += correct
-        self.total_seen += (cur_batch_size * NUM_POINT)
+        self.total_seen += cur_batch_size * NUM_POINT
 
         for l in range(self.num_parts):
             self.total_seen_class[l] += np.sum(targets == l)
-            self.total_correct_class[l] += (np.sum((cur_pred_val == l) & (targets == l)))
+            self.total_correct_class[l] += np.sum((cur_pred_val == l) & (targets == l))
 
         for i in range(cur_batch_size):
             segp = cur_pred_val[i, :]
@@ -205,12 +272,14 @@ class BasePointcloudModel(pl.LightningModule):
             cat = SEGMENTATION_LABEL_TO_PART[segl[0]]
             part_ious = [0.0 for _ in range(len(SEGMENTATION_CLASSES[cat]))]
             for l in SEGMENTATION_CLASSES[cat]:
-                if (np.sum(segl == l) == 0) and (np.sum(segp == l) == 0):  # part is not present, no prediction as well
+                if (np.sum(segl == l) == 0) and (
+                    np.sum(segp == l) == 0
+                ):  # part is not present, no prediction as well
                     part_ious[l - SEGMENTATION_CLASSES[cat][0]] = 1.0
                 else:
-                    part_ious[l - SEGMENTATION_CLASSES[cat][0]] = np.sum((segl == l) & (segp == l)) / float(
-                        np.sum((segl == l) | (segp == l))
-                    )
+                    part_ious[l - SEGMENTATION_CLASSES[cat][0]] = np.sum(
+                        (segl == l) & (segp == l)
+                    ) / float(np.sum((segl == l) | (segp == l)))
             self.shape_ious[cat].append(np.mean(part_ious))
 
     def get_metrics(self):
@@ -221,7 +290,10 @@ class BasePointcloudModel(pl.LightningModule):
             self.shape_ious[cat] = np.mean(self.shape_ious[cat])
         mean_shape_ious = np.mean(list(self.shape_ious.values()))
         accuracy = self.total_correct / float(self.total_seen)
-        class_avg_accuracies = np.mean(np.array(self.total_correct_class) / np.array(self.total_seen_class, dtype=np.float))
+        class_avg_accuracies = np.mean(
+            np.array(self.total_correct_class)
+            / np.array(self.total_seen_class, dtype=np.float)
+        )
         class_avg_ious = mean_shape_ious
         instance_avg_iou = np.mean(all_shape_ious)
         return accuracy, class_avg_accuracies, class_avg_ious, instance_avg_iou
@@ -308,7 +380,8 @@ class Pointnet(BasePointcloudModel):
         transformation_matrix = outputs[1]
 
         transformation_loss = (
-            self.regularization_transform * self.feature_transform_regularizer(transformation_matrix)
+            self.regularization_transform
+            * self.feature_transform_regularizer(transformation_matrix)
             if self.regularization_transform
             else 0
         )
@@ -319,8 +392,11 @@ class Pointnet(BasePointcloudModel):
     def feature_transform_regularizer(self, trans):
         d = trans.shape[1]
         I = torch.eye(d)[None, :, :].to(trans.device)
-        loss = torch.mean(torch.norm(torch.bmm(trans, trans.transpose(2, 1) - I), dim=(1, 2)))
+        loss = torch.mean(
+            torch.norm(torch.bmm(trans, trans.transpose(2, 1) - I), dim=(1, 2))
+        )
         return loss
+
 
 class DGCNN(BasePointcloudModel):
     def __init__(self, hyperparams):
@@ -343,39 +419,58 @@ class DGCNN(BasePointcloudModel):
         self.bn9 = nn.BatchNorm1d(256)
         self.bn10 = nn.BatchNorm1d(128)
 
-        self.conv1 = nn.Sequential(nn.Conv2d(6, 64, kernel_size=1, bias=False),
-                                   self.bn1,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv2 = nn.Sequential(nn.Conv2d(64, 64, kernel_size=1, bias=False),
-                                   self.bn2,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv3 = nn.Sequential(nn.Conv2d(64*2, 64, kernel_size=1, bias=False),
-                                   self.bn3,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv4 = nn.Sequential(nn.Conv2d(64, 64, kernel_size=1, bias=False),
-                                   self.bn4,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv5 = nn.Sequential(nn.Conv2d(64*2, 64, kernel_size=1, bias=False),
-                                   self.bn5,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv6 = nn.Sequential(nn.Conv1d(192, 1024, kernel_size=1, bias=False),
-                                   self.bn6,
-
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv7 = nn.Sequential(nn.Conv1d(16, 64, kernel_size=1, bias=False),
-                                   self.bn7,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv8 = nn.Sequential(nn.Conv1d(1280, 256, kernel_size=1, bias=False),
-                                   self.bn8,
-                                   nn.LeakyReLU(negative_slope=0.2))
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(6, 64, kernel_size=1, bias=False),
+            self.bn1,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(64, 64, kernel_size=1, bias=False),
+            self.bn2,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(64 * 2, 64, kernel_size=1, bias=False),
+            self.bn3,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv4 = nn.Sequential(
+            nn.Conv2d(64, 64, kernel_size=1, bias=False),
+            self.bn4,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv5 = nn.Sequential(
+            nn.Conv2d(64 * 2, 64, kernel_size=1, bias=False),
+            self.bn5,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv6 = nn.Sequential(
+            nn.Conv1d(192, 1024, kernel_size=1, bias=False),
+            self.bn6,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv7 = nn.Sequential(
+            nn.Conv1d(16, 64, kernel_size=1, bias=False),
+            self.bn7,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv8 = nn.Sequential(
+            nn.Conv1d(1280, 256, kernel_size=1, bias=False),
+            self.bn8,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
         self.dp1 = nn.Dropout(p=0.5)
-        self.conv9 = nn.Sequential(nn.Conv1d(256, 256, kernel_size=1, bias=False),
-                                   self.bn9,
-                                   nn.LeakyReLU(negative_slope=0.2))
+        self.conv9 = nn.Sequential(
+            nn.Conv1d(256, 256, kernel_size=1, bias=False),
+            self.bn9,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
         self.dp2 = nn.Dropout(p=0.5)
-        self.conv10 = nn.Sequential(nn.Conv1d(256, 128, kernel_size=1, bias=False),
-                                   self.bn10,
-                                   nn.LeakyReLU(negative_slope=0.2))
+        self.conv10 = nn.Sequential(
+            nn.Conv1d(256, 128, kernel_size=1, bias=False),
+            self.bn10,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
         self.conv11 = nn.Conv1d(128, self.num_parts, kernel_size=1, bias=False)
 
     def forward(self, x, l):
@@ -428,7 +523,6 @@ class DGCNN(BasePointcloudModel):
         return x, trans_feat
 
 
-
 class PointcloudCanonFunction(pl.LightningModule):
     def __init__(self, hyperparams):
         super().__init__()
@@ -446,11 +540,13 @@ class PointcloudCanonFunction(pl.LightningModule):
     def gram_schmidt(self, vectors):
         v1 = vectors[:, 0]
         v1 = v1 / torch.norm(v1, dim=1, keepdim=True)
-        v2 = (vectors[:, 1] - torch.sum(vectors[:, 1] * v1, dim=1, keepdim=True) * v1)
+        v2 = vectors[:, 1] - torch.sum(vectors[:, 1] * v1, dim=1, keepdim=True) * v1
         v2 = v2 / torch.norm(v2, dim=1, keepdim=True)
-        v3 = (vectors[:, 2] - torch.sum(vectors[:, 2] * v1, dim=1, keepdim=True) * v1 - torch.sum(vectors[:, 2] * v2,
-                                                                                                  dim=1,
-                                                                                                  keepdim=True) * v2)
+        v3 = (
+            vectors[:, 2]
+            - torch.sum(vectors[:, 2] * v1, dim=1, keepdim=True) * v1
+            - torch.sum(vectors[:, 2] * v2, dim=1, keepdim=True) * v2
+        )
         v3 = v3 / torch.norm(v3, dim=1, keepdim=True)
         return torch.stack([v1, v2, v3], dim=1)
 
@@ -459,8 +555,10 @@ class PointcloudPredFunction(pl.LightningModule):
     def __init__(self, hyperparams):
         super().__init__()
         self.model_type = hyperparams.pred_model_type
-        self.model = {"pointnet": lambda: Pointnet(hyperparams),
-                      "DGCNN": lambda: DGCNN(hyperparams)}[self.model_type]()
+        self.model = {
+            "pointnet": lambda: Pointnet(hyperparams),
+            "DGCNN": lambda: DGCNN(hyperparams),
+        }[self.model_type]()
 
     def forward(self, points, labels):
         return self.model(points, labels)
@@ -481,11 +579,12 @@ class EquivariantPointcloudModel(BasePointcloudModel):
         rotation_matrix_inverse = rotation_matrix.transpose(1, 2)
 
         # not applying translations
-        canonical_point_cloud = torch.bmm(point_cloud.transpose(1, 2), rotation_matrix_inverse)
+        canonical_point_cloud = torch.bmm(
+            point_cloud.transpose(1, 2), rotation_matrix_inverse
+        )
         canonical_point_cloud = canonical_point_cloud.transpose(1, 2)
 
         return self.pred_function(canonical_point_cloud, label)[0], rotation_matrix
-
 
 
 class VNPointnet(BasePointcloudModel):
@@ -505,12 +604,16 @@ class VNPointnet(BasePointcloudModel):
         self.conv1 = VNLinearLeakyReLU(64 // 3, 64 // 3, dim=4, negative_slope=0.0)
         self.conv2 = VNLinearLeakyReLU(64 // 3, 128 // 3, dim=4, negative_slope=0.0)
         self.conv3 = VNLinearLeakyReLU(128 // 3, 128 // 3, dim=4, negative_slope=0.0)
-        self.conv4 = VNLinearLeakyReLU(128 // 3 * 2, 512 // 3, dim=4, negative_slope=0.0)
+        self.conv4 = VNLinearLeakyReLU(
+            128 // 3 * 2, 512 // 3, dim=4, negative_slope=0.0
+        )
 
         self.conv5 = VNLinear(512 // 3, 2048 // 3)
         self.bn5 = VNBatchNorm(2048 // 3, dim=4)
 
-        self.std_feature = VNStdFeature(2048 // 3 * 2, dim=4, normalize_frame=False, negative_slope=0.0)
+        self.std_feature = VNStdFeature(
+            2048 // 3 * 2, dim=4, normalize_frame=False, negative_slope=0.0
+        )
 
         if self.pooling == "max":
             self.pool = VNMaxPool(64 // 3)
