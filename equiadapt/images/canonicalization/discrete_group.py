@@ -114,8 +114,8 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         x = self.crop_canonization(x)
         x = self.resize_canonization(x)
         return x
-        
-    
+
+
     def canonicalize(self, x: torch.Tensor, targets: List = None) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an image as input and

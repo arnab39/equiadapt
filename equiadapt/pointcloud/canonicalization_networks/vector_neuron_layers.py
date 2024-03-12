@@ -11,7 +11,7 @@ class VNLinear(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(VNLinear, self).__init__()
         self.map_to_feat = nn.Linear(in_channels, out_channels, bias=False)
-    
+
     def forward(self, x):
         '''
         x: point features of shape [B, N_feat, 3, N_samples, ...]
@@ -24,7 +24,7 @@ class VNBilinear(nn.Module):
     def __init__(self, in_channels1, in_channels2, out_channels):
         super(VNBilinear, self).__init__()
         self.map_to_feat = nn.Bilinear(in_channels1, in_channels2, out_channels, bias=False)
-    
+
     def forward(self, x, labels):
         '''
         x: point features of shape [B, N_feat, 3, N_samples, ...]
@@ -42,7 +42,7 @@ class VNSoftplus(nn.Module):
         else:
             self.map_to_dir = nn.Linear(in_channels, in_channels, bias=False)
         self.negative_slope = negative_slope
-    
+
     def forward(self, x):
         '''
         x: point features of shape [B, N_feat, 3, N_samples, ...]
@@ -64,7 +64,7 @@ class VNLeakyReLU(nn.Module):
         else:
             self.map_to_dir = nn.Linear(in_channels, in_channels, bias=False)
         self.negative_slope = negative_slope
-    
+
     def forward(self, x):
         '''
         x: point features of shape [B, N_feat, 3, N_samples, ...]
@@ -82,15 +82,15 @@ class VNLinearLeakyReLU(nn.Module):
         super(VNLinearLeakyReLU, self).__init__()
         self.dim = dim
         self.negative_slope = negative_slope
-        
+
         self.map_to_feat = nn.Linear(in_channels, out_channels, bias=False)
         self.batchnorm = VNBatchNorm(out_channels, dim=dim)
-        
+
         if share_nonlinearity == True:
             self.map_to_dir = nn.Linear(in_channels, 1, bias=False)
         else:
             self.map_to_dir = nn.Linear(in_channels, out_channels, bias=False)
-    
+
     def forward(self, x):
         '''
         x: point features of shape [B, N_feat, 3, N_samples, ...]
@@ -115,15 +115,15 @@ class VNLinearAndLeakyReLU(nn.Module):
         self.share_nonlinearity = share_nonlinearity
         self.use_batchnorm = use_batchnorm
         self.negative_slope = negative_slope
-        
+
         self.linear = VNLinear(in_channels, out_channels)
         self.leaky_relu = VNLeakyReLU(out_channels, share_nonlinearity=share_nonlinearity, negative_slope=negative_slope)
-        
+
         # BatchNorm
         self.use_batchnorm = use_batchnorm
         if use_batchnorm != 'none':
             self.batchnorm = VNBatchNorm(out_channels, dim=dim, mode=use_batchnorm)
-    
+
     def forward(self, x):
         '''
         x: point features of shape [B, N_feat, 3, N_samples, ...]
@@ -146,7 +146,7 @@ class VNBatchNorm(nn.Module):
             self.bn = nn.BatchNorm1d(num_features)
         elif dim == 5:
             self.bn = nn.BatchNorm2d(num_features)
-    
+
     def forward(self, x):
         '''
         x: point features of shape [B, N_feat, 3, N_samples, ...]
@@ -157,7 +157,7 @@ class VNBatchNorm(nn.Module):
         norm = norm.unsqueeze(2)
         norm_bn = norm_bn.unsqueeze(2)
         x = x / norm * norm_bn
-        
+
         return x
 
 
@@ -165,7 +165,7 @@ class VNMaxPool(nn.Module):
     def __init__(self, in_channels):
         super(VNMaxPool, self).__init__()
         self.map_to_dir = nn.Linear(in_channels, in_channels, bias=False)
-    
+
     def forward(self, x):
         '''
         x: point features of shape [B, N_feat, 3, N_samples, ...]
@@ -187,14 +187,14 @@ class VNStdFeature(nn.Module):
         super(VNStdFeature, self).__init__()
         self.dim = dim
         self.normalize_frame = normalize_frame
-        
+
         self.vn1 = VNLinearLeakyReLU(in_channels, in_channels//2, dim=dim, share_nonlinearity=share_nonlinearity, negative_slope=negative_slope)
         self.vn2 = VNLinearLeakyReLU(in_channels//2, in_channels//4, dim=dim, share_nonlinearity=share_nonlinearity, negative_slope=negative_slope)
         if normalize_frame:
             self.vn_lin = nn.Linear(in_channels//4, 2, bias=False)
         else:
             self.vn_lin = nn.Linear(in_channels//4, 3, bias=False)
-    
+
     def forward(self, x):
         '''
         x: point features of shape [B, N_feat, 3, N_samples, ...]
@@ -203,7 +203,7 @@ class VNStdFeature(nn.Module):
         z0 = self.vn1(z0)
         z0 = self.vn2(z0)
         z0 = self.vn_lin(z0.transpose(1, -1)).transpose(1, -1)
-        
+
         if self.normalize_frame:
             # make z0 orthogonal. u2 = v2 - proj_u1(v2)
             v1 = z0[:,0,:]
@@ -216,17 +216,17 @@ class VNStdFeature(nn.Module):
             v2_norm = torch.sqrt((v2*v2).sum(1, keepdims=True))
             u2 = v2 / (v2_norm+EPS)
 
-            # compute the cross product of the two output vectors        
+            # compute the cross product of the two output vectors
             u3 = torch.cross(u1, u2)
             z0 = torch.stack([u1, u2, u3], dim=1).transpose(1, 2)
         else:
             z0 = z0.transpose(1, 2)
-        
+
         if self.dim == 4:
             x_std = torch.einsum('bijm,bjkm->bikm', x, z0)
         elif self.dim == 3:
             x_std = torch.einsum('bij,bjk->bik', x, z0)
         elif self.dim == 5:
             x_std = torch.einsum('bijmn,bjkmn->bikmn', x, z0)
-        
+
         return x_std, z0

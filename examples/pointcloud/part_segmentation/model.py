@@ -18,33 +18,33 @@ class PointcloudClassificationPipeline(pl.LightningModule):
     def __init__(self, hyperparams):
         super().__init__()
         self.hyperparams = hyperparams
-        
+
         canonicalization_network = get_canonicalization_network(
-            hyperparams.canonicalization_type, 
+            hyperparams.canonicalization_type,
             hyperparams.canonicalization
         )
-        
+
         self.canonicalizer = get_canonicalizer(
-            hyperparams.canonicalization_type, 
-            canonicalization_network, 
+            hyperparams.canonicalization_type,
+            canonicalization_network,
             hyperparams.canonicalization
         )
-        
+
         self.prediction_network = get_prediction_network(
             hyperparams.prediction.prediction_network_architecture,
             hyperparams.prediction
         )
-        
+
         self.save_hyperparameters()
 
 
     def maybe_transform_points(self, points, rotation_type):
         '''
         Apply random rotation to the pointcloud
-        
+
         Args:
             points (torch.Tensor): pointcloud of shape (B, 3, N)
-            rotation_type (str): type of rotation to apply. Options are 1) z 2) so3 
+            rotation_type (str): type of rotation to apply. Options are 1) z 2) so3
         '''
         trot = None
         if rotation_type == "z":
@@ -56,51 +56,51 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         else:
             raise NotImplementedError(f"Unknown rotation type {rotation_type}")
         if trot is not None:
-            points = trot.transform_points(points)          
+            points = trot.transform_points(points)
         return points
-        
-        
+
+
     def augment_points(self, points):
         points = random_point_dropout(points)
         points = random_scale_point_cloud(points)
         points = random_shift_point_cloud(points)
         return points
-    
+
     def get_label_one_hot(self, label):
         label_one_hot = np.zeros((label.shape[0], 16))
         for idx in range(label.shape[0]):
             label_one_hot[idx, label[idx]] = 1
         label_one_hot = torch.from_numpy(label_one_hot.astype(np.float32)).to(label.device)
         return label_one_hot
-    
+
     def training_step(self, batch):
         points, targets, seg = batch
         label_one_hot =  self.get_label_one_hot(targets)
-        
+
         training_metrics = {}
         loss = 0.0
-        
+
         points = self.maybe_transform_points(
             points, self.hyperparams.experiment.training.rotation_type
         )
 
         if self.hyperparams.experiment.training.augment:
             points = self.augment_points(points)
-            
+
         points = points.transpose(2, 1)
 
         # Canonicalize the pointcloud
         canonicalized_points = self.canonicalizer(points)
-        
+
         # calculate the task loss which is the cross-entropy loss for classification
-        if self.hyperparams.experiment.training.loss.task_weight:   
+        if self.hyperparams.experiment.training.loss.task_weight:
             # Get the outputs from the prediction network
             seg_pred = self.prediction_network(canonicalized_points, label_one_hot)
             seg_pred = seg_pred.transpose(2, 1).contiguous()
-            
+
             # Loss
-            task_loss = self.get_loss(seg_pred.view(-1, seg_pred.size(-1)), seg.view(-1))     
-            loss += task_loss * self.hyperparams.experiment.training.loss.task_weight      
+            task_loss = self.get_loss(seg_pred.view(-1, seg_pred.size(-1)), seg.view(-1))
+            loss += task_loss * self.hyperparams.experiment.training.loss.task_weight
             training_metrics.update({"train/task_loss": task_loss,})
 
         if self.hyperparams.experiment.training.loss.prior_weight and self.hyperparams.canonicalization_type != 'identity':
@@ -108,12 +108,12 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             loss += prior_loss * self.hyperparams.experiment.training.loss.prior_weight
             metric_identity = self.canonicalizer.get_identity_metric()
             training_metrics.update({
-                    "train/prior_loss": prior_loss, 
+                    "train/prior_loss": prior_loss,
                     "train/identity_metric": metric_identity
                 })
-        
+
         training_metrics.update({"train/loss": loss,})
-        
+
         self.log_dict(training_metrics, on_epoch=True, prog_bar=True)
 
         return loss
@@ -123,11 +123,11 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         self.test_true_cls = []
         self.test_pred_seg = []
         self.test_true_seg = []
-        self.test_label_seg = []    
+        self.test_label_seg = []
 
     def validation_step(self, batch):
         points, targets, seg = batch
-        
+
         label_one_hot =  self.get_label_one_hot(targets)
 
         points = self.maybe_transform_points(
@@ -138,16 +138,16 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         # Canonicalize the pointcloud
         canonicalized_points = self.canonicalizer(points)
-        
+
         # Get the outputs from the prediction network
         seg_pred = self.prediction_network(canonicalized_points, label_one_hot)
         seg_pred = seg_pred.transpose(2, 1).contiguous()
 
         pred = seg_pred.max(dim=2)[1]
-        
+
         seg_np = seg.cpu().numpy()
         pred_np = pred.detach().cpu().numpy()
-        
+
         self.test_true_cls.append(seg_np.reshape(-1))
         self.test_pred_cls.append(pred_np.reshape(-1))
         self.test_true_seg.append(seg_np)
@@ -171,19 +171,19 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             "val/iou": np.mean(test_ious)
         }
         self.log_dict(validation_metrics, on_epoch=True, prog_bar=True)
-        
+
         return validation_metrics
-    
+
     def on_test_epoch_start(self):
         self.test_pred_cls = []
         self.test_true_cls = []
         self.test_pred_seg = []
         self.test_true_seg = []
         self.test_label_seg = []
-        
+
     def test_step(self, batch):
         points, targets, seg = batch
-        
+
         label_one_hot =  self.get_label_one_hot(targets)
 
         points = self.maybe_transform_points(
@@ -194,16 +194,16 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         # Canonicalize the pointcloud
         canonicalized_points = self.canonicalizer(points)
-        
+
         # Get the outputs from the prediction network
         seg_pred = self.prediction_network(canonicalized_points, label_one_hot)
         seg_pred = seg_pred.transpose(2, 1).contiguous()
 
         pred = seg_pred.max(dim=2)[1]
-        
+
         seg_np = seg.cpu().numpy()
         pred_np = pred.detach().cpu().numpy()
-        
+
         self.test_true_cls.append(seg_np.reshape(-1))
         self.test_pred_cls.append(pred_np.reshape(-1))
         self.test_true_seg.append(seg_np)
@@ -227,7 +227,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             "test/iou": np.mean(test_ious)
         }
         self.log_dict(test_metrics, on_epoch=True, prog_bar=True)
-        
+
         return test_metrics
 
     def get_loss(self, predictions, targets, smoothing=False, ignore_index=255):
@@ -241,12 +241,12 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
             loss = -(one_hot * log_prb).sum(dim=1).mean()
         else:
-            loss = F.cross_entropy(predictions, targets, reduction='mean', 
+            loss = F.cross_entropy(predictions, targets, reduction='mean',
                                    ignore_index=ignore_index)
 
         return loss
 
-    
+
     def configure_optimizers(self):
         if self.hyperparams.experiment.training.optimizer == "Adam":
             optimizer = torch.optim.Adam([
@@ -260,16 +260,16 @@ class PointcloudClassificationPipeline(pl.LightningModule):
                     {'params': self.prediction_network.parameters(), 'lr': self.hyperparams.experiment.training.prediction_lr * 100},
                     {'params': self.canonicalizer.parameters(), 'lr': self.hyperparams.experiment.training.canonicalization_lr * 100},
                 ], momentum=0.9, weight_decay=1e-4)
-            
+
             if self.hyperparams.experiment.training.lr_scheduler == "cosine":
-                scheduler = CosineAnnealingLR(optimizer, 
-                                              T_max=self.hyperparams.experiment.training.num_epochs, 
+                scheduler = CosineAnnealingLR(optimizer,
+                                              T_max=self.hyperparams.experiment.training.num_epochs,
                                               eta_min=1e-3)
             elif self.hyperparams.experiment.training.lr_scheduler == "step":
                 scheduler = StepLR(optimizer, step_size=20, gamma=0.7)
             else:
                 raise NotImplementedError(f"Unknown learning rate decay schedule {self.hyperparams.experiment.training.lr_scheduler}")
-            
+
             scheduler_dict = {
                 "scheduler": scheduler,
                 "interval": "epoch",
@@ -302,14 +302,4 @@ def calculate_shape_IoU(pred_np, seg_np, label, class_choice, visual=False):
                 iou = I / float(U)
             part_ious.append(iou)
         shape_ious.append(np.mean(part_ious))
-    return shape_ious  
-
-
-
-
-
-
-
-
-
-
+    return shape_ious

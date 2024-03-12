@@ -3,12 +3,12 @@ import torch
 from escnn import gspaces
 
 class ESCNNEquivariantNetwork(torch.nn.Module):
-    def __init__(self, 
-                 in_shape: tuple, 
-                 out_channels: int, 
-                 kernel_size: int, 
-                 group_type: str = "rotation", 
-                 num_rotations: int = 4, 
+    def __init__(self,
+                 in_shape: tuple,
+                 out_channels: int,
+                 kernel_size: int,
+                 group_type: str = "rotation",
+                 num_rotations: int = 4,
                  num_layers: int = 1):
         super().__init__()
 
@@ -47,7 +47,7 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
             self.eqv_network.append(escnn.nn.PointwiseDropout(self.out_type, p=0.5),)
 
         self.eqv_network.append(escnn.nn.R2Conv(self.out_type, self.out_type, kernel_size),)
-    
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         The forward takes an image as input and returns the activations of
@@ -113,12 +113,12 @@ class ESCNNSteerableNetwork(torch.nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = escnn.nn.GeometricTensor(x, self.in_type)
         out = self.block(x)
-        
+
         feature_maps = out.tensor  # Extract tensor from geometric tensor
         feature_maps = torch.mean(feature_maps, dim=(-1, -2))  # Average over spatial dimensions
         feature_maps = feature_maps.reshape(feature_maps.shape[0], 2, 2)  # Reshape to get vector/vectors of dimension 2
         return feature_maps
-    
+
 
 # wide resnet equivariant network and utilities
 class ESCNNWideBottleneck(torch.nn.Module):
@@ -207,7 +207,7 @@ class ESCNNWRNEquivariantNetwork(torch.nn.Module):
             self.gspace = gspaces.flipRot2dOnR2(num_rotations)
         else:
             raise ValueError('group_type must be rotation or roto-reflection for now.')
-        
+
         # other initialization
         widen_factor = 2
         self.kernel_size = kernel_size
@@ -246,7 +246,7 @@ class ESCNNWRNEquivariantNetwork(torch.nn.Module):
                 self.eqv_network.append(escnn.nn.ReLU(rs[ridx+1], inplace=True),)
 
         self.eqv_network.append(escnn.nn.R2Conv(r4, r5, kernel_size),)
-        
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         x shape: (batch_size, in_channels, height, width)

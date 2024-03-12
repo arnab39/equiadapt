@@ -74,12 +74,12 @@ class PointNet(nn.Module):
         x = self.dp1(x)
         x = self.linear2(x)
         return x
-    
+
 class DGCNN(nn.Module):
     def __init__(self, hyperparams: DictConfig):
         super().__init__()
         self.k = hyperparams.k
-        
+
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)
@@ -108,7 +108,7 @@ class DGCNN(nn.Module):
         self.bn7 = nn.BatchNorm1d(256)
         self.dp2 = nn.Dropout(p=hyperparams.dropout)
         self.linear3 = nn.Linear(256, hyperparams.num_classes)
-    
+
     def forward(self, x):
         batch_size = x.size(0)
         x = get_graph_feature(x, k=self.k)      # (batch_size, 3, num_points) -> (batch_size, 3*2, num_points, k)
@@ -139,7 +139,7 @@ class DGCNN(nn.Module):
         x = F.leaky_relu(self.bn7(self.linear2(x)), negative_slope=0.2) # (batch_size, 512) -> (batch_size, 256)
         x = self.dp2(x)
         x = self.linear3(x)                                             # (batch_size, 256) -> (batch_size, output_channels)
-        
+
         return x
 
 class Transform_Net(nn.Module):
@@ -168,8 +168,8 @@ class Transform_Net(nn.Module):
 
         self.transform = nn.Linear(256, 3*3)
         init.constant_(self.transform.weight, 0)
-        init.eye_(self.transform.bias.view(3, 3)) 
-        
+        init.eye_(self.transform.bias.view(3, 3))
+
     def forward(self, x):
         batch_size = x.size(0)
 
@@ -195,7 +195,7 @@ class DGCNN_partseg(nn.Module):
         self.seg_num_all = seg_num_all
         self.k = hyperparams.k
         self.transform_net = Transform_Net(hyperparams=hyperparams)
-        
+
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(64)
@@ -206,7 +206,7 @@ class DGCNN_partseg(nn.Module):
         self.bn8 = nn.BatchNorm1d(256)
         self.bn9 = nn.BatchNorm1d(256)
         self.bn10 = nn.BatchNorm1d(128)
-        
+
         self.conv1 = nn.Sequential(nn.Conv2d(6, 64, kernel_size=1, bias=False),
                                    self.bn1,
                                    nn.LeakyReLU(negative_slope=0.2))
@@ -240,7 +240,7 @@ class DGCNN_partseg(nn.Module):
                                    self.bn10,
                                    nn.LeakyReLU(negative_slope=0.2))
         self.conv11 = nn.Conv1d(128, self.seg_num_all, kernel_size=1, bias=False)
-    
+
     def forward(self, x, l):
         batch_size = x.size(0)
         num_points = x.size(2)
@@ -272,7 +272,7 @@ class DGCNN_partseg(nn.Module):
 
         l = l.view(batch_size, -1, 1)           # (batch_size, num_categoties, 1)
         l = self.conv7(l)                       # (batch_size, num_categoties, 1) -> (batch_size, 64, 1)
-        
+
         x = torch.cat((x, l), dim=1)            # (batch_size, 1088, 1)
         x = x.repeat(1, 1, num_points)          # (batch_size, 1088, num_points)
 
@@ -284,5 +284,5 @@ class DGCNN_partseg(nn.Module):
         x = self.dp2(x)
         x = self.conv10(x)                      # (batch_size, 256, num_points) -> (batch_size, 128, num_points)
         x = self.conv11(x)                      # (batch_size, 256, num_points) -> (batch_size, seg_num_all, num_points)
-        
+
         return x

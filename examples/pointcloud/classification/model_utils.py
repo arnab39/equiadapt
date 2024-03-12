@@ -12,7 +12,7 @@ def get_prediction_network(
         'pointnet': PointNet,
         'dgcnn': DGCNN,
     }
-    
+
     if architecture not in model_dict:
         raise ValueError(f'{architecture} is not implemented as prediction network for now.')
 

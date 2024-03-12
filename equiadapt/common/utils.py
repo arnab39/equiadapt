@@ -65,7 +65,7 @@ class LieParameterization(torch.nn.Module):
         son_bases = self.get_son_bases().to(params.device)
         A = torch.einsum('bs,sij->bij', params, son_bases)
         return torch.matrix_exp(A)
-    
+
     def get_on_rep(self, params: torch.Tensor, reflect_indicators: torch.Tensor) -> torch.Tensor:
         """
         Computes the representation for O(n) group, optionally including reflections.
@@ -86,7 +86,7 @@ class LieParameterization(torch.nn.Module):
         reflection_matrix = torch.diag_embed(torch.tensor([1] * (self.group_dim - 1) + [-1]))
         on_rep = torch.matmul(son_rep, reflect_indicators * reflection_matrix + (1 - reflect_indicators) * identity_matrix)
         return on_rep
-    
+
     def get_sen_rep(self, params: torch.Tensor) -> torch.Tensor:
         """Computes the representation for SEn group.
 
@@ -104,7 +104,7 @@ class LieParameterization(torch.nn.Module):
         rho[:, :self.group_dim, self.group_dim] = params[:, son_param_dim:]
         rho[:, self.group_dim, self.group_dim] = 1
         return rho
-    
+
     def get_en_rep(self, params: torch.Tensor, reflect_indicators: torch.Tensor) -> torch.Tensor:
         """Computes the representation for E(n) group.
 

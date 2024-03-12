@@ -61,18 +61,18 @@ Equiadapt enables users to obtain equivariant versions of existing neural networ
 # Details on using `equiadapt` library
 
 1. Create a `canonicalization network` (or use our provided networks: for images, in `equiadapt/images/canonicalization_networks/`).
-   
+
 ```
 canonicalization_network = ESCNNEquivariantNetwork(...)
-```  
+```
 2. Wrap it using `equiadapt` wrappers to form a `canonicalizer`.
-    
-  To create your custom canonicalizer, you must inherit `BaseCanonicalization` and define `canonicalize()` and, optionally, `invert_canonicalization()`. Please refer to [this](equiadapt/images/canonicalization) for custom image canonicalizers.   
+
+  To create your custom canonicalizer, you must inherit `BaseCanonicalization` and define `canonicalize()` and, optionally, `invert_canonicalization()`. Please refer to [this](equiadapt/images/canonicalization) for custom image canonicalizers.
 ```
 canonicalizer = GroupEquivariantImageCanonicalization(canonicalization_network, ...)
 ```
 
-3. Use this wrapper with your code to canonicalize the input data.  
+3. Use this wrapper with your code to canonicalize the input data.
 
 ```
 inputs_canonicalized = canonicalizer(inputs)
@@ -107,7 +107,7 @@ conda activate equiadapt
 pip install -e .
 ```
 
-### Setup Hydra 
+### Setup Hydra
 - Create a `.env` file in the root of the project with the following content:
   ```
     export HYDRA_JOBS="/path/to/your/hydra/jobs/directory"
@@ -119,7 +119,7 @@ pip install -e .
 
 
 # Running Instructions
-For image classification: [here](examples/images/classification/README.md)  
+For image classification: [here](examples/images/classification/README.md)
 For (image) instance segmentation: [here](examples/images/segmentation/README.md)
 
 

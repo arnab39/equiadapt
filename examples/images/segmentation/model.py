@@ -187,7 +187,7 @@ class ImageSegmentationPipeline(pl.LightningModule):
             'val/mar_large': _map_dict['mar_large'],
 
         })
-        
+
          # Log the identity metric if the prior weight is non-zero
         if self.hyperparams.experiment.training.loss.prior_weight:
             metric_identity = self.canonicalizer.get_identity_metric()
