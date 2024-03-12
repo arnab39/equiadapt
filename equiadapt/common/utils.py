@@ -14,11 +14,13 @@ def gram_schmidt(vectors: torch.Tensor) -> torch.Tensor:
     """
     v1 = vectors[:, 0]
     v1 = v1 / torch.norm(v1, dim=1, keepdim=True)
-    v2 = (vectors[:, 1] - torch.sum(vectors[:, 1] * v1, dim=1, keepdim=True) * v1)
+    v2 = vectors[:, 1] - torch.sum(vectors[:, 1] * v1, dim=1, keepdim=True) * v1
     v2 = v2 / torch.norm(v2, dim=1, keepdim=True)
-    v3 = (vectors[:, 2] - torch.sum(vectors[:, 2] * v1, dim=1, keepdim=True) * v1 - torch.sum(vectors[:, 2] * v2,
-                                                                                                dim=1,
-                                                                                                keepdim=True) * v2)
+    v3 = (
+        vectors[:, 2]
+        - torch.sum(vectors[:, 2] * v1, dim=1, keepdim=True) * v1
+        - torch.sum(vectors[:, 2] * v2, dim=1, keepdim=True) * v2
+    )
     v3 = v3 / torch.norm(v3, dim=1, keepdim=True)
     return torch.stack([v1, v2, v3], dim=1)
 
@@ -48,7 +50,13 @@ class LieParameterization(torch.nn.Module):
         """
         num_son_bases = self.group_dim * (self.group_dim - 1) // 2
         son_bases = torch.zeros((num_son_bases, self.group_dim, self.group_dim))
-        for counter, (i, j) in enumerate([(i, j) for i in range(self.group_dim) for j in range(i + 1, self.group_dim)]):
+        for counter, (i, j) in enumerate(
+            [
+                (i, j)
+                for i in range(self.group_dim)
+                for j in range(i + 1, self.group_dim)
+            ]
+        ):
             son_bases[counter, i, j] = 1
             son_bases[counter, j, i] = -1
         return son_bases
@@ -63,10 +71,12 @@ class LieParameterization(torch.nn.Module):
             torch.Tensor: The representation of shape (batch_size, rep_dim, rep_dim).
         """
         son_bases = self.get_son_bases().to(params.device)
-        A = torch.einsum('bs,sij->bij', params, son_bases)
+        A = torch.einsum("bs,sij->bij", params, son_bases)
         return torch.matrix_exp(A)
 
-    def get_on_rep(self, params: torch.Tensor, reflect_indicators: torch.Tensor) -> torch.Tensor:
+    def get_on_rep(
+        self, params: torch.Tensor, reflect_indicators: torch.Tensor
+    ) -> torch.Tensor:
         """
         Computes the representation for O(n) group, optionally including reflections.
 
@@ -83,8 +93,14 @@ class LieParameterization(torch.nn.Module):
         # would need to determine how to reflect (e.g., across which axis or plane)
         # and this might not directly apply as-is.
         identity_matrix = torch.eye(self.group_dim)
-        reflection_matrix = torch.diag_embed(torch.tensor([1] * (self.group_dim - 1) + [-1]))
-        on_rep = torch.matmul(son_rep, reflect_indicators * reflection_matrix + (1 - reflect_indicators) * identity_matrix)
+        reflection_matrix = torch.diag_embed(
+            torch.tensor([1] * (self.group_dim - 1) + [-1])
+        )
+        on_rep = torch.matmul(
+            son_rep,
+            reflect_indicators * reflection_matrix
+            + (1 - reflect_indicators) * identity_matrix,
+        )
         return on_rep
 
     def get_sen_rep(self, params: torch.Tensor) -> torch.Tensor:
@@ -97,15 +113,22 @@ class LieParameterization(torch.nn.Module):
             torch.Tensor: The representation of shape (batch_size, rep_dim, rep_dim).
         """
         son_param_dim = self.group_dim * (self.group_dim - 1) // 2
-        rho = torch.zeros(params.shape[0], self.group_dim + 1,
-                          self.group_dim + 1, device=params.device)
-        rho[:, :self.group_dim, :self.group_dim] = self.get_son_rep(
-            params[:, :son_param_dim].unsqueeze(0)).squeeze(0)
-        rho[:, :self.group_dim, self.group_dim] = params[:, son_param_dim:]
+        rho = torch.zeros(
+            params.shape[0],
+            self.group_dim + 1,
+            self.group_dim + 1,
+            device=params.device,
+        )
+        rho[:, : self.group_dim, : self.group_dim] = self.get_son_rep(
+            params[:, :son_param_dim].unsqueeze(0)
+        ).squeeze(0)
+        rho[:, : self.group_dim, self.group_dim] = params[:, son_param_dim:]
         rho[:, self.group_dim, self.group_dim] = 1
         return rho
 
-    def get_en_rep(self, params: torch.Tensor, reflect_indicators: torch.Tensor) -> torch.Tensor:
+    def get_en_rep(
+        self, params: torch.Tensor, reflect_indicators: torch.Tensor
+    ) -> torch.Tensor:
         """Computes the representation for E(n) group.
 
         Args:
@@ -130,19 +153,25 @@ class LieParameterization(torch.nn.Module):
 
         # Separate rotation/reflection and translation parameters
         rotation_params = params[:, :rotation_param_dim]
-        translation_params = params[:, rotation_param_dim:rotation_param_dim + translation_param_dim]
+        translation_params = params[
+            :, rotation_param_dim : rotation_param_dim + translation_param_dim
+        ]
 
         # Compute rotation/reflection representation
         rotoreflection_rep = self.get_on_rep(rotation_params, reflect_indicators)
 
         # Construct the E(n) representation matrix
-        en_rep = torch.zeros(params.shape[0], self.group_dim + 1, self.group_dim + 1, device=params.device)
-        en_rep[:, :self.group_dim, :self.group_dim] = rotoreflection_rep
-        en_rep[:, :self.group_dim, self.group_dim] = translation_params
+        en_rep = torch.zeros(
+            params.shape[0],
+            self.group_dim + 1,
+            self.group_dim + 1,
+            device=params.device,
+        )
+        en_rep[:, : self.group_dim, : self.group_dim] = rotoreflection_rep
+        en_rep[:, : self.group_dim, self.group_dim] = translation_params
         en_rep[:, self.group_dim, self.group_dim] = 1
 
         return en_rep
-
 
     def get_group_rep(self, params: torch.Tensor) -> torch.Tensor:
         """Computes the representation for the specified Lie group.
@@ -153,14 +182,18 @@ class LieParameterization(torch.nn.Module):
         Returns:
             torch.Tensor: The group representation of shape (batch_size, rep_dim, rep_dim).
         """
-        if self.group_type == 'SOn':
+        if self.group_type == "SOn":
             return self.get_son_rep(params)
-        elif self.group_type == 'SEn':
+        elif self.group_type == "SEn":
             return self.get_sen_rep(params)
-        elif self.group_type == 'On':
+        elif self.group_type == "On":
             # TODO: currently assuming no reflections
-            return self.get_on_rep(params, torch.zeros(params.shape[0], 1, device=params.device))
-        elif self.group_type == 'En':
-            return self.get_en_rep(params, torch.zeros(params.shape[0], 1, device=params.device))
+            return self.get_on_rep(
+                params, torch.zeros(params.shape[0], 1, device=params.device)
+            )
+        elif self.group_type == "En":
+            return self.get_en_rep(
+                params, torch.zeros(params.shape[0], 1, device=params.device)
+            )
         else:
             raise ValueError(f"Unsupported group type: {self.group_type}")

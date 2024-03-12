@@ -7,6 +7,8 @@ import pytorch_lightning as pl
 from canonical_network.models.vn_layers import *
 import torch.nn.init as init
 from canonical_network.utils import get_graph_feature_cross
+
+
 class STN3d(pl.LightningModule):
     def __init__(self, channel):
         super(STN3d, self).__init__()
@@ -37,7 +39,11 @@ class STN3d(pl.LightningModule):
         x = self.fc3(x)
 
         iden = (
-            Variable(torch.from_numpy(np.array([1, 0, 0, 0, 1, 0, 0, 0, 1]).astype(np.float32)))
+            Variable(
+                torch.from_numpy(
+                    np.array([1, 0, 0, 0, 1, 0, 0, 0, 1]).astype(np.float32)
+                )
+            )
             .view(1, 9)
             .repeat(batchsize, 1)
         )
@@ -46,6 +52,7 @@ class STN3d(pl.LightningModule):
         x = x + iden
         x = x.view(-1, 3, 3)
         return x
+
 
 class STNkd(pl.LightningModule):
     def __init__(self, k=64):
@@ -131,40 +138,60 @@ class Transform_Net(pl.LightningModule):
         self.bn2 = nn.BatchNorm2d(128)
         self.bn3 = nn.BatchNorm1d(1024)
 
-        self.conv1 = nn.Sequential(nn.Conv2d(6, 64, kernel_size=1, bias=False),
-                                   self.bn1,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv2 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=1, bias=False),
-                                   self.bn2,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv3 = nn.Sequential(nn.Conv1d(128, 1024, kernel_size=1, bias=False),
-                                   self.bn3,
-                                   nn.LeakyReLU(negative_slope=0.2))
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(6, 64, kernel_size=1, bias=False),
+            self.bn1,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=1, bias=False),
+            self.bn2,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv3 = nn.Sequential(
+            nn.Conv1d(128, 1024, kernel_size=1, bias=False),
+            self.bn3,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
 
         self.linear1 = nn.Linear(1024, 512, bias=False)
         self.bn3 = nn.BatchNorm1d(512)
         self.linear2 = nn.Linear(512, 256, bias=False)
         self.bn4 = nn.BatchNorm1d(256)
 
-        self.transform = nn.Linear(256, 3*3)
+        self.transform = nn.Linear(256, 3 * 3)
         init.constant_(self.transform.weight, 0)
         init.eye_(self.transform.bias.view(3, 3))
 
     def forward(self, x):
         batch_size = x.size(0)
 
-        x = self.conv1(x)                       # (batch_size, 3*2, num_points, k) -> (batch_size, 64, num_points, k)
-        x = self.conv2(x)                       # (batch_size, 64, num_points, k) -> (batch_size, 128, num_points, k)
-        x = x.max(dim=-1, keepdim=False)[0]     # (batch_size, 128, num_points, k) -> (batch_size, 128, num_points)
+        x = self.conv1(
+            x
+        )  # (batch_size, 3*2, num_points, k) -> (batch_size, 64, num_points, k)
+        x = self.conv2(
+            x
+        )  # (batch_size, 64, num_points, k) -> (batch_size, 128, num_points, k)
+        x = x.max(dim=-1, keepdim=False)[
+            0
+        ]  # (batch_size, 128, num_points, k) -> (batch_size, 128, num_points)
 
-        x = self.conv3(x)                       # (batch_size, 128, num_points) -> (batch_size, 1024, num_points)
-        x = x.max(dim=-1, keepdim=False)[0]     # (batch_size, 1024, num_points) -> (batch_size, 1024)
+        x = self.conv3(
+            x
+        )  # (batch_size, 128, num_points) -> (batch_size, 1024, num_points)
+        x = x.max(dim=-1, keepdim=False)[
+            0
+        ]  # (batch_size, 1024, num_points) -> (batch_size, 1024)
 
-        x = F.leaky_relu(self.bn3(self.linear1(x)), negative_slope=0.2)     # (batch_size, 1024) -> (batch_size, 512)
-        x = F.leaky_relu(self.bn4(self.linear2(x)), negative_slope=0.2)     # (batch_size, 512) -> (batch_size, 256)
+        x = F.leaky_relu(
+            self.bn3(self.linear1(x)), negative_slope=0.2
+        )  # (batch_size, 1024) -> (batch_size, 512)
+        x = F.leaky_relu(
+            self.bn4(self.linear2(x)), negative_slope=0.2
+        )  # (batch_size, 512) -> (batch_size, 256)
 
-        x = self.transform(x)                   # (batch_size, 256) -> (batch_size, 3*3)
-        x = x.view(batch_size, 3, 3)            # (batch_size, 3*3) -> (batch_size, 3, 3)
+        x = self.transform(x)  # (batch_size, 256) -> (batch_size, 3*3)
+        x = x.view(batch_size, 3, 3)  # (batch_size, 3*3) -> (batch_size, 3, 3)
 
         return x
 
@@ -185,10 +212,8 @@ class VNSmall(pl.LightningModule):
         elif self.pooling == "mean":
             self.pool = mean_pool
 
-
         # Wild idea -- Just use a linear layer to predict the output
         self.conv = VNLinear(3, 12 // 3)
-
 
     def forward(self, point_cloud, labels=None):
 
@@ -205,6 +230,7 @@ class VNSmall(pl.LightningModule):
         out = self.dropout(out)
 
         return out.mean(dim=-1)
+
 
 class PointNetEncoder(pl.LightningModule):
     def __init__(self, global_feat=True, feature_transform=False, channel=3):
@@ -225,11 +251,11 @@ class PointNetEncoder(pl.LightningModule):
         B, D, N = x.size()
         trans = self.stn(x)
         x = x.transpose(2, 1)
-        if D >3 :
-            x, feature = x.split(3,dim=2)
+        if D > 3:
+            x, feature = x.split(3, dim=2)
         x = torch.bmm(x, trans)
         if D > 3:
-            x = torch.cat([x,feature],dim=2)
+            x = torch.cat([x, feature], dim=2)
         x = x.transpose(2, 1)
         x = F.relu(self.bn1(self.conv1(x)))
 

@@ -1,4 +1,3 @@
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,7 +7,11 @@ import pytorch_lightning as pl
 from einops import rearrange
 import wandb
 
-from canonical_network.models.set_base_models import BaseSetModel, DeepSets, SequentialMultiple
+from canonical_network.models.set_base_models import (
+    BaseSetModel,
+    DeepSets,
+    SequentialMultiple,
+)
 from canonical_network.utils import define_hyperparams, dict_to_object
 
 SET_HYPERPARAMS = {
@@ -24,7 +27,7 @@ SET_HYPERPARAMS = {
     "out_dim": 1,
     "layer_pooling": "sum",
     "final_pooling": "",
-    "temperature_anneal": 0.0
+    "temperature_anneal": 0.0,
 }
 
 
@@ -48,7 +51,9 @@ class SetCanonFunction(pl.LightningModule):
             "final_pooling": "",
         }
 
-        self.model = {"deepsets": lambda: DeepSets(define_hyperparams(model_hyperparams))}[self.model_type]()
+        self.model = {
+            "deepsets": lambda: DeepSets(define_hyperparams(model_hyperparams))
+        }[self.model_type]()
 
     def forward(self, x, set_indices, batch_idx):
         output = self.model(x, set_indices, batch_idx)
@@ -70,7 +75,9 @@ class SetPredictionLayer(pl.LightningModule):
         self.pooling = pooling
 
         self.identity_linear = nn.Linear(self.in_dim, self.out_dim)
-        self.outer_linear = nn.Linear(self.in_dim * self.num_clusters, self.out_dim * self.num_clusters)
+        self.outer_linear = nn.Linear(
+            self.in_dim * self.num_clusters, self.out_dim * self.num_clusters
+        )
 
     def forward(self, x, clusters, set_indices):
         identity = self.identity_linear(x)
@@ -81,7 +88,9 @@ class SetPredictionLayer(pl.LightningModule):
         pooled = torch.einsum("nbk,nf->bkf", cluster_matrix, x)
         pooled = rearrange(pooled, "b k f -> b (k f)")
         outer = self.outer_linear(pooled)
-        outer = rearrange(outer, "b (k f) -> b k f", k=self.num_clusters, f=self.out_dim)
+        outer = rearrange(
+            outer, "b (k f) -> b k f", k=self.num_clusters, f=self.out_dim
+        )
         outer = torch.einsum("nbk, bkf->nf", cluster_matrix, outer)
 
         # residual connection
@@ -106,12 +115,18 @@ class SetPredictionFunction(pl.LightningModule):
         self.set_layers = SequentialMultiple(
             *[
                 SetPredictionLayer(
-                    self.hidden_dim, self.hidden_dim, self.num_clusters, self.batch_size, self.layer_pooling
+                    self.hidden_dim,
+                    self.hidden_dim,
+                    self.num_clusters,
+                    self.batch_size,
+                    self.layer_pooling,
                 )
                 for i in range(self.num_layers - 1)
             ]
         )
-        self.output_layer = SequentialMultiple(nn.Linear(self.hidden_dim, self.out_dim), nn.Sigmoid())
+        self.output_layer = SequentialMultiple(
+            nn.Linear(self.hidden_dim, self.out_dim), nn.Sigmoid()
+        )
 
     def forward(self, x, clusters, set_indices):
         embeddings = self.embedding_layer(x)
@@ -147,12 +162,17 @@ class SetModel(BaseSetModel):
 
         predictions, clusters = validation_step_outputs[0]
         if self.current_epoch == 0:
-            dummy_input = torch.zeros(self.num_embeddings, device=self.device, dtype=torch.long)
-            dummy_indices = torch.zeros(1, device=self.device, dtype=torch.long)
-            model_filename = (
-                f"canonical_network/results/digits/onnx_models/set_model_{wandb.run.name}_{str(self.global_step)}.onnx"
+            dummy_input = torch.zeros(
+                self.num_embeddings, device=self.device, dtype=torch.long
             )
-            torch.onnx.export(self, (dummy_input, dummy_indices, 0.0), model_filename, opset_version=12)
+            dummy_indices = torch.zeros(1, device=self.device, dtype=torch.long)
+            model_filename = f"canonical_network/results/digits/onnx_models/set_model_{wandb.run.name}_{str(self.global_step)}.onnx"
+            torch.onnx.export(
+                self,
+                (dummy_input, dummy_indices, 0.0),
+                model_filename,
+                opset_version=12,
+            )
             wandb.save(model_filename)
 
         self.logger.experiment.log(

@@ -1,5 +1,3 @@
-
-
 import pytorch_lightning as pl
 from pytorch3d.transforms import RotateAxisAngle, Rotate, random_rotations
 from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
@@ -7,6 +5,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
 from canonical_network.utils import *
 from canonical_network.models.pointcloud_networks import VNSmall, PointNetEncoder
 from canonical_network.models.vn_layers import *
+
 
 class BasePointcloudClassificationModel(pl.LightningModule):
     def __init__(self, hyperparams):
@@ -20,25 +19,38 @@ class BasePointcloudClassificationModel(pl.LightningModule):
 
     def configure_optimizers(self):
         if self.hyperparams.optimizer == "Adam":
-            optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
-                                         weight_decay=self.hyperparams.decay_rate)
+            optimizer = torch.optim.Adam(
+                self.parameters(),
+                lr=self.learning_rate,
+                weight_decay=self.hyperparams.decay_rate,
+            )
             print("Using Adam optimizer")
             return optimizer
         elif self.hyperparams.optimizer == "SGD":
             self.learning_rate *= 100
-            optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9,
-                                        weight_decay=self.hyperparams.decay_rate)
+            optimizer = torch.optim.SGD(
+                self.parameters(),
+                lr=self.learning_rate,
+                momentum=0.9,
+                weight_decay=self.hyperparams.decay_rate,
+            )
             if self.hyperparams.decay_type == "cosine":
-                scheduler = CosineAnnealingLR(optimizer, T_max=self.hyperparams.num_epochs, eta_min=1e-3)
+                scheduler = CosineAnnealingLR(
+                    optimizer, T_max=self.hyperparams.num_epochs, eta_min=1e-3
+                )
             elif self.hyperparams.decay_type == "step":
                 scheduler = StepLR(optimizer, step_size=20, gamma=0.7)
             else:
-                raise NotImplementedError(f"Unknown learning rate decay {self.hyperparams.decay_type}")
+                raise NotImplementedError(
+                    f"Unknown learning rate decay {self.hyperparams.decay_type}"
+                )
             scheduler_dict = {
                 "scheduler": scheduler,
                 "interval": "epoch",
             }
-            print(f"Using SGD optimizer with {self.hyperparams.decay_type} learning rate scheduler")
+            print(
+                f"Using SGD optimizer with {self.hyperparams.decay_type} learning rate scheduler"
+            )
             return {"optimizer": optimizer, "lr_scheduler": scheduler_dict}
         else:
             raise NotImplementedError
@@ -50,7 +62,12 @@ class BasePointcloudClassificationModel(pl.LightningModule):
         # Augmentations
         trot = None
         if self.train_rotation == "z":
-            trot = RotateAxisAngle(angle=torch.rand(points.shape[0]) * 360, axis="Z", degrees=True, device=self.device)
+            trot = RotateAxisAngle(
+                angle=torch.rand(points.shape[0]) * 360,
+                axis="Z",
+                degrees=True,
+                device=self.device,
+            )
         elif self.train_rotation == "so3":
             trot = Rotate(R=random_rotations(points.shape[0]), device=self.device)
         if trot is not None:
@@ -75,7 +92,7 @@ class BasePointcloudClassificationModel(pl.LightningModule):
 
     def on_validation_epoch_start(self):
         self.mean_correct = []
-        self.class_acc = np.zeros((self.num_classes,3))
+        self.class_acc = np.zeros((self.num_classes, 3))
 
     def validation_step(self, batch, batch_idx):
         points, targets = batch
@@ -83,7 +100,12 @@ class BasePointcloudClassificationModel(pl.LightningModule):
 
         trot = None
         if self.valid_rotation == "z":
-            trot = RotateAxisAngle(angle=torch.rand(points.shape[0]) * 360, axis="Z", degrees=True, device=self.device)
+            trot = RotateAxisAngle(
+                angle=torch.rand(points.shape[0]) * 360,
+                axis="Z",
+                degrees=True,
+                device=self.device,
+            )
         elif self.valid_rotation == "so3":
             trot = Rotate(R=random_rotations(points.shape[0]), device=self.device)
         if trot is not None:
@@ -97,8 +119,15 @@ class BasePointcloudClassificationModel(pl.LightningModule):
 
         pred_choice = predictions.data.max(1)[1]
         for cat in np.unique(targets.cpu()):
-            classacc = pred_choice[targets == cat].eq(targets[targets == cat].long().data).cpu().sum()
-            self.class_acc[cat, 0] += classacc.item() / float(points[targets == cat].size()[0])
+            classacc = (
+                pred_choice[targets == cat]
+                .eq(targets[targets == cat].long().data)
+                .cpu()
+                .sum()
+            )
+            self.class_acc[cat, 0] += classacc.item() / float(
+                points[targets == cat].size()[0]
+            )
             self.class_acc[cat, 1] += 1
         correct = pred_choice.eq(targets.long().data).cpu().sum()
         self.mean_correct.append(correct.item() / float(points.size()[0]))
@@ -111,9 +140,12 @@ class BasePointcloudClassificationModel(pl.LightningModule):
         class_acc = np.mean(self.class_acc[:, 2])
         instance_acc = np.mean(self.mean_correct)
         self.log_dict(
-            {"valid/instance_accuracy": instance_acc,
-             "valid/class_accuracy": class_acc},
-            prog_bar=True)
+            {
+                "valid/instance_accuracy": instance_acc,
+                "valid/class_accuracy": class_acc,
+            },
+            prog_bar=True,
+        )
 
     def get_loss(self, outputs, targets, smoothing=True):
         predictions = self.get_predictions(outputs)
@@ -126,7 +158,7 @@ class BasePointcloudClassificationModel(pl.LightningModule):
 
             loss = -(one_hot * log_prb).sum(dim=1).mean()
         else:
-            loss = F.cross_entropy(predictions, targets, reduction='mean')
+            loss = F.cross_entropy(predictions, targets, reduction="mean")
 
         return loss
 
@@ -135,7 +167,6 @@ class BasePointcloudClassificationModel(pl.LightningModule):
             outputs = list(zip(*outputs))
             return torch.cat(outputs[0], dim=0)
         return outputs[0]
-
 
 
 class Pointnet(BasePointcloudClassificationModel):
@@ -149,7 +180,9 @@ class Pointnet(BasePointcloudClassificationModel):
         else:
             channel = 3
 
-        self.feat = PointNetEncoder(global_feat=True, feature_transform=True, channel=channel)
+        self.feat = PointNetEncoder(
+            global_feat=True, feature_transform=True, channel=channel
+        )
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, hyperparams.num_classes)
@@ -170,7 +203,9 @@ class Pointnet(BasePointcloudClassificationModel):
         predictions = self.get_predictions(outputs)
         transformation_matrix = outputs[1]
 
-        transformation_loss = 0.001 * self.feature_transform_regularizer(transformation_matrix)
+        transformation_loss = 0.001 * self.feature_transform_regularizer(
+            transformation_matrix
+        )
         total_loss = F.nll_loss(predictions, targets) + transformation_loss
 
         return total_loss
@@ -178,7 +213,9 @@ class Pointnet(BasePointcloudClassificationModel):
     def feature_transform_regularizer(self, trans):
         d = trans.shape[1]
         I = torch.eye(d)[None, :, :].to(trans.device)
-        loss = torch.mean(torch.norm(torch.bmm(trans, trans.transpose(2, 1) - I), dim=(1, 2)))
+        loss = torch.mean(
+            torch.norm(torch.bmm(trans, trans.transpose(2, 1) - I), dim=(1, 2))
+        )
         return loss
 
 
@@ -193,21 +230,31 @@ class DGCNN(BasePointcloudClassificationModel):
         self.bn4 = nn.BatchNorm2d(256)
         self.bn5 = nn.BatchNorm1d(1024)
 
-        self.conv1 = nn.Sequential(nn.Conv2d(6, 64, kernel_size=1, bias=False),
-                                   self.bn1,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv2 = nn.Sequential(nn.Conv2d(64 * 2, 64, kernel_size=1, bias=False),
-                                   self.bn2,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv3 = nn.Sequential(nn.Conv2d(64 * 2, 128, kernel_size=1, bias=False),
-                                   self.bn3,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv4 = nn.Sequential(nn.Conv2d(128 * 2, 256, kernel_size=1, bias=False),
-                                   self.bn4,
-                                   nn.LeakyReLU(negative_slope=0.2))
-        self.conv5 = nn.Sequential(nn.Conv1d(512, 1024, kernel_size=1, bias=False),
-                                   self.bn5,
-                                   nn.LeakyReLU(negative_slope=0.2))
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(6, 64, kernel_size=1, bias=False),
+            self.bn1,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(64 * 2, 64, kernel_size=1, bias=False),
+            self.bn2,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(64 * 2, 128, kernel_size=1, bias=False),
+            self.bn3,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv4 = nn.Sequential(
+            nn.Conv2d(128 * 2, 256, kernel_size=1, bias=False),
+            self.bn4,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
+        self.conv5 = nn.Sequential(
+            nn.Conv1d(512, 1024, kernel_size=1, bias=False),
+            self.bn5,
+            nn.LeakyReLU(negative_slope=0.2),
+        )
         self.linear1 = nn.Linear(1024 * 2, 512, bias=False)
         self.bn6 = nn.BatchNorm1d(512)
         self.dp1 = nn.Dropout(p=0.5)
@@ -251,7 +298,6 @@ class DGCNN(BasePointcloudClassificationModel):
         return x, trans_feat
 
 
-
 class PointcloudCanonFunction(pl.LightningModule):
     def __init__(self, hyperparams):
         super().__init__()
@@ -269,11 +315,13 @@ class PointcloudCanonFunction(pl.LightningModule):
     def gram_schmidt(self, vectors):
         v1 = vectors[:, 0]
         v1 = v1 / torch.norm(v1, dim=1, keepdim=True)
-        v2 = (vectors[:, 1] - torch.sum(vectors[:, 1] * v1, dim=1, keepdim=True) * v1)
+        v2 = vectors[:, 1] - torch.sum(vectors[:, 1] * v1, dim=1, keepdim=True) * v1
         v2 = v2 / torch.norm(v2, dim=1, keepdim=True)
-        v3 = (vectors[:, 2] - torch.sum(vectors[:, 2] * v1, dim=1, keepdim=True) * v1 - torch.sum(vectors[:, 2] * v2,
-                                                                                                  dim=1,
-                                                                                                  keepdim=True) * v2)
+        v3 = (
+            vectors[:, 2]
+            - torch.sum(vectors[:, 2] * v1, dim=1, keepdim=True) * v1
+            - torch.sum(vectors[:, 2] * v2, dim=1, keepdim=True) * v2
+        )
         v3 = v3 / torch.norm(v3, dim=1, keepdim=True)
         return torch.stack([v1, v2, v3], dim=1)
 
@@ -282,8 +330,10 @@ class PointcloudPredFunction(pl.LightningModule):
     def __init__(self, hyperparams):
         super().__init__()
         self.model_type = hyperparams.pred_model_type
-        self.model = {"pointnet": lambda: Pointnet(hyperparams),
-                      "DGCNN": lambda: DGCNN(hyperparams)}[self.model_type]()
+        self.model = {
+            "pointnet": lambda: Pointnet(hyperparams),
+            "DGCNN": lambda: DGCNN(hyperparams),
+        }[self.model_type]()
 
     def forward(self, points):
         return self.model(points)
@@ -303,7 +353,9 @@ class EquivariantPointcloudModel(BasePointcloudClassificationModel):
         rotation_matrix_inverse = rotation_matrix.transpose(1, 2)
 
         # not applying translations
-        canonical_point_cloud = torch.bmm(point_cloud.transpose(1, 2), rotation_matrix_inverse)
+        canonical_point_cloud = torch.bmm(
+            point_cloud.transpose(1, 2), rotation_matrix_inverse
+        )
         canonical_point_cloud = canonical_point_cloud.transpose(1, 2)
 
         predictions, _ = self.pred_function(canonical_point_cloud)
@@ -319,7 +371,9 @@ class VNPointnet(BasePointcloudClassificationModel):
             channel = 6
         else:
             channel = 3
-        self.feat = PointNetEncoder(hyperparams, global_feat=True, feature_transform=True, channel=channel)
+        self.feat = PointNetEncoder(
+            hyperparams, global_feat=True, feature_transform=True, channel=channel
+        )
         self.fc1 = nn.Linear(1024 // 3 * 6, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, hyperparams.num_classes)
