@@ -42,7 +42,7 @@ NBODY_HYPERPARAMS = {
 
 class EuclideangraphCanonFunction(pl.LightningModule):
     """
-    Returns rotation matrix and translation vectors for canonicalization 
+    Returns rotation matrix and translation vectors for canonicalization
     following eqns (9) and (10) in https://arxiv.org/pdf/2211.06489.pdf.
     """
     def __init__(self, hyperparams):
@@ -81,7 +81,7 @@ class EuclideangraphCanonFunction(pl.LightningModule):
     def forward(self, nodes, loc, edges, vel, edge_attr, charges):
         """
         Returns rotation matrix and translation vectors, which are denoted as O and t respectively in eqn. 10
-        of https://arxiv.org/pdf/2211.06489.pdf. 
+        of https://arxiv.org/pdf/2211.06489.pdf.
 
         Args:
             `nodes`: Norms of velocity vectors. Shape: (n_nodes*batch_size) x 1
@@ -170,7 +170,7 @@ class EuclideanGraphModel(BaseEuclideangraphModel):
     def forward(self, nodes, loc, edges, vel, edge_attr, charges):
         """
         Returns predicted coordinates.
-        
+
         Args:
             `nodes`: Norms of velocity vectors. Shape: (n_nodes*batch_size) x 1
             `loc`: Starting locations of nodes. Shape: (n_nodes*batch_size) x coord_dim
@@ -179,27 +179,27 @@ class EuclideanGraphModel(BaseEuclideangraphModel):
             `edge_attr`: Products of charges and squared relative distances between adjacent nodes (each have their own column). Shape: (n_edges*batch_size) x 2
             `charges`: Charges of nodes . Shape: (n_nodes * batch_size) x 1
         """
-        # Rotation and translation vectors from eqn (10) in https://arxiv.org/pdf/2211.06489.pdf. 
+        # Rotation and translation vectors from eqn (10) in https://arxiv.org/pdf/2211.06489.pdf.
         # Shapes: (n_nodes * batch_size) x 3 x 3 and (n_nodes * batch_size) x 3
         rotation_matrix, translation_vectors = self.canon_function(nodes, loc, edges, vel, edge_attr, charges)
         rotation_matrix_inverse = rotation_matrix.transpose(1, 2) # Inverse of a rotation matrix is its transpose.
 
-        # Canonicalizes coordinates by rotating node coordinates and translation vectors by inverse rotation. 
-        # Shape: (n_nodes * batch_size) x coord_dim. 
+        # Canonicalizes coordinates by rotating node coordinates and translation vectors by inverse rotation.
+        # Shape: (n_nodes * batch_size) x coord_dim.
         canonical_loc = (
             torch.bmm(loc[:, None, :], rotation_matrix_inverse).squeeze()
             - torch.bmm(translation_vectors[:, None, :], rotation_matrix_inverse).squeeze()
         )
         # Canonicalizes velocities.
-        # Shape: (n_nodes * batch_size) x vel_dim. 
+        # Shape: (n_nodes * batch_size) x vel_dim.
         canonical_vel = torch.bmm(vel[:, None, :], rotation_matrix_inverse).squeeze()
 
         # Makes prediction on canonical inputs.
-        # Shape: (n_nodes * batch_size) x coord_dim. 
+        # Shape: (n_nodes * batch_size) x coord_dim.
         position_prediction = self.pred_function(nodes, canonical_loc, edges, canonical_vel, edge_attr, charges)
 
-        # Applies rotation to predictions, following equation (10) from https://arxiv.org/pdf/2211.06489.pdf 
-        # Shape: (n_nodes * batch_size) x coord_dim. 
+        # Applies rotation to predictions, following equation (10) from https://arxiv.org/pdf/2211.06489.pdf
+        # Shape: (n_nodes * batch_size) x coord_dim.
         position_prediction = (
             torch.bmm(position_prediction[:, None, :], rotation_matrix).squeeze() + translation_vectors
         )

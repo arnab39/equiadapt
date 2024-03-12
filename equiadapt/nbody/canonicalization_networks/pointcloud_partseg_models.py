@@ -154,7 +154,7 @@ class BasePointcloudModel(pl.LightningModule):
         return outputs
 
     def validation_epoch_end(self, outputs):
-        
+
         accuracy, class_avg_accuracy, class_avg_iou, instance_avg_iou = self.get_metrics()
         self.log_dict(
             {"valid/accuracy": accuracy, "valid/class_avg_iou": class_avg_iou, "valid/instance_avg_iou": instance_avg_iou},
@@ -331,7 +331,7 @@ class DGCNN(BasePointcloudModel):
         self.regularization_transform = hyperparams.regularization_transform
         self.n_knn = hyperparams.n_knn
         self.transform_net = Transform_Net(hyperparams)
-        
+
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(64)
@@ -423,7 +423,7 @@ class DGCNN(BasePointcloudModel):
         x = self.conv11(x)
 
         x = x.transpose(1, 2)
-        
+
         trans_feat = None
         return x, trans_feat
 
@@ -569,9 +569,3 @@ class VNPointnet(BasePointcloudModel):
         net = net.view(B, N, self.num_parts)  # [B, N, 50]
 
         return net
-
-
-
-
-
-

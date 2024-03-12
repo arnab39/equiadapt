@@ -10,16 +10,16 @@ import torch
 
 from examples.nbody.prepare.nbody_data import NBodyDataModule
 
-HYPERPARAMS = {"model": "NBodyPipeline", 
-               "canon_model_type": "vndeepsets", 
-               "pred_model_type": "Transformer", 
-               "batch_size": 100, 
-               "dryrun": False, 
-               "use_wandb": False, 
-               "checkpoint": False, 
-               "num_epochs": 1000, 
-               "num_workers":0, 
-               "auto_tune":False, 
+HYPERPARAMS = {"model": "NBodyPipeline",
+               "canon_model_type": "vndeepsets",
+               "pred_model_type": "Transformer",
+               "batch_size": 100,
+               "dryrun": False,
+               "use_wandb": False,
+               "checkpoint": False,
+               "num_epochs": 1000,
+               "num_workers":0,
+               "auto_tune":False,
                "seed": 0,
                 "learning_rate": 1e-3, #1e-3
                 "weight_decay": 1e-12,
@@ -64,7 +64,7 @@ def train_nbody():
     else:
         print('Using wandb for logging.')
         os.environ["WANDB_MODE"] = "online"
-        
+
     wandb.login()
     wandb.init(config=hyperparams, entity="symmetry_group", project="equiadapt")
     wandb_logger = WandbLogger(project="equiadapt")
@@ -87,8 +87,8 @@ def train_nbody():
         trainer = pl.Trainer(fast_dev_run=False, max_epochs=2, accelerator="auto", limit_train_batches=10, limit_val_batches=10, logger=wandb_logger, callbacks=callbacks, deterministic=False, enable_checkpointing=hyperparams.checkpoint, log_every_n_steps=30)
     else:
         trainer = pl.Trainer(fast_dev_run=hyperparams.dryrun, max_epochs=hyperparams.num_epochs, accelerator="auto", logger=wandb_logger, callbacks=callbacks, deterministic=False, enable_checkpointing=hyperparams.checkpoint, log_every_n_steps=30)
-    
-    
+
+
     trainer.fit(model, datamodule=nbody_data)
 
 

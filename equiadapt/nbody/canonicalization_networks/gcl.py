@@ -42,14 +42,14 @@ class GCL_basic(nn.Module):
         pass
 
     def forward(self, x, edge_index, edge_attr=None):
-        
+
         """
-        Based on equation (2) in https://arxiv.org/pdf/2102.09844.pdf. 
+        Based on equation (2) in https://arxiv.org/pdf/2102.09844.pdf.
         A matrix of edge features is created and used to update node features (m and h in paper).
 
         Args:
             `x`: Matrix of node embeddings. Shape: (n_nodes * batch_size) x hidden_dim
-            `edge_index`: Length 2 list of tensors, containing indices of adjacent nodes; each shape (n_edges * batch_size). 
+            `edge_index`: Length 2 list of tensors, containing indices of adjacent nodes; each shape (n_edges * batch_size).
         """
         row, col = edge_index
         # phi_e in the paper. returns a matrix m of edge features used to update node and feature embeddings.
@@ -87,7 +87,7 @@ class GCL(GCL_basic):
         self.attention = attention
         self.t_eq = t_eq
         self.recurrent = recurrent
-        input_edge_nf = input_nf * 2 # because we concatenate 
+        input_edge_nf = input_nf * 2 # because we concatenate
         self.edge_mlp = nn.Sequential(
             nn.Linear(input_edge_nf + edges_in_nf, hidden_dim, bias=bias),
             act_fn,
@@ -136,7 +136,7 @@ class GCL(GCL_basic):
         row, col = edge_index
         # m_i from paper, where m__i = sum of edge attributes for edges adjacent to i (n_nodes x edge_attr_dim)
         agg = unsorted_segment_sum(data=edge_attr, segment_ids=row, num_segments=h.size(0))
-        out = torch.cat([h, agg], dim=1) 
+        out = torch.cat([h, agg], dim=1)
         out = self.node_mlp(out) # phi_h from the paper. Shape: (n_nodes * batch_size) x output_nf
         if self.recurrent:
             out = out + h
@@ -179,7 +179,7 @@ class GCL_rf(GCL_basic):
 
 
 # Equivariant graph convolutional layer
-# Based on equations (3) - (6) from https://arxiv.org/pdf/2102.09844.pdf 
+# Based on equations (3) - (6) from https://arxiv.org/pdf/2102.09844.pdf
 class E_GCL(nn.Module):
     """Graph Neural Net with global state and fixed number of nodes per graph.
     Args:
@@ -287,7 +287,7 @@ class E_GCL(nn.Module):
         else:
             agg = torch.cat([h, agg], dim=1) # concatenate inputs for phi_h. (n_nodes * batch_size) x (2*hidden_dim)
         # phi_h from eqn. (6). Updates node feature embeddings. Shape: (n_nodes * batch_size) x output_nf
-        out = self.node_mlp(agg) 
+        out = self.node_mlp(agg)
         if self.recurrent:
             out = h + out
         return out, agg # Shape: ((n_nodes * batch_size) x output_nf, (n_nodes * batch_size) x (2*hidden_dim))
@@ -304,13 +304,13 @@ class E_GCL(nn.Module):
             `edge_feat`: Matrix m from eqn. (3). (n_edges * batch_size) x hidden_dim
         """
         row, col = edge_index # indices of adjacent nodes
-        # Eqn. (4) phi_x(m_ij). Shape: (n_edges * batch_size) x num_vectors_in x num_vectors_out 
-        coord_matrix = self.coord_mlp(edge_feat).view(-1, self.num_vectors_in, self.num_vectors_out) 
+        # Eqn. (4) phi_x(m_ij). Shape: (n_edges * batch_size) x num_vectors_in x num_vectors_out
+        coord_matrix = self.coord_mlp(edge_feat).view(-1, self.num_vectors_in, self.num_vectors_out)
         if coord_diff.dim() == 2:
             coord_diff = coord_diff.unsqueeze(2)
             coord = coord.unsqueeze(2).repeat(1, 1, self.num_vectors_out) # n_nodes * batch_size x coord_dim x num_vectors_out
         # coord_diff = coord_diff / radial.unsqueeze(1)
-        # 
+        #
         trans = torch.einsum("bij,bci->bcj", coord_matrix, coord_diff)  # (n_edges * batch_size) x coord_dim x 1
         trans = torch.clamp(
             trans, min=-100, max=100
@@ -320,7 +320,7 @@ class E_GCL(nn.Module):
             coord = coord.mean(dim=2, keepdim=True) + agg * self.coords_weight
         else:
             coord += agg * self.coords_weight # Update coordinate embeddings following eqn. (4)
-        return coord # 
+        return coord #
 
     def coord2radial(self, edge_index, coord):
         """
@@ -348,7 +348,7 @@ class E_GCL(nn.Module):
         """
         Based on equations (3)-(6) in https://arxiv.org/pdf/2102.09844.pdf.
         Updates node feature and coordinate embeddings.
-         
+
         Args:
             `h`: Node feature embeddings. Shape: (n_nodes * batch_size) x hidden_dim
             `edge_index`: Indices of adjacent nodes. Shape: (n_edges * batch_size) x 2
@@ -356,7 +356,7 @@ class E_GCL(nn.Module):
         """
         row, col = edge_index #indices of adjacent nodes
         # squared dists and diffs. (n_edges * batch_size) x 1, (batch_size * n_edges) x coord_dim
-        radial, coord_diff = self.coord2radial(edge_index, coord) 
+        radial, coord_diff = self.coord2radial(edge_index, coord)
         edge_feat = self.edge_model(h[row], h[col], radial, edge_attr) #Shape: (n_edges * batch_size) x hidden_dim
         coord = self.coord_model(coord, edge_index, coord_diff, radial, edge_feat) # Updated coord embeddings from eqn. 4. (n_nodes * batch_size) x coord_dim x 1
         h, agg = self.node_model(h, edge_index, edge_feat, node_attr)
@@ -364,7 +364,7 @@ class E_GCL(nn.Module):
         # x = self.node_model(x, edge_index, x[col], u, batch)  # GCN
         return h, coord, edge_attr
 
-# Based on section 3.2 in https://arxiv.org/pdf/2102.09844.pdf. 
+# Based on section 3.2 in https://arxiv.org/pdf/2102.09844.pdf.
 class E_GCL_vel(E_GCL):
     """Graph Neural Net with global state and fixed number of nodes per graph.
     Args:
@@ -417,7 +417,7 @@ class E_GCL_vel(E_GCL):
         """
         Based on section 3.2 in https://arxiv.org/pdf/2102.09844.pdf.
         Updates node feature, coordinate, and velocity embeddings.
-         
+
         Args:
             `h`: Node feature embeddings. Shape: (n_nodes * batch_size) x hidden_dim
             `edge_index`: Indices of adjacent nodes. Shape: (n_edges * batch_size) x 2
@@ -431,7 +431,7 @@ class E_GCL_vel(E_GCL):
         edge_feat = self.edge_model(h[row], h[col], radial, edge_attr) #Shape: (n_edges * batch_size) x hidden_dim
         coord = self.coord_model(coord, edge_index, coord_diff, radial, edge_feat) # Updated coord embeddings from eqn. 4. (n_nodes * batch_size) x coord_dim x 1
         # phi_v from eqn. 7. Shape: (n_nodes * batch_size) x num_vectors_in * num_vectors_out
-        coord_vel_matrix = self.coord_mlp_vel(h).view(-1, self.num_vectors_in, self.num_vectors_out) 
+        coord_vel_matrix = self.coord_mlp_vel(h).view(-1, self.num_vectors_in, self.num_vectors_out)
         if vel.dim() == 2:
             vel = vel.unsqueeze(2)
         coord += torch.einsum("bij,bci->bcj", coord_vel_matrix, vel) # eqn. (7)
@@ -486,7 +486,7 @@ class GCL_rf_vel(nn.Module):
 
 def unsorted_segment_sum(data, segment_ids, num_segments):
     """Custom PyTorch op to replicate TensorFlow's `unsorted_segment_sum`."""
-    result_shape = (num_segments, data.size(1)) 
+    result_shape = (num_segments, data.size(1))
     result = data.new_full(result_shape, 0)  # Init empty result tensor.
     segment_ids = segment_ids.unsqueeze(-1).expand(-1, data.size(1))
     result.scatter_add_(0, segment_ids, data)

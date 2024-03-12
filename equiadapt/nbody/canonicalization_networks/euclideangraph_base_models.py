@@ -45,14 +45,14 @@ class BaseEuclideangraphModel(pl.LightningModule):
 
         Args:
             `batch`: a list of tensors [loc, vel, edge_attr, charges, loc_end]
-            `loc`: batch_size x n_nodes x 3 
+            `loc`: batch_size x n_nodes x 3
             `vel`: batch_size x n_nodes x 3
             `edge_attr`: batch_size x n_edges x 1
             `charges`: batch_size x n_nodes x 1
             `loc_end`: batch_size x n_nodes x 3
             `batch_idx`: index of the batch
         """
-     
+
         batch_size, n_nodes, _ = batch[0].size()
         batch = [d.view(-1, d.size(2)) for d in batch] # converts to 2D matrices
         loc, vel, edge_attr, charges, loc_end = batch
@@ -80,7 +80,7 @@ class BaseEuclideangraphModel(pl.LightningModule):
         Args:
         Args:
             `batch`: a list of tensors [loc, vel, edge_attr, charges, loc_end]
-            `loc`: batch_size x n_nodes x 3 
+            `loc`: batch_size x n_nodes x 3
             `vel`: batch_size x n_nodes x 3
             `edge_attr`: batch_size x n_edges x 1
             `charges`: batch_size x n_nodes x 1
@@ -229,7 +229,7 @@ class EGNN_vel(BaseEuclideangraphModel):
         Args:
             `h`: Norms of velocity vectors. Shape: (n_nodes * batch_size) x 1
             `x`: Coordinates of nodes. Shape: (n_nodes * batch_size) x coord_dim
-            `edges`: Length 2 list of vertices, where edges[0][i] is adjacent to edges[1][i]. 
+            `edges`: Length 2 list of vertices, where edges[0][i] is adjacent to edges[1][i].
             `vel`: Velocities of nodes. Shape: (n_nodes * batch_size) x vel_dim
             `edge_attr`: Products of charges along edges. batch_size x n_edges x 1
         """
@@ -278,7 +278,7 @@ class GNN(BaseEuclideangraphModel):
         Args:
             `nodes`: Norms of velocity vectors. Shape: (n_nodes * batch_size) x 1
             `loc`: Coordinates of nodes. Shape: (n_nodes * batch_size) x coord_dim
-            `edges`: Length 2 list of vertices, where edges[0][i] is adjacent to edges[1][i]. 
+            `edges`: Length 2 list of vertices, where edges[0][i] is adjacent to edges[1][i].
             `vel`: Velocities of nodes. Shape: (n_nodes * batch_size) x vel_dim
             `edge_attr`: Products of charges along edges. batch_size x n_edges x 1
         """
@@ -436,8 +436,8 @@ class Transformer(BaseEuclideangraphModel):
         self.encoder = torch.nn.TransformerEncoder(encoder_layer=encoder_layer, num_layers=self.n_layers)
 
         self.decoder = nn.Sequential(
-            nn.Linear(in_features=7*self.hidden_dim, out_features=7*self.hidden_dim), 
-            self.act_fn, 
+            nn.Linear(in_features=7*self.hidden_dim, out_features=7*self.hidden_dim),
+            self.act_fn,
             nn.Linear(in_features=7*self.hidden_dim, out_features=3)
         )
 
@@ -464,7 +464,7 @@ class Transformer(BaseEuclideangraphModel):
         nodes = nodes.view(-1, 5, nodes.shape[1]*nodes.shape[2]) # batch_size x n_nodes x (7 * hidden_dim)
         h = self.encoder(nodes) # batch_size x n_nodes x (7 * hidden_dim)
         h = h.view(-1,h.shape[2])
-        h = self.decoder(h) 
+        h = self.decoder(h)
         return h
 
 
@@ -483,7 +483,7 @@ class PositionalEncoding(nn.Module):
             `x`: Concatenated velocity and coordinate vectors. Shape: (n_nodes * batch_size x 6 x 1)
         """
         pe = torch.zeros(x.shape[0],x.shape[1], self.hidden_dim).to(x.device) # (n_nodes * batch_size) x 6 x 32
-        sin_terms = torch.sin(x * self.div_term) 
+        sin_terms = torch.sin(x * self.div_term)
         pe[:, :,0::2] = sin_terms
-        pe[:, :,1::2] = torch.cos(x * self.div_term) 
+        pe[:, :,1::2] = torch.cos(x * self.div_term)
         return self.dropout(pe)

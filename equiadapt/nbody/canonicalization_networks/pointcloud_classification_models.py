@@ -339,10 +339,3 @@ class VNPointnet(BasePointcloudClassificationModel):
     def get_loss(self, outputs, targets):
         predictions = self.get_predictions(outputs)
         return F.nll_loss(predictions, targets)
-
-
-
-
-
-
-

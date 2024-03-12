@@ -57,7 +57,7 @@ class SetCanonFunction(pl.LightningModule):
         output = self.model(x, set_indices, batch_idx)
         temperature = self.get_temperature(batch_idx)
         return F.softmax(output / temperature, dim=1)
-    
+
     def get_temperature(self, batch_idx):
         temperature = np.exp(-self.temprature_anneal * batch_idx)
         return np.max([0.1, temperature])

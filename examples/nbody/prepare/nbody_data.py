@@ -63,7 +63,7 @@ class NBodyDataset():
                     edge_attr.append(edges[:self.max_samples, i, j])
                     rows.append(i)
                     cols.append(j)
-        # Once loop is over, 
+        # Once loop is over,
         # edge_attr = list all charge products between distinct nodes (20 x max_samples) (ie. product for all edges)
         # where edge_attr[i] = product of charges for node rows[i] and cols[i]
         edges = [rows, cols]

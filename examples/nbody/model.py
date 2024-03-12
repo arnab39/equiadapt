@@ -31,7 +31,7 @@ class NBodyPipeline(pl.LightningModule):
 
         Args:
             `batch`: a list of tensors [loc, vel, edge_attr, charges, loc_end]
-            `loc`: batch_size x n_nodes x 3 
+            `loc`: batch_size x n_nodes x 3
             `vel`: batch_size x n_nodes x 3
             `edge_attr`: batch_size x n_edges x 1
             `charges`: batch_size x n_nodes x 1
@@ -63,7 +63,7 @@ class NBodyPipeline(pl.LightningModule):
         self.log_dict(metrics, on_epoch=True)
 
         return loss
-    
+
 
     def validation_step(self, batch: torch.Tensor):
         batch_size, n_nodes, _ = batch[0].size()
@@ -92,7 +92,7 @@ class NBodyPipeline(pl.LightningModule):
 
         return loss
 
-          
+
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam([

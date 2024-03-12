@@ -158,5 +158,3 @@ class Transformer(BaseSetModel):
         #     x = ts.scatter(x, set_indices, reduce=self.final_pooling)
         output = self.output_layer(x).squeeze() * mask
         return output
-
-
