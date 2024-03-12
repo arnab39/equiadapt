@@ -114,21 +114,6 @@ class BaseEuclideangraphModel(pl.LightningModule):
         scheduler = self.lr_schedulers()
         self.log("lr", scheduler.optimizer.param_groups[0]["lr"])
 
-        # if self.current_epoch == 0:
-        #     model_filename = f"canonical_network/results/nbody/onnx_models/{self.model}_{wandb.run.name}_{str(self.global_step)}.onnx"
-        #     torch.onnx.export(
-        #         self,
-        #         (
-        #             self.dummy_nodes.to(self.device),
-        #             self.dummy_loc.to(self.device),
-        #             [edges.to(self.device) for edges in self.dummy_edges],
-        #             self.dummy_vel.to(self.device),
-        #             self.dummy_edge_attr.to(self.device),
-        #         ),
-        #         model_filename,
-        #         opset_version=12,
-        #     )
-        #     wandb.save(model_filename)
 
     def get_edges(self, batch_size, n_nodes):
         """
