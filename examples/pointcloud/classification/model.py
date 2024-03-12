@@ -141,7 +141,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         avg_per_class_acc = metrics.balanced_accuracy_score(test_true, test_pred)
         self.log_dict(
             {"val/acc": test_acc,
-             "val/avg_per_class_acc": avg_per_class_acc},
+             "val/avg_per_class_acc": avg_per_class_acc}, # type: ignore
             prog_bar=True)
         
         return {"val/acc": test_acc, "val/avg_per_class_acc": avg_per_class_acc}
@@ -180,7 +180,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         avg_per_class_acc = metrics.balanced_accuracy_score(test_true, test_pred)
         self.log_dict(
             {"test/acc": test_acc,
-             "test/avg_per_class_acc": avg_per_class_acc},
+             "test/avg_per_class_acc": avg_per_class_acc}, # type: ignore
             prog_bar=True)
         
         return {"test/acc": test_acc, "test/avg_per_class_acc": avg_per_class_acc}

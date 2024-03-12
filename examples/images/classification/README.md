@@ -21,4 +21,4 @@ We use `hydra` and `OmegaConf` to setup experiments and parse configs. All the c
 - Dataset settings can be found [`here`](configs/dataset) and set with `dataset.dataset_name=cifar10`
 - Experiment settings can be found [`here`](configs/experiment) and set with `experiment.inference.num_rotations=8`
 - Prediction architecture settings can be found [`here`](configs/prediction) and set with `prediction.prediction_network_architecture=vit`
-- Wandb logging settings can can be found [`here`](configs/wandb) and set with `wandb.use_wandb=1`
+- Wandb logging settings can can be found [`here`](configs/wandb) and set with `wandb.use_wandb=1`. You have to change the entity to your wandb team.

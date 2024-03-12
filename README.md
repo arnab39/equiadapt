@@ -107,6 +107,34 @@ conda activate equiadapt
 pip install -e .
 ```
 
+
+# Running Instructions using examples in different domain
+
+We provide example code to run equiadapt in different data domains and tasks to achieve equivariance. You can also find [tutorial](tutorials) on how to use equiadapt with minimalistic changes to your own code.
+
+Before you jump to the instructions for each of them please follow the setup hydra instructions to create a `.env` file with the paths to store all the data, wandb logs and checkpoints.
+
+<table style="border:1px solid black; border-collapse: collapse;">
+  <tr>
+    <th style="border:1px solid black;" rowspan="2"><div align="center">Image</div></th>
+    <td style="border:1px solid black;">Classification</td>
+    <td style="border:1px solid black;"><a href="examples/images/classification/README.md">here</a></td>
+  </tr>
+  <tr>
+    <td style="border:1px solid black;">Segmentation</td>
+    <td style="border:1px solid black;"><a href="examples/images/segmentation/README.md">here</a></td>
+  </tr>
+  <tr>
+    <th style="border:1px solid black;" rowspan="2"><div align="center">Point Cloud</div></th>
+    <td style="border:1px solid black;">Classification</td>
+    <td style="border:1px solid black;"><a href="examples/pointcloud/classification/README.md">here</a></td>
+  </tr>
+  <tr>
+    <td style="border:1px solid black;">Part Segmentation</td>
+    <td style="border:1px solid black;"><a href="examples/pointcloud/part_segmentation/README.md">here</a></td>
+  </tr>
+</table>
+
 ### Setup Hydra 
 - Create a `.env` file in the root of the project with the following content:
   ```
@@ -116,11 +144,6 @@ pip install -e .
     export DATA_PATH="/path/to/your/data/directory"
     export CHECKPOINT_PATH="/path/to/your/checkpoint/directory"
   ```  
-
-
-# Running Instructions
-For image classification: [here](examples/images/classification/README.md)  
-For (image) instance segmentation: [here](examples/images/segmentation/README.md)
 
 
 # Related papers
