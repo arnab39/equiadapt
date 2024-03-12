@@ -16,13 +16,13 @@ class BaseCanonicalization(torch.nn.Module):
         """
         Forward method for the canonicalization which takes the input data and
         returns the canonicalized version of the data
-        
+
         Args:
             x: input data
             targets: (optional) additional targets that need to be canonicalized, 
                     such as boxes for promptable instance segmentation
             **kwargs: additional arguments
-        
+
         Returns:
             canonicalized_x: canonicalized version of the input data
         """
@@ -44,11 +44,11 @@ class BaseCanonicalization(torch.nn.Module):
             the canonicalized version of the data and targets 
         """
         raise NotImplementedError()
-    
+
 
     def invert_canonicalization(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
         """
-        This method takes the output of the canonicalized data 
+        This method takes the output of the canonicalized data
         and returns the output for the original data orientation
         
         Args: 
@@ -60,7 +60,7 @@ class BaseCanonicalization(torch.nn.Module):
             
         """
         raise NotImplementedError()
-    
+
 
 class IdentityCanonicalization(BaseCanonicalization):
     def __init__(self, canonicalization_network: torch.nn.Module = torch.nn.Identity()):
@@ -83,8 +83,8 @@ class IdentityCanonicalization(BaseCanonicalization):
     
  
 class DiscreteGroupCanonicalization(BaseCanonicalization):
-    def __init__(self, 
-                 canonicalization_network: torch.nn.Module, 
+    def __init__(self,
+                 canonicalization_network: torch.nn.Module,
                  beta: float = 1.0,
                  gradient_trick: str = 'straight_through'):
         super().__init__(canonicalization_network)
@@ -95,10 +95,10 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
         """
         This method takes the activations for each group element as input and
         returns the group element in a differentiable manner
-        
+
         Args:
             group_activations: activations for each group element
-            
+
         Returns:
             group_element_onehot: one hot encoding of the group element
         """
@@ -106,31 +106,31 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
             torch.argmax(group_activations, dim=-1), self.num_group).float()
         group_activations_soft = torch.nn.functional.softmax(self.beta * group_activations, dim=-1)
         if self.gradient_trick == 'straight_through':
-            if self.training:            
-                group_element_onehot = (group_activations_one_hot + group_activations_soft - group_activations_soft.detach()) 
+            if self.training:
+                group_element_onehot = (group_activations_one_hot + group_activations_soft - group_activations_soft.detach())
             else:
                 group_element_onehot = group_activations_one_hot
         elif self.gradient_trick == 'gumbel_softmax':
             group_element_onehot = torch.nn.functional.gumbel_softmax(group_activations, tau=1, hard=True)
         else:
-            raise ValueError(f'Gradient trick {self.gradient_trick} not implemented')  
-        
+            raise ValueError(f'Gradient trick {self.gradient_trick} not implemented')
+
         # return the group element one hot encoding
         return group_element_onehot
     
     def canonicalize(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
-        This method takes an input data and 
+        This method takes an input data and
         returns its canonicalized version and
         a dictionary containing the information
         about the canonicalization
         """
         raise NotImplementedError()
-    
+
 
     def invert_canonicalization(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
         """
-        This method takes the output of the canonicalized data 
+        This method takes the output of the canonicalized data
         and returns the output for the original data orientation
         """
         raise NotImplementedError()
@@ -147,7 +147,7 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
         return (group_activations.argmax(dim=-1) == 0).float().mean()
 
 
-    
+
 class ContinuousGroupCanonicalization(BaseCanonicalization):
     def __init__(self, 
                  canonicalization_network: torch.nn.Module, 
@@ -159,10 +159,10 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
         """
         This method takes the  as input and
         returns the group element in a differentiable manner
-        
+
         Args:
             group_activations: activations for each group element
-            
+
         Returns:
             group_element: group element
         """
@@ -170,17 +170,17 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
     
     def canonicalize(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
-        This method takes an input data and 
+        This method takes an input data and
         returns its canonicalized version and
         a dictionary containing the information
         about the canonicalization
         """
         raise NotImplementedError()
-    
+
 
     def invert_canonicalization(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
         """
-        This method takes the output of the canonicalized data 
+        This method takes the output of the canonicalized data
         and returns the output for the original data orientation
         """
         raise NotImplementedError()
@@ -198,5 +198,3 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
         identity_element = torch.eye(group_elements_rep.shape[-1]).repeat(
             group_elements_rep.shape[0], 1, 1).to(self.device)
         return 1.0 - torch.nn.functional.mse_loss(group_elements_rep, identity_element).mean()
-    
-    

@@ -78,7 +78,7 @@ class LieParameterization(torch.nn.Module):
             torch.Tensor: The representation of shape (batch_size, rep_dim, rep_dim).
         """
         son_rep = self.get_son_rep(params)
-        
+
         # This is a simplified and conceptual approach; actual reflection handling
         # would need to determine how to reflect (e.g., across which axis or plane)
         # and this might not directly apply as-is.
@@ -97,7 +97,7 @@ class LieParameterization(torch.nn.Module):
             torch.Tensor: The representation of shape (batch_size, rep_dim, rep_dim).
         """
         son_param_dim = self.group_dim * (self.group_dim - 1) // 2
-        rho = torch.zeros(params.shape[0], self.group_dim + 1, 
+        rho = torch.zeros(params.shape[0], self.group_dim + 1,
                           self.group_dim + 1, device=params.device)
         rho[:, :self.group_dim, :self.group_dim] = self.get_son_rep(
             params[:, :son_param_dim].unsqueeze(0)).squeeze(0)
@@ -142,7 +142,7 @@ class LieParameterization(torch.nn.Module):
         en_rep[:, self.group_dim, self.group_dim] = 1
 
         return en_rep
-        
+
 
     def get_group_rep(self, params: torch.Tensor) -> torch.Tensor:
         """Computes the representation for the specified Lie group.
@@ -164,5 +164,3 @@ class LieParameterization(torch.nn.Module):
             return self.get_en_rep(params, torch.zeros(params.shape[0], 1, device=params.device))
         else:
             raise ValueError(f"Unsupported group type: {self.group_type}")
-
-    
