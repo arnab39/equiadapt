@@ -72,7 +72,8 @@ def get_trainer(
                 else "ddp_find_unused_parameters_true"
             ),
             # since when you do a forward pass through the (large) prediction network (such as Segment-Anything Model)
-            # there might be some unused parameters in the prediction network, so we need to set the strategy to ddp_find_unused_parameters_true
+            # there might be some unused parameters in the prediction network, so we need to set the strategy to
+            # ddp_find_unused_parameters_true
         )
 
     return trainer

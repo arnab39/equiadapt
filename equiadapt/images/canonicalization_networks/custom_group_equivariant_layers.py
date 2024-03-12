@@ -189,7 +189,6 @@ class RotationEquivariantConv(nn.Module):
         )[:num_rotations].to(device)
 
     def get_rotated_permuted_weights(self, weights, num_rotations=4):
-        device = weights.device
         weights = weights.flatten(0, 1).unsqueeze(0).repeat(num_rotations, 1, 1, 1, 1)
         permuted_weights = torch.gather(weights, 2, self.permute_indices_along_group)
         rotated_permuted_weights = K.geometry.rotate(

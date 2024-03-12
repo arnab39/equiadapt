@@ -344,7 +344,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
                 "scheduler": scheduler,
                 "interval": "epoch",
             }
-            print(f"Using SGD optimizer with learning rate scheduler")
+            print("Using SGD optimizer with learning rate scheduler")
             return {"optimizer": optimizer, "lr_scheduler": scheduler_dict}
         else:
             raise NotImplementedError

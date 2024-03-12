@@ -3,10 +3,11 @@ import warnings
 import os
 from torch.utils.data import Dataset, DataLoader
 
-warnings.filterwarnings("ignore")
 import pytorch_lightning as pl
 import h5py
 import glob
+
+warnings.filterwarnings("ignore")
 
 
 def translate_pointcloud(pointcloud):
