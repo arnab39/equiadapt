@@ -75,7 +75,6 @@ class ImageClassifierPipeline(pl.LightningModule):
 
         # add group contrast loss while using optmization based canonicalization method
         if "opt" in self.hyperparams.canonicalization_type:
-        if "opt" in self.hyperparams.canonicalization_type:
             group_contrast_loss = self.canonicalizer.get_optimization_specific_loss()
             loss += (
                 group_contrast_loss
@@ -221,9 +220,17 @@ class ImageClassifierPipeline(pl.LightningModule):
             }
             return {"optimizer": optimizer, "lr_scheduler": scheduler_dict}
         else:
-            print(f'using AdamW optimizer')
-            optimizer = torch.optim.AdamW([
-                    {'params': self.prediction_network.parameters(), 'lr': self.hyperparams.experiment.training.prediction_lr},
-                    {'params': self.canonicalizer.parameters(), 'lr': self.hyperparams.experiment.training.canonicalization_lr},
-                ])
+            print(f"using AdamW optimizer")
+            optimizer = torch.optim.AdamW(
+                [
+                    {
+                        "params": self.prediction_network.parameters(),
+                        "lr": self.hyperparams.experiment.training.prediction_lr,
+                    },
+                    {
+                        "params": self.canonicalizer.parameters(),
+                        "lr": self.hyperparams.experiment.training.canonicalization_lr,
+                    },
+                ]
+            )
             return optimizer
