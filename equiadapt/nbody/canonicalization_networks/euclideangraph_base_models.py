@@ -140,7 +140,6 @@ class BaseEuclideangraphModel(pl.LightningModule):
         scheduler = self.lr_schedulers()
         self.log("lr", scheduler.optimizer.param_groups[0]["lr"])
 
-
     def get_edges(self, batch_size, n_nodes):
         """
         Returns a length 2 list of vertices, where edges[0][i] is adjacent to edges[1][i]
@@ -181,7 +180,7 @@ class EGNN_vel(BaseEuclideangraphModel):
         self.num_vectors = 1
 
         # self.reg = reg
-        ### Encoder
+        # Encoder
         # self.add_module("gcl_0", E_GCL(in_node_nf, self.hidden_dim, self.hidden_dim, edges_in_d=in_edge_nf, act_fn=act_fn, recurrent=False, coords_weight=coords_weight))
         self.embedding = nn.Linear(hyperparams.in_node_nf, self.hidden_dim)
         self.add_module(
@@ -261,7 +260,7 @@ class GNN(BaseEuclideangraphModel):
         self.act_fn = nn.SiLU()
         self.attention = 0
         self.recurrent = True
-        ### Encoder
+        # Encoder
         # self.add_module("gcl_0", GCL(self.hidden_dim, self.hidden_dim, self.hidden_dim, edges_in_nf=1, act_fn=act_fn, attention=attention, recurrent=recurrent))
         for i in range(0, self.n_layers):
             self.add_module(
