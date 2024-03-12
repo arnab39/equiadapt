@@ -97,7 +97,7 @@ loss.backward()
 ```
 
 # Setup instructions
-### Setup Conda environment 
+### Setup Conda environment
 
 To create a conda environment with the necessary packages:
 
@@ -115,7 +115,7 @@ pip install -e .
     export WANDB_CACHE_DIR="/path/to/your/wandb/cache/directory"
     export DATA_PATH="/path/to/your/data/directory"
     export CHECKPOINT_PATH="/path/to/your/checkpoint/directory"
-  ```  
+  ```
 
 
 # Running Instructions
@@ -127,7 +127,7 @@ For (image) instance segmentation: [here](examples/images/segmentation/README.md
 
 For more insights on this library refer to our original paper on the idea: [Equivariance with Learned Canonicalization Function (ICML 2023)](https://proceedings.mlr.press/v202/kaba23a.html) and how to extend it to make any existing large pre-trained model equivariant: [Equivariant Adaptation of Large Pretrained Models (NeurIPS 2023)](https://proceedings.neurips.cc/paper_files/paper/2023/hash/9d5856318032ef3630cb580f4e24f823-Abstract-Conference.html).
 
-To learn more about this from a blog, check out: [How to make your foundation model equivariant](https://mila.quebec/en/article/how-to-make-your-foundation-model-equivariant/)  
+To learn more about this from a blog, check out: [How to make your foundation model equivariant](https://mila.quebec/en/article/how-to-make-your-foundation-model-equivariant/)
 
 # Citation
 If you find this library or the associated papers useful, please cite the following papers:
@@ -162,7 +162,22 @@ This repository is a work in progress. We are actively working on improving the 
 
 # Contact
 
-For questions related to this code, please raise an issue, or you can mail us at: 
+For questions related to this code, please raise an issue and you can mail us at:
 ```arnab.mondal@mila.quebec```
 ```siba-smarak.panigrahi@mila.quebec```
 ```kabaseko@mila.quebec```
+
+# Contributing
+
+You can check out the [contributor's guide](CONTRIBUTING.md).
+
+This project uses `pre-commit`_, you can install it before making any
+changes::
+
+    pip install pre-commit
+    cd equiadapt
+    pre-commit install
+
+It is a good idea to update the hooks to the latest version::
+
+    pre-commit autoupdate

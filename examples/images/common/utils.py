@@ -34,7 +34,7 @@ def get_canonicalization_network(
     """
     if canonicalization_type == 'identity':
         return torch.nn.Identity()
-    
+
     canonicalization_network_dict = {
         'group_equivariant': {
             'escnn': ESCNNEquivariantNetwork,
@@ -52,21 +52,21 @@ def get_canonicalization_network(
             'cnn': ConvNetwork,
         }
     }
-    
+
     if canonicalization_type not in canonicalization_network_dict:
-        raise ValueError(f'{canonicalization_type} is not implemented')   
+        raise ValueError(f'{canonicalization_type} is not implemented')
     if canonicalization_hyperparams.network_type not in canonicalization_network_dict[canonicalization_type]:
         raise ValueError(f'{canonicalization_hyperparams.network_type} is not implemented for {canonicalization_type}')
-    
+
     canonicalization_network = \
     canonicalization_network_dict[canonicalization_type][
         canonicalization_hyperparams.network_type
         ](
-           in_shape = (in_shape[0], canonicalization_hyperparams.resize_shape, 
-                       canonicalization_hyperparams.resize_shape), 
+           in_shape = (in_shape[0], canonicalization_hyperparams.resize_shape,
+                       canonicalization_hyperparams.resize_shape),
            **canonicalization_hyperparams.network_hyperparams
         )
-    
+
     return canonicalization_network
 
 
@@ -85,21 +85,21 @@ def get_canonicalizer(
     """
     if canonicalization_type == 'identity':
         return IdentityCanonicalization(canonicalization_network)
-    
+
     canonicalizer_dict = {
         'group_equivariant': GroupEquivariantImageCanonicalization,
         'steerable': SteerableImageCanonicalization,
         'opt_group_equivariant': OptimizedGroupEquivariantImageCanonicalization,
         'opt_steerable': OptimizedSteerableImageCanonicalization
     }
-    
+
     if canonicalization_type not in canonicalizer_dict:
         raise ValueError(f'{canonicalization_type} needs a canonicalization network implementation.')
-    
+
     canonicalizer = canonicalizer_dict[canonicalization_type](
         canonicalization_network=canonicalization_network,
         canonicalization_hyperparams=canonicalization_hyperparams,
         in_shape=in_shape
     )
-    
+
     return canonicalizer
