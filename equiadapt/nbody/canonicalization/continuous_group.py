@@ -1,12 +1,5 @@
 import torch
-import kornia as K
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
-from equiadapt.common.utils import gram_schmidt
-from torch.nn.modules import Module
-from torchvision import transforms
-import math
-from torch.nn import functional as F
-from equiadapt.common.utils import gram_schmidt
 
 class ContinuousGroupNBody(ContinuousGroupCanonicalization):
     def __init__(self,

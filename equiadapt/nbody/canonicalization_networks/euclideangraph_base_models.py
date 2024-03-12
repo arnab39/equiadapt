@@ -1,16 +1,11 @@
-import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
 import pytorch_lightning as pl
-from pytorch3d.transforms import RotateAxisAngle, Rotate, random_rotations
-import torchmetrics.functional as tmf
 import wandb
 import torch_scatter as ts
 import math
 from equiadapt.nbody.canonicalization_networks.gcl import E_GCL_vel, GCL
-from equiadapt.nbody.canonicalization_networks.vn_layers import VNLinearLeakyReLU, VNLinear, VNLeakyReLU, VNSoftplus
+from equiadapt.nbody.canonicalization_networks.vn_layers import VNLeakyReLU, VNSoftplus
 from equiadapt.nbody.canonicalization_networks.set_base_models import SequentialMultiple
 
 

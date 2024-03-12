@@ -1,11 +1,9 @@
 import math
-from typing import Dict, Union
 
 import torch
 from omegaconf import DictConfig
 from torchvision import transforms
 
-import wandb
 
 
 def get_inference_method(canonicalizer: torch.nn.Module,

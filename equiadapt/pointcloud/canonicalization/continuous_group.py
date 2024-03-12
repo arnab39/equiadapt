@@ -2,7 +2,6 @@
 # This is meant to be a proof of concept and we are happy to receive contribution to extend this to other group actions.
 
 import torch
-import kornia as K
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 from equiadapt.common.utils import gram_schmidt
 from typing import Any, List, Tuple, Union

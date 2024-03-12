@@ -1,11 +1,8 @@
 import numpy as np
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 import pytorch_lightning as pl
-import os
-import json
 import numpy as np
-from torch.utils.data import Dataset
 import pathlib
 
 SRC_PATH = pathlib.Path(__file__).parent.parent

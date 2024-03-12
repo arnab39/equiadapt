@@ -1,7 +1,7 @@
 from torch import optim, nn
 import pytorch_lightning as pl
 import torch
-from torch.optim.lr_scheduler import OneCycleLR, MultiStepLR
+from torch.optim.lr_scheduler import MultiStepLR
 from canonical_network.models.image_networks import VanillaNetwork, EquivariantCanonizationNetwork, \
     BasicConvEncoder, Identity, PCACanonizationNetwork, RotationEquivariantConvEncoder, OptimizationCanonizationNetwork
 from canonical_network.models.resnet import resnet44

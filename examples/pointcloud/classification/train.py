@@ -7,7 +7,6 @@ import wandb
 from omegaconf import DictConfig, OmegaConf
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
-from argparse import ArgumentParser
 
 from prepare import ModelNetDataModule
 from train_utils import get_model_pipeline, get_callbacks, get_checkpoint_name, get_trainer, load_envs

@@ -1,10 +1,7 @@
 from omegaconf import DictConfig
 import torch
-import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-import pytorch_lightning as pl
-from torch.autograd import Variable
 import torch.nn.init as init
 
 def knn(x, k):

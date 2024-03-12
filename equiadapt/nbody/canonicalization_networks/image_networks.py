@@ -4,7 +4,6 @@ from torch import nn
 import torch
 from canonical_network.models.equivariant_layers import RotationEquivariantConvLift, \
     RotoReflectionEquivariantConvLift, RotationEquivariantConv, RotoReflectionEquivariantConv
-from torchvision import transforms
 from canonical_network.models.set_base_models import SequentialMultiple
 import numpy as np
 

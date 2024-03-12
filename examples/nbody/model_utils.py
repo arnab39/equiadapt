@@ -1,6 +1,4 @@
 from equiadapt.nbody.canonicalization_networks.euclideangraph_base_models import EGNN_vel, VNDeepSets, GNN, Transformer
-from collections import namedtuple
-from omegaconf import OmegaConf
 import torch
 
 

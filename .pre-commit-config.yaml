@@ -24,15 +24,15 @@ repos:
 #   - id: pyupgrade
 #     args: ['--py37-plus']
 
-## If you want to avoid flake8 errors due to unused vars or imports:
-# - repo: https://github.com/PyCQA/autoflake
-#   rev: v2.1.1
-#   hooks:
-#   - id: autoflake
-#     args: [
-#       --in-place,
-#       --remove-all-unused-imports,
-#     ]
+# If you want to avoid flake8 errors due to unused vars or imports:
+- repo: https://github.com/PyCQA/autoflake
+  rev: v2.1.1
+  hooks:
+  - id: autoflake
+    args: [
+      --in-place,
+      --remove-all-unused-imports,
+    ]
 
 # - repo: https://github.com/PyCQA/isort
 #   rev: 5.13.2

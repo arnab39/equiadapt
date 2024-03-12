@@ -3,7 +3,7 @@ import os
 import random
 
 import pytorch_lightning as pl
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import STL10
 

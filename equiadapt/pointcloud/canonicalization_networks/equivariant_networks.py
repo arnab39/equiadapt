@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from equiadapt.pointcloud.canonicalization_networks.vector_neuron_layers import VNLinearLeakyReLU, VNLinear, VNMaxPool, VNBatchNorm
+from equiadapt.pointcloud.canonicalization_networks.vector_neuron_layers import VNLinearLeakyReLU, VNMaxPool, VNBatchNorm
 
 def knn(x, k):
     inner = -2 * torch.matmul(x.transpose(2, 1), x)

@@ -1,7 +1,5 @@
 from torch import nn
 import torch
-import torch.nn.functional as F
-import torch_scatter as ts
 
 
 class MLP(nn.Module):

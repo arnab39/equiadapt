@@ -4,9 +4,8 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 import pytorch_lightning as pl
 import wandb
 import os
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import OmegaConf
 from examples.nbody.model import NBodyPipeline
-import torch
 
 from examples.nbody.prepare.nbody_data import NBodyDataModule
 

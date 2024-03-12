@@ -1,4 +1,3 @@
-import argparse
 import os
 import urllib.request as url_req
 import zipfile
