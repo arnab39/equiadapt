@@ -10,3 +10,6 @@ version_scheme = "no-guess-dev"
 
 [tool.mypy]
 exclude = ['docs']
+
+[tool.flake8]
+max-line-length = 130
