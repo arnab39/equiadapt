@@ -3,15 +3,22 @@ from equiadapt.images.canonicalization import discrete_group
 
 from equiadapt.images.canonicalization.continuous_group import (
     ContinuousGroupImageCanonicalization,
-    OptimizedSteerableImageCanonicalization, SteerableImageCanonicalization,)
+    OptimizedSteerableImageCanonicalization,
+    SteerableImageCanonicalization,
+)
 from equiadapt.images.canonicalization.discrete_group import (
-    DiscreteGroupImageCanonicalization, GroupEquivariantImageCanonicalization,
-    OptimizedGroupEquivariantImageCanonicalization,)
+    DiscreteGroupImageCanonicalization,
+    GroupEquivariantImageCanonicalization,
+    OptimizedGroupEquivariantImageCanonicalization,
+)
 
-__all__ = ['ContinuousGroupImageCanonicalization',
-           'DiscreteGroupImageCanonicalization',
-           'GroupEquivariantImageCanonicalization',
-           'OptimizedGroupEquivariantImageCanonicalization',
-           'OptimizedSteerableImageCanonicalization',
-           'SteerableImageCanonicalization', 'continuous_group',
-           'discrete_group']
+__all__ = [
+    "ContinuousGroupImageCanonicalization",
+    "DiscreteGroupImageCanonicalization",
+    "GroupEquivariantImageCanonicalization",
+    "OptimizedGroupEquivariantImageCanonicalization",
+    "OptimizedSteerableImageCanonicalization",
+    "SteerableImageCanonicalization",
+    "continuous_group",
+    "discrete_group",
+]

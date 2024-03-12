@@ -2,18 +2,18 @@
 # This is meant to be a proof of concept and we are happy to receive contribution to extend this to other group actions.
 
 import torch
-import kornia as K
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 from equiadapt.common.utils import gram_schmidt
 from typing import Any, List, Tuple, Union
 
-class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization):
-    def __init__(self,
-                 canonicalization_network: torch.nn.Module,
-                 canonicalization_hyperparams: dict,
-                 ):
-        super().__init__(canonicalization_network)
 
+class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization):
+    def __init__(
+        self,
+        canonicalization_network: torch.nn.Module,
+        canonicalization_hyperparams: dict,
+    ):
+        super().__init__(canonicalization_network)
 
     def get_groupelement(self, x: torch.Tensor):
         """
@@ -26,11 +26,11 @@ class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization)
         Returns:
             group_element: group element
         """
-        raise NotImplementedError('get_groupelement method is not implemented')
+        raise NotImplementedError("get_groupelement method is not implemented")
 
-
-
-    def canonicalize(self, x: torch.Tensor, targets: List = None, **kwargs: Any) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
+    def canonicalize(
+        self, x: torch.Tensor, targets: List = None, **kwargs: Any
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an image as input and
         returns the canonicalized image
@@ -46,26 +46,26 @@ class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization)
         # get the group element dictionary
         group_element_dict = self.get_groupelement(x)
 
-        rotation_matrices = group_element_dict['rotation']
+        rotation_matrices = group_element_dict["rotation"]
 
         # get the inverse of the rotation matrices
         rotation_matrix_inverse = rotation_matrices.transpose(1, 2)
 
         # apply the inverse rotation matrices to the input point cloud
-        x_canonicalized = torch.bmm(x.transpose(1, 2), rotation_matrix_inverse).transpose(1, 2)
+        x_canonicalized = torch.bmm(
+            x.transpose(1, 2), rotation_matrix_inverse
+        ).transpose(1, 2)
 
         return x_canonicalized
 
 
-
 class EquivariantPointcloudCanonicalization(ContinuousGroupPointcloudCanonicalization):
-    def __init__(self,
-                 canonicalization_network: torch.nn.Module,
-                 canonicalization_hyperparams: dict,
-                 ):
-        super().__init__(canonicalization_network,
-                         canonicalization_hyperparams)
-
+    def __init__(
+        self,
+        canonicalization_network: torch.nn.Module,
+        canonicalization_hyperparams: dict,
+    ):
+        super().__init__(canonicalization_network, canonicalization_hyperparams)
 
     def get_groupelement(self, x: torch.Tensor):
         """
@@ -86,12 +86,14 @@ class EquivariantPointcloudCanonicalization(ContinuousGroupPointcloudCanonicaliz
         out_vectors = self.canonicalization_network(x)
 
         # Check whether canonicalization_info_dict is already defined
-        if not hasattr(self, 'canonicalization_info_dict'):
+        if not hasattr(self, "canonicalization_info_dict"):
             self.canonicalization_info_dict = {}
 
-        group_element_dict['rotation'] = gram_schmidt(out_vectors)
-        self.canonicalization_info_dict['group_element_matrix_representation'] = group_element_dict['rotation']
+        group_element_dict["rotation"] = gram_schmidt(out_vectors)
+        self.canonicalization_info_dict["group_element_matrix_representation"] = (
+            group_element_dict["rotation"]
+        )
 
-        self.canonicalization_info_dict['group_element'] = group_element_dict
+        self.canonicalization_info_dict["group_element"] = group_element_dict
 
         return group_element_dict

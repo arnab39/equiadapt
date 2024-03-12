@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Optional
 
 import dotenv
 import pytorch_lightning as pl
@@ -14,9 +14,9 @@ from prepare import (
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
 
-def get_model_data_and_callbacks(hyperparams : DictConfig):
+def get_model_data_and_callbacks(hyperparams: DictConfig):
 
-     # get image data
+    # get image data
     image_data = get_image_data(hyperparams.dataset)
 
     # checkpoint name
@@ -28,15 +28,18 @@ def get_model_data_and_callbacks(hyperparams : DictConfig):
     # get model pipeline
     model = get_model_pipeline(hyperparams)
 
-    return  model, image_data, callbacks
+    return model, image_data, callbacks
+
 
 def get_model_pipeline(hyperparams: DictConfig):
 
     if hyperparams.experiment.run_mode == "test":
         model = ImageClassifierPipeline.load_from_checkpoint(
-            checkpoint_path=hyperparams.checkpoint.checkpoint_path + "/" + \
-                hyperparams.checkpoint.checkpoint_name + ".ckpt",
-            hyperparams=hyperparams
+            checkpoint_path=hyperparams.checkpoint.checkpoint_path
+            + "/"
+            + hyperparams.checkpoint.checkpoint_name
+            + ".ckpt",
+            hyperparams=hyperparams,
         )
         model.freeze()
         model.eval()
@@ -45,23 +48,31 @@ def get_model_pipeline(hyperparams: DictConfig):
 
     return model
 
+
 def get_trainer(
-    hyperparams: DictConfig,
-    callbacks: list,
-    wandb_logger: pl.loggers.WandbLogger
+    hyperparams: DictConfig, callbacks: list, wandb_logger: pl.loggers.WandbLogger
 ):
     if hyperparams.experiment.run_mode == "dryrun":
         trainer = pl.Trainer(
-            fast_dev_run=5, max_epochs=hyperparams.experiment.training.num_epochs, accelerator="auto",
-            limit_train_batches=5, limit_val_batches=5, logger=wandb_logger,
-            callbacks=callbacks, deterministic=hyperparams.experiment.deterministic
+            fast_dev_run=5,
+            max_epochs=hyperparams.experiment.training.num_epochs,
+            accelerator="auto",
+            limit_train_batches=5,
+            limit_val_batches=5,
+            logger=wandb_logger,
+            callbacks=callbacks,
+            deterministic=hyperparams.experiment.deterministic,
         )
     else:
         trainer = pl.Trainer(
-            max_epochs=hyperparams.experiment.training.num_epochs, accelerator="auto",
-            logger=wandb_logger, callbacks=callbacks, deterministic=hyperparams.experiment.deterministic,
-            num_nodes=hyperparams.experiment.num_nodes, devices=hyperparams.experiment.num_gpus,
-            strategy='ddp'
+            max_epochs=hyperparams.experiment.training.num_epochs,
+            accelerator="auto",
+            logger=wandb_logger,
+            callbacks=callbacks,
+            deterministic=hyperparams.experiment.deterministic,
+            num_nodes=hyperparams.experiment.num_nodes,
+            devices=hyperparams.experiment.num_gpus,
+            strategy="ddp",
         )
 
     return trainer
@@ -76,13 +87,16 @@ def get_callbacks(hyperparams: DictConfig):
         mode="max",
         save_on_train_epoch_end=False,
     )
-    early_stop_metric_callback = EarlyStopping(monitor="val/acc",
-                    min_delta=hyperparams.experiment.training.min_delta,
-                    patience=hyperparams.experiment.training.patience,
-                    verbose=True,
-                    mode="max")
+    early_stop_metric_callback = EarlyStopping(
+        monitor="val/acc",
+        min_delta=hyperparams.experiment.training.min_delta,
+        patience=hyperparams.experiment.training.patience,
+        verbose=True,
+        mode="max",
+    )
 
     return [checkpoint_callback, early_stop_metric_callback]
+
 
 def get_recursive_hyperparams_identifier(hyperparams: DictConfig):
     # get the identifier for the canonicalization network hyperparameters
@@ -97,7 +111,12 @@ def get_recursive_hyperparams_identifier(hyperparams: DictConfig):
                 identifier += f"_net_type_{value}_"
             elif key == "out_vector_size":
                 identifier += f"_out_vec_{value}_"
-            elif key in ["kernel_size", "resize_shape", "group_type", "artifact_err_wt"]:
+            elif key in [
+                "kernel_size",
+                "resize_shape",
+                "group_type",
+                "artifact_err_wt",
+            ]:
                 identifier += f"_{key.split('_')[0]}_{value}_"
             elif key in ["num_layers", "out_channels", "num_rotations"]:
                 identifier += f"_{key.split('_')[-1]}_{value}_"
@@ -105,11 +124,16 @@ def get_recursive_hyperparams_identifier(hyperparams: DictConfig):
                 identifier += f"_{key}_{value}_"
     return identifier
 
-def get_checkpoint_name(hyperparams : DictConfig):
-    return f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization)}".lstrip("_") + \
-                        f"_loss_wts_{int(hyperparams.experiment.training.loss.task_weight)}_{int(hyperparams.experiment.training.loss.prior_weight)}_{int(hyperparams.experiment.training.loss.group_contrast_weight)}" + \
-                        f"_lrs_{hyperparams.experiment.training.prediction_lr}_{hyperparams.experiment.training.canonicalization_lr}" + \
-                        f"_seed_{hyperparams.experiment.seed}"
+
+def get_checkpoint_name(hyperparams: DictConfig):
+    return (
+        f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization)}".lstrip(
+            "_"
+        )
+        + f"_loss_wts_{int(hyperparams.experiment.training.loss.task_weight)}_{int(hyperparams.experiment.training.loss.prior_weight)}_{int(hyperparams.experiment.training.loss.group_contrast_weight)}"
+        + f"_lrs_{hyperparams.experiment.training.prediction_lr}_{hyperparams.experiment.training.canonicalization_lr}"
+        + f"_seed_{hyperparams.experiment.seed}"
+    )
 
 
 def get_image_data(dataset_hyperparams: DictConfig):
@@ -119,7 +143,7 @@ def get_image_data(dataset_hyperparams: DictConfig):
         "cifar10": CIFAR10DataModule,
         "cifar100": CIFAR100DataModule,
         "stl10": STL10DataModule,
-        "imagenet": ImageNetDataModule
+        "imagenet": ImageNetDataModule,
     }
 
     if dataset_hyperparams.dataset_name not in dataset_classes:

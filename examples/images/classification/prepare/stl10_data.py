@@ -1,9 +1,8 @@
-
 import os
 import random
 
 import pytorch_lightning as pl
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import STL10
 
@@ -18,6 +17,7 @@ class CustomRotationTransform:
         angle = random.choice(self.angles)
         return transforms.functional.rotate(x, angle)
 
+
 class STL10DataModule(pl.LightningDataModule):
     def __init__(self, hyperparams, download=False):
         super().__init__()
@@ -29,10 +29,8 @@ class STL10DataModule(pl.LightningDataModule):
                     transforms.Pad(4),
                     transforms.RandomCrop(96),
                     transforms.Resize(224),
-
                     transforms.RandomRotation(5),
                     transforms.RandomHorizontalFlip(),
-
                     transforms.ToTensor(),
                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                 ]
@@ -44,11 +42,9 @@ class STL10DataModule(pl.LightningDataModule):
                     transforms.Pad(4),
                     transforms.RandomCrop(96),
                     transforms.Resize(224),
-
                     CustomRotationTransform([0, 45, 90, 135, 180, 225, 270, 315]),
                     # transforms.RandomRotation(180),
                     transforms.RandomHorizontalFlip(),
-
                     transforms.ToTensor(),
                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                 ]
@@ -60,7 +56,6 @@ class STL10DataModule(pl.LightningDataModule):
                     transforms.Pad(4),
                     transforms.RandomCrop(96),
                     transforms.Resize(224),
-
                     transforms.ToTensor(),
                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                 ]
@@ -76,11 +71,26 @@ class STL10DataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
-            self.train_dataset = STL10(self.data_path, split='train', transform=self.train_transform, download=True)
-            self.valid_dataset = STL10(self.data_path, split='test', transform=self.test_transform, download=True)
+            self.train_dataset = STL10(
+                self.data_path,
+                split="train",
+                transform=self.train_transform,
+                download=True,
+            )
+            self.valid_dataset = STL10(
+                self.data_path,
+                split="test",
+                transform=self.test_transform,
+                download=True,
+            )
         if stage == "test":
-            self.test_dataset = STL10(self.data_path, split='test', transform=self.test_transform, download=True)
-            print('Test dataset size: ', len(self.test_dataset))
+            self.test_dataset = STL10(
+                self.data_path,
+                split="test",
+                transform=self.test_transform,
+                download=True,
+            )
+            print("Test dataset size: ", len(self.test_dataset))
 
     def train_dataloader(self):
         train_loader = DataLoader(
