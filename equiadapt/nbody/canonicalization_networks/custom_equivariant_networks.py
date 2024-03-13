@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torch_scatter as ts
+
 from equiadapt.nbody.canonicalization_networks.custom_group_equivariant_layers import (
-    VNSoftplus,
     VNLeakyReLU,
+    VNSoftplus,
 )
 
 

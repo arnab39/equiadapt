@@ -1,12 +1,9 @@
-from examples.nbody.networks.euclideangraph_base_models import (
-    GNN,
-    Transformer,
-)
 import torch
 
 from equiadapt.nbody.canonicalization_networks.custom_equivariant_networks import (
     VNDeepSets,
 )
+from examples.nbody.networks.euclideangraph_base_models import GNN, Transformer
 
 
 def get_canonicalization_network(hyperparams):

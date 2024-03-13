@@ -1,13 +1,14 @@
-import torch
 import pytorch_lightning as pl
-from examples.nbody.model_utils import (
-    get_canonicalization_network,
-    get_prediction_network,
-    get_edges,
-)
+import torch
 import torch.nn as nn
 from omegaconf import DictConfig
+
 from equiadapt.nbody.canonicalization.continuous_group import ContinuousGroupNBody
+from examples.nbody.model_utils import (
+    get_canonicalization_network,
+    get_edges,
+    get_prediction_network,
+)
 
 
 class NBodyPipeline(pl.LightningModule):

@@ -1,4 +1,5 @@
 import torch
+
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 
 

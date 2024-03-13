@@ -12,7 +12,7 @@ def get_model_data_and_callbacks(hyperparams: DictConfig):
 
     # get image data
     image_data = get_image_data(hyperparams.dataset)
-    
+
     # checkpoint callbacks
     callbacks = get_callbacks(hyperparams)
 
@@ -94,6 +94,7 @@ def get_callbacks(hyperparams: DictConfig):
     )
 
     return [checkpoint_callback, early_stop_metric_callback]
+
 
 def get_image_data(dataset_hyperparams: DictConfig):
 

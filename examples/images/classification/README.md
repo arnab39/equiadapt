@@ -21,7 +21,7 @@ checkpoint.checkpoint_path=/path/of/checkpoint/dir checkpoint.checkpoint_name=<n
 
 ```
 
-**Note**: 
+**Note**:
 The final checkpoint that will be loaded during evaluation as follows, hence ensure that the combination:
 ```
     model = ImageClassifierPipeline.load_from_checkpoint(

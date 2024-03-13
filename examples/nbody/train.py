@@ -1,12 +1,12 @@
-import pytorch_lightning as pl
-from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-import pytorch_lightning as pl
-import wandb
 import os
-from omegaconf import OmegaConf
-from examples.nbody.model import NBodyPipeline
 
+import pytorch_lightning as pl
+from omegaconf import OmegaConf
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from pytorch_lightning.loggers import WandbLogger
+
+import wandb
+from examples.nbody.model import NBodyPipeline
 from examples.nbody.prepare.nbody_data import NBodyDataModule
 
 HYPERPARAMS = {

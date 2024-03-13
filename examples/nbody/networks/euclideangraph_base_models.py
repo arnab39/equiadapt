@@ -1,6 +1,8 @@
+import math
+
 import torch
 import torch.nn as nn
-import math
+
 from examples.nbody.networks.gcl import GCL
 
 

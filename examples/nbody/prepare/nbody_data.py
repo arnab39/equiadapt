@@ -1,9 +1,9 @@
+import pathlib
+
 import numpy as np
+import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
-import pytorch_lightning as pl
-import numpy as np
-import pathlib
 
 SRC_PATH = pathlib.Path(__file__).parent.parent
 DATA_PATH = SRC_PATH / "data"
