@@ -1,3 +1,5 @@
+from typing import Dict, List, Optional, Tuple, Type, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -32,10 +34,17 @@ class MaskRCNNModel(nn.Module):
                 in_features, num_classes
             )
 
-    def forward(self, images, targets):
-        pred_masks = []
-        ious = []
-        outputs = []
+    def forward(
+        self, images: torch.Tensor, targets: List[Dict[str, torch.Tensor]]
+    ) -> Tuple[
+        Optional[Dict[str, torch.Tensor]],
+        Optional[List[torch.Tensor]],
+        Optional[List[torch.Tensor]],
+        Optional[List[Dict[str, torch.Tensor]]],
+    ]:
+        pred_masks: List[torch.Tensor] = []
+        ious: List[torch.Tensor] = []
+        outputs: List[Dict[str, torch.Tensor]] = []
         if self.training:
             loss_dict = self.model(images, targets)
             return loss_dict, None, None, None
@@ -101,14 +110,21 @@ class SAMModel(nn.Module):
             checkpoint=pretrained_ckpt_path
         )
 
-    def forward(self, images, targets):
+    def forward(
+        self, images: torch.Tensor, targets: List[Dict[str, torch.Tensor]]
+    ) -> Tuple[
+        Optional[Dict[str, torch.Tensor]],
+        List[torch.Tensor],
+        List[torch.Tensor],
+        List[Dict[str, torch.Tensor]],
+    ]:
         if isinstance(images, list):
             images = torch.stack(images)
         _, _, H, W = images.shape
         image_embeddings = self.model.image_encoder(images)
-        pred_masks = []
-        ious = []
-        outputs = []
+        pred_masks: List[torch.Tensor] = []
+        ious: List[torch.Tensor] = []
+        outputs: List[Dict[str, torch.Tensor]] = []
         for _, embedding, target in zip(images, image_embeddings, targets):
             bbox = target["boxes"]
 
@@ -147,11 +163,20 @@ class SAMModel(nn.Module):
 
 
 class FocalLoss(nn.Module):
-    def __init__(self, weight=None, size_average=True):
+    def __init__(
+        self, weight: Optional[torch.Tensor] = None, size_average: bool = True
+    ):
         super().__init__()
-        self.name = "focal_loss"
+        self.name: str = "focal_loss"
 
-    def forward(self, inputs, targets, alpha=ALPHA, gamma=GAMMA, smooth=1):
+    def forward(
+        self,
+        inputs: torch.Tensor,
+        targets: torch.Tensor,
+        alpha: float = ALPHA,
+        gamma: float = GAMMA,
+        smooth: int = 1,
+    ) -> torch.Tensor:
         inputs = F.sigmoid(inputs)
 
         # flatten label and prediction tensors
@@ -167,11 +192,15 @@ class FocalLoss(nn.Module):
 
 
 class DiceLoss(nn.Module):
-    def __init__(self, weight=None, size_average=True):
+    def __init__(
+        self, weight: Optional[torch.Tensor] = None, size_average: bool = True
+    ):
         super().__init__()
-        self.name = "dice_loss"
+        self.name: str = "dice_loss"
 
-    def forward(self, inputs, targets, smooth=1):
+    def forward(
+        self, inputs: torch.Tensor, targets: torch.Tensor, smooth: int = 1
+    ) -> torch.Tensor:
         inputs = F.sigmoid(inputs)
 
         # flatten label and prediction tensors
@@ -184,8 +213,21 @@ class DiceLoss(nn.Module):
         return 1 - dice
 
 
-def get_dataset_specific_info(dataset_name, prediction_architecture_name):
-    dataset_info = {
+def get_dataset_specific_info(
+    dataset_name: str, prediction_architecture_name: str
+) -> Tuple[
+    Optional[Tuple[nn.ModuleList, Tuple[int, int, int], int]], Tuple[int, int, int], int
+]:
+    dataset_info: Dict[
+        str,
+        Dict[
+            str,
+            Union[
+                Tuple[nn.ModuleList, Tuple[int, int, int], int],
+                Tuple[None, Tuple[int, int, int], int],
+            ],
+        ],
+    ] = {
         "coco": {
             "sam": ([FocalLoss(), DiceLoss()], (3, 1024, 1024), 91),
             "maskrcnn": (None, (3, 512, 512), 91),
@@ -207,10 +249,13 @@ def get_prediction_network(
     use_pretrained: bool = False,
     freeze_encoder: bool = False,
     num_classes: int = 91,
-    pretrained_ckpt_path=None,
-):
+    pretrained_ckpt_path: Optional[str] = None,
+) -> nn.Module:
     weights = "DEFAULT" if use_pretrained else None
-    model_dict = {"sam": SAMModel, "maskrcnn": MaskRCNNModel}
+    model_dict: Dict[str, Type[nn.Module]] = {
+        "sam": SAMModel,
+        "maskrcnn": MaskRCNNModel,
+    }
 
     if architecture not in model_dict:
         raise ValueError(
@@ -233,7 +278,7 @@ def get_prediction_network(
     return prediction_network
 
 
-def calc_iou(pred_mask, gt_mask):
+def calc_iou(pred_mask: torch.Tensor, gt_mask: torch.Tensor) -> torch.Tensor:
     pred_mask = (pred_mask >= 0.5).float()
     intersection = torch.sum(torch.mul(pred_mask, gt_mask), dim=(1, 2))
     union = (

@@ -11,6 +11,21 @@ from equiadapt.common.utils import gram_schmidt
 
 
 class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization):
+    """
+    This class represents a continuous group point cloud canonicalization.
+
+    Args:
+        canonicalization_network (torch.nn.Module): The canonicalization network.
+        canonicalization_hyperparams (DictConfig): The hyperparameters for canonicalization.
+
+    Attributes:
+        device: The device on which the operations are performed.
+
+    Methods:
+        get_groupelement: Maps the input point cloud to the group element.
+        canonicalize: Returns the canonicalized point cloud.
+    """
+
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
@@ -20,14 +35,16 @@ class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization)
 
     def get_groupelement(self, x: torch.Tensor) -> dict:
         """
-        This method takes the input image and
-        maps it to the group element
+        This method takes the input image and maps it to the group element.
 
         Args:
-            x: input image
+            x (torch.Tensor): The input image.
 
         Returns:
-            group_element: group element
+            dict: The group element.
+
+        Raises:
+            NotImplementedError: If the method is not implemented.
         """
         raise NotImplementedError("get_groupelement method is not implemented")
 
@@ -35,14 +52,16 @@ class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization)
         self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
-        This method takes an image as input and
-        returns the canonicalized image
+        This method takes an image as input and returns the canonicalized image.
 
         Args:
-            x: input point cloud
+            x (torch.Tensor): The input point cloud.
+            targets (Optional[List]): The list of targets (optional).
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
-            x_canonicalized: canonicalized point cloud
+            Union[torch.Tensor, Tuple[torch.Tensor, List]]: The canonicalized point cloud.
+
         """
         self.device = x.device
 
@@ -63,6 +82,21 @@ class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization)
 
 
 class EquivariantPointcloudCanonicalization(ContinuousGroupPointcloudCanonicalization):
+    """
+    This class represents the equivariant point cloud canonicalization module.
+
+    It inherits from the ContinuousGroupPointcloudCanonicalization class.
+
+    Args:
+        canonicalization_network (torch.nn.Module): The canonicalization network module.
+        canonicalization_hyperparams (DictConfig): The hyperparameters for the canonicalization.
+
+    Attributes:
+        canonicalization_network (torch.nn.Module): The canonicalization network module.
+        canonicalization_hyperparams (DictConfig): The hyperparameters for the canonicalization.
+        canonicalization_info_dict (dict): A dictionary to store the canonicalization information.
+    """
+
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
@@ -72,16 +106,14 @@ class EquivariantPointcloudCanonicalization(ContinuousGroupPointcloudCanonicaliz
 
     def get_groupelement(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         """
-        This method takes the input image and
-        maps it to the group element
+        This method takes the input image and maps it to the group element.
 
         Args:
-            x: input point cloud
+            x (torch.Tensor): The input point cloud.
 
         Returns:
-            group_element: group element
+            dict[str, torch.Tensor]: A dictionary containing the group element.
         """
-
         group_element_dict = {}
 
         # convert the group activations to one hot encoding of group element

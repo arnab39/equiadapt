@@ -1,3 +1,5 @@
+"""This package contains equivariant modules and networks for the equiadapt pointcloud canonicalization."""
+
 from equiadapt.pointcloud.canonicalization_networks import (
     equivariant_networks,
     vector_neuron_layers,

@@ -8,7 +8,7 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.strategies import DDPStrategy
 
 
-def get_model_pipeline(hyperparams: DictConfig):
+def get_model_pipeline(hyperparams: DictConfig) -> pl.LightningModule:
 
     if hyperparams.experiment.run_mode == "test":
         model = PointcloudClassificationPipeline.load_from_checkpoint(
@@ -28,7 +28,7 @@ def get_model_pipeline(hyperparams: DictConfig):
 
 def get_trainer(
     hyperparams: DictConfig, callbacks: list, wandb_logger: pl.loggers.WandbLogger
-):
+) -> pl.Trainer:
     if hyperparams.experiment.run_mode == "dryrun":
         trainer = pl.Trainer(
             fast_dev_run=5,
@@ -55,7 +55,7 @@ def get_trainer(
     return trainer
 
 
-def get_callbacks(hyperparams: DictConfig):
+def get_callbacks(hyperparams: DictConfig) -> list:
 
     checkpoint_callback = ModelCheckpoint(
         dirpath=hyperparams.checkpoint.checkpoint_path,
@@ -75,7 +75,7 @@ def get_callbacks(hyperparams: DictConfig):
     return [checkpoint_callback, early_stop_metric_callback]
 
 
-def get_recursive_hyperparams_identifier(hyperparams: DictConfig):
+def get_recursive_hyperparams_identifier(hyperparams: DictConfig) -> str:
     # get the identifier for the canonicalization network hyperparameters
     # recursively go through the dictionary and get the values and concatenate them
     identifier = ""
@@ -87,7 +87,7 @@ def get_recursive_hyperparams_identifier(hyperparams: DictConfig):
     return identifier
 
 
-def get_checkpoint_name(hyperparams: DictConfig):
+def get_checkpoint_name(hyperparams: DictConfig) -> str:
 
     return (
         f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization)}".lstrip(
