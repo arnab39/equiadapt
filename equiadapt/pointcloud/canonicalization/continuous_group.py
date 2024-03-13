@@ -3,6 +3,7 @@
 
 from omegaconf import DictConfig
 import torch
+
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 from equiadapt.common.utils import gram_schmidt
 from typing import Any, List, Tuple, Union, Optional
