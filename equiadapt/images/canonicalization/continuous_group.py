@@ -1,9 +1,9 @@
 import math
-from omegaconf import DictConfig
-from typing import Optional, Dict, Any, Union, Tuple, List
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import kornia as K
 import torch
+from omegaconf import DictConfig
 from torch.nn import functional as F
 from torchvision import transforms
 

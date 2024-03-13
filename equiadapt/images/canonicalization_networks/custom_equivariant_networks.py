@@ -1,12 +1,14 @@
+from typing import Tuple
+
 import torch
 import torch.nn as nn
+
 from .custom_group_equivariant_layers import (
-    RotationEquivariantConvLift,
     RotationEquivariantConv,
-    RotoReflectionEquivariantConvLift,
+    RotationEquivariantConvLift,
     RotoReflectionEquivariantConv,
+    RotoReflectionEquivariantConvLift,
 )
-from typing import Tuple
 
 
 class CustomEquivariantNetwork(nn.Module):

@@ -2,9 +2,10 @@
 # Taken from Vector Neurons: A General Framework for SO(3)-Equivariant Networks (https://arxiv.org/abs/2104.12229) paper and
 # their codebase https://github.com/FlyingGiraffe/vnn
 
+from typing import Tuple
+
 import torch
 import torch.nn as nn
-from typing import Tuple
 
 EPS = 1e-6
 

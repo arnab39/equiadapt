@@ -1,4 +1,5 @@
 from omegaconf import DictConfig
+
 from examples.pointcloud.common.networks import DGCNN_partseg
 
 

@@ -1,13 +1,15 @@
+from typing import Optional
+
 import torch
 import torch.nn as nn
+from omegaconf import DictConfig
+
 from equiadapt.pointcloud.canonicalization_networks.vector_neuron_layers import (
+    VNBatchNorm,
     VNLinearLeakyReLU,
     VNMaxPool,
-    VNBatchNorm,
     mean_pool,
 )
-from omegaconf import DictConfig
-from typing import Optional
 
 
 def knn(x: torch.Tensor, k: int) -> torch.Tensor:

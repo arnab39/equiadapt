@@ -1,8 +1,9 @@
+import math
+
+import kornia as K
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import kornia as K
-import math
 
 
 class RotationEquivariantConvLift(nn.Module):

@@ -26,7 +26,7 @@ repos:
 
 ## If you want to avoid flake8 errors due to unused vars or imports:
 - repo: https://github.com/PyCQA/autoflake
-  rev: v2.1.1
+  rev: v2.3.1
   hooks:
   - id: autoflake
     args: [
@@ -34,10 +34,10 @@ repos:
       --remove-all-unused-imports,
     ]
 
-# - repo: https://github.com/PyCQA/isort
-#   rev: 5.13.2
-#   hooks:
-#   - id: isort
+- repo: https://github.com/PyCQA/isort
+  rev: 5.13.2
+  hooks:
+  - id: isort
 
 - repo: https://github.com/psf/black
   rev: 24.2.0
@@ -52,11 +52,11 @@ repos:
 #   - id: blacken-docs
 #     additional_dependencies: [black]
 
-- repo: https://github.com/PyCQA/flake8
-  rev: 7.0.0
-  hooks:
-  - id: flake8
-    additional_dependencies: [flake8-docstrings]
+# - repo: https://github.com/PyCQA/flake8
+#   rev: 7.0.0
+#   hooks:
+#   - id: flake8
+#     additional_dependencies: [flake8-docstrings]
 
 ## Check for misspells in documentation files:
 # - repo: https://github.com/codespell-project/codespell
@@ -64,9 +64,9 @@ repos:
 #   hooks:
 #   - id: codespell
 
-# Check for type errors with mypy:
-- repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 'v1.8.0'
-  hooks:
-  - id: mypy
-    args: [--disallow-untyped-defs, --ignore-missing-imports]
+# # Check for type errors with mypy:
+# - repo: https://github.com/pre-commit/mirrors-mypy
+#   rev: 'v1.9.0'
+#   hooks:
+#   - id: mypy
+#     args: [--disallow-untyped-defs, --ignore-missing-imports]

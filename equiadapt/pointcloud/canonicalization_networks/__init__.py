@@ -1,6 +1,7 @@
-from equiadapt.pointcloud.canonicalization_networks import equivariant_networks
-from equiadapt.pointcloud.canonicalization_networks import vector_neuron_layers
-
+from equiadapt.pointcloud.canonicalization_networks import (
+    equivariant_networks,
+    vector_neuron_layers,
+)
 from equiadapt.pointcloud.canonicalization_networks.equivariant_networks import (
     VNSmall,
     get_graph_feature_cross,

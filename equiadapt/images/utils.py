@@ -1,7 +1,8 @@
+from typing import List, Tuple
+
 import kornia as K
 import torch
 from torchvision import transforms
-from typing import List, Tuple
 
 
 def roll_by_gather(feature_map: torch.Tensor, shifts: torch.Tensor) -> torch.Tensor:

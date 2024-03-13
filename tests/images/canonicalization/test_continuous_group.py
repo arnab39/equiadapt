@@ -4,9 +4,9 @@ import pytest
 import torch
 from omegaconf import DictConfig
 
-from equiadapt import (
+from equiadapt import (  # Update with your actual import path
     ContinuousGroupImageCanonicalization,
-)  # Update with your actual import path
+)
 
 
 @pytest.fixture

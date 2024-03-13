@@ -1,11 +1,12 @@
+import numpy as np
+import pytorch_lightning as pl
+import sklearn.metrics as metrics
 import torch
 import torch.nn.functional as F
-import pytorch_lightning as pl
-from pytorch3d.transforms import RotateAxisAngle, Rotate, random_rotations
-from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
-import numpy as np
-
 from model_utils import get_prediction_network
+from pytorch3d.transforms import Rotate, RotateAxisAngle, random_rotations
+from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
+
 from examples.pointcloud.common.utils import (
     get_canonicalization_network,
     get_canonicalizer,
@@ -13,7 +14,6 @@ from examples.pointcloud.common.utils import (
     random_scale_point_cloud,
     random_shift_point_cloud,
 )
-import sklearn.metrics as metrics
 
 
 class PointcloudClassificationPipeline(pl.LightningModule):
