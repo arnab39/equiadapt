@@ -12,10 +12,7 @@ def get_model_data_and_callbacks(hyperparams: DictConfig):
 
     # get image data
     image_data = get_image_data(hyperparams.dataset)
-
-    # checkpoint name
-    hyperparams.checkpoint.checkpoint_name = get_checkpoint_name(hyperparams)
-
+    
     # checkpoint callbacks
     callbacks = get_callbacks(hyperparams)
 
@@ -97,30 +94,6 @@ def get_callbacks(hyperparams: DictConfig):
     )
 
     return [checkpoint_callback, early_stop_metric_callback]
-
-
-def get_recursive_hyperparams_identifier(hyperparams: DictConfig):
-    # get the identifier for the canonicalization network hyperparameters
-    # recursively go through the dictionary and get the values and concatenate them
-    identifier = ""
-    for key, value in hyperparams.items():
-        if isinstance(value, DictConfig):
-            identifier += f"_{get_recursive_hyperparams_identifier(value)}_"
-        else:
-            identifier += f"_{key}_{value}_"
-    return identifier
-
-
-def get_checkpoint_name(hyperparams: DictConfig):
-
-    return (
-        f"{get_recursive_hyperparams_identifier(hyperparams.canonicalization)}".lstrip(
-            "_"
-        )
-        + f"__epochs_{hyperparams.experiment.training.num_epochs}_"
-        + f"__seed_{hyperparams.experiment.seed}"
-    )
-
 
 def get_image_data(dataset_hyperparams: DictConfig):
 

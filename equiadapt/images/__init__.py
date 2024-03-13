@@ -1,7 +1,4 @@
-from equiadapt.images import canonicalization
-from equiadapt.images import canonicalization_networks
-from equiadapt.images import utils
-
+from equiadapt.images import canonicalization, canonicalization_networks, utils
 from equiadapt.images.canonicalization import (
     ContinuousGroupImageCanonicalization,
     DiscreteGroupImageCanonicalization,
@@ -17,9 +14,9 @@ from equiadapt.images.canonicalization_networks import (
     CustomEquivariantNetwork,
     ESCNNEquivariantNetwork,
     ESCNNSteerableNetwork,
-    ESCNNWRNEquivariantNetwork,
     ESCNNWideBasic,
     ESCNNWideBottleneck,
+    ESCNNWRNEquivariantNetwork,
     ResNet18Network,
     RotationEquivariantConv,
     RotationEquivariantConvLift,

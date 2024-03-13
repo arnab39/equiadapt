@@ -12,11 +12,11 @@ from equiadapt.images.canonicalization.discrete_group import (
 )
 from equiadapt.images.canonicalization_networks import (
     ConvNetwork,
-    ResNet18Network,
     CustomEquivariantNetwork,
     ESCNNEquivariantNetwork,
     ESCNNSteerableNetwork,
     ESCNNWRNEquivariantNetwork,
+    ResNet18Network,
 )
 
 

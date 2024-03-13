@@ -1,11 +1,12 @@
+import numpy as np
 import torch
 from omegaconf import DictConfig
-from equiadapt.pointcloud.canonicalization_networks import VNSmall
+
 from equiadapt.common.basecanonicalization import IdentityCanonicalization
 from equiadapt.pointcloud.canonicalization.continuous_group import (
     EquivariantPointcloudCanonicalization,
 )
-import numpy as np
+from equiadapt.pointcloud.canonicalization_networks import VNSmall
 
 
 def get_canonicalization_network(

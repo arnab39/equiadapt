@@ -1,5 +1,6 @@
 from omegaconf import DictConfig
-from examples.pointcloud.common.networks import PointNet, DGCNN
+
+from examples.pointcloud.common.networks import DGCNN, PointNet
 
 
 def get_prediction_network(

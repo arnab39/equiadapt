@@ -1,12 +1,13 @@
 # Note that for now we have only implemented canonicalizatin for rotation in the pointcloud setting.
 # This is meant to be a proof of concept and we are happy to receive contribution to extend this to other group actions.
 
-from omegaconf import DictConfig
+from typing import Any, List, Optional, Tuple, Union
+
 import torch
+from omegaconf import DictConfig
 
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 from equiadapt.common.utils import gram_schmidt
-from typing import Any, List, Tuple, Union, Optional
 
 
 class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization):

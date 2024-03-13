@@ -1,11 +1,10 @@
-import dotenv
-from omegaconf import DictConfig
 from typing import Optional
 
+import dotenv
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-
 from model import PointcloudClassificationPipeline
+from omegaconf import DictConfig
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.strategies import DDPStrategy
 
 
