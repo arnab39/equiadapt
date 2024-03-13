@@ -11,7 +11,25 @@ python train.py canonicalization=group_equivariant experiment.training.loss.prio
 
 **Note**: You can also run the `train.py` as follows from the root directory of the project: 
 ```
-python examples/images/classification/train.py canonicalization=group_equivariant dataset.dataset_name=rotated_mnist
+python examples/images/classification/train.py canonicalization=group_equivariant
+```
+
+### For testing checkpoints
+```
+python train.py experiment.run_mode=test dataset.dataset_name=stl10 \
+checkpoint.checkpoint_path=/path/of/checkpoint/dir checkpoint.checkpoint_name=<name-of-checkpoint>
+
+```
+
+**Note**: 
+The final checkpoint that will be loaded during evaluation as follows, hence ensure that the combination:
+```
+    model = ImageClassifierPipeline.load_from_checkpoint(
+            checkpoint_path=hyperparams.checkpoint.checkpoint_path + "/" + \
+                hyperparams.checkpoint.checkpoint_name + ".ckpt",
+            hyperparams=hyperparams
+        )
+
 ```
 
 ## Important Hyperparameters
