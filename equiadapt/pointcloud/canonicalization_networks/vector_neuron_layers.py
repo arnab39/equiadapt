@@ -18,6 +18,10 @@ class VNLinear(nn.Module):
     Vector Neuron Linear layer.
 
     This layer applies a linear transformation to the input tensor.
+
+    Methods:
+        __init__: Initializes the VNLinear layer.
+        forward: Performs forward pass of the VNLinear layer.
     """
 
     def __init__(self, in_channels: int, out_channels: int):
@@ -50,6 +54,10 @@ class VNBilinear(nn.Module):
     Vector Neuron Bilinear layer.
 
     VNBilinear applies a bilinear layer to the input features.
+
+    Methods:
+        __init__: Initializes the VNBilinear layer.
+        forward: Performs forward pass of the VNBilinear layer.
     """
 
     def __init__(self, in_channels1: int, in_channels2: int, out_channels: int):
@@ -87,6 +95,10 @@ class VNSoftplus(nn.Module):
     Vector Neuron Softplus layer.
 
     VNSoftplus applies a softplus activation to the input features.
+
+    Methods:
+        __init__: Initializes the VNSoftplus layer.
+        forward: Performs forward pass of the VNSoftplus layer.
     """
 
     def __init__(
@@ -144,6 +156,10 @@ class VNLeakyReLU(nn.Module):
     Vector Neuron Leaky ReLU layer.
 
     VNLLeakyReLU applies a LeakyReLU activation to the input features.
+
+    Methods:
+        __init__: Initializes the VNLeakyReLU layer.
+        forward: Performs forward pass of the VNLeakyReLU layer.
     """
 
     def __init__(
@@ -196,6 +212,10 @@ class VNLinearLeakyReLU(nn.Module):
     Vector Neuron Linear Leaky ReLU layer.
 
     VNLinearLeakyReLU applies a linear transformation followed by a LeakyReLU activation to the input features.
+
+    Methods:
+        __init__: Initializes the VNLinearLeakyReLU layer.
+        forward: Performs forward pass of the VNLinearLeakyReLU layer.
     """
 
     def __init__(
@@ -258,6 +278,10 @@ class VNBatchNorm(nn.Module):
     Vector Neuron Batch Normalization layer.
 
     VNBatchNorm applies batch normalization to the input features.
+
+    Methods:
+        __init__: Initializes the VNBatchNorm layer.
+        forward: Performs forward pass of the VNBatchNorm layer.
     """
 
     def __init__(self, num_features: int, dim: int):
@@ -305,6 +329,10 @@ class VNMaxPool(nn.Module):
     Vector Neuron Max Pooling layer.
 
     VNMaxPool applies max pooling to the input features.
+
+    Methods:
+        __init__: Initializes the VNMaxPool layer.
+        forward: Performs forward pass of the VNMaxPool layer.
     """
 
     def __init__(self, in_channels: int):
@@ -360,15 +388,13 @@ class VNStdFeature(nn.Module):
     It takes point features as input and applies a series of VNLinearLeakyReLU layers
     followed by a linear layer to produce the standard features.
 
-    Args:
-        in_channels (int): Number of input channels.
-        dim (int, optional): Dimension of the output features. Defaults to 4.
-        normalize_frame (bool, optional): Whether to normalize the frame. Defaults to False.
-        share_nonlinearity (bool, optional): Whether to share the nonlinearity across layers. Defaults to False.
-        negative_slope (float, optional): Negative slope of the LeakyReLU activation function. Defaults to 0.2.
+    Attributes:
+        dim (int): Dimension of the input features.
+        normalize_frame (bool): Whether to normalize the frame.
 
-    Returns:
-        Tuple[torch.Tensor, torch.Tensor]: Tuple containing the standard features and the frame vectors.
+    Methods:
+        __init__: Initializes the VNStdFeature module.
+        forward: Performs forward pass of the VNStdFeature module.
 
     Shape:
         - Input: (B, N_feat, 3, N_samples, ...)

@@ -93,9 +93,22 @@ class VNSmall(torch.nn.Module):
         dropout (nn.Dropout): Dropout layer.
         pool (Union[VNMaxPool, mean_pool]): Pooling layer.
 
+    Methods:
+        __init__: Initializes the VNSmall network.
+        forward: Forward pass of the VNSmall network.
+
     """
 
     def __init__(self, hyperparams: DictConfig):
+        """
+        Initialize the VN Small network.
+
+        Args:
+            hyperparams (DictConfig): A dictionary-like object containing hyperparameters.
+
+        Raises:
+            ValueError: If the specified pooling type is not supported.
+        """
         super().__init__()
         self.n_knn = hyperparams.n_knn
         self.pooling = hyperparams.pooling
