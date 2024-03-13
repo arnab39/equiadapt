@@ -12,6 +12,16 @@ from .custom_group_equivariant_layers import (
 
 
 class CustomEquivariantNetwork(nn.Module):
+    """
+    This class represents a custom equivariant network.
+
+    The network is equivariant to a specified group, which can be either the rotation group or the roto-reflection group. The network consists of a sequence of equivariant convolutional layers, each followed by a ReLU activation function.
+
+    Methods:
+        __init__: Initializes the CustomEquivariantNetwork instance.
+        forward: Performs a forward pass through the network.
+    """
+
     def __init__(
         self,
         in_shape: Tuple[int, int, int, int],
@@ -22,6 +32,18 @@ class CustomEquivariantNetwork(nn.Module):
         num_layers: int = 1,
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
+        """
+        Initializes the CustomEquivariantNetwork instance.
+
+        Args:
+            in_shape (Tuple[int, int, int, int]): The shape of the input data.
+            out_channels (int): The number of output channels.
+            kernel_size (int): The size of the kernel in the convolutional layers.
+            group_type (str, optional): The type of group the network is equivariant to. Defaults to "rotation".
+            num_rotations (int, optional): The number of rotations in the group. Defaults to 4.
+            num_layers (int, optional): The number of layers in the network. Defaults to 1.
+            device (str, optional): The device to run the network on. Defaults to "cuda" if available, otherwise "cpu".
+        """
         super().__init__()
 
         if group_type == "rotation":
@@ -57,8 +79,13 @@ class CustomEquivariantNetwork(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        x shape: (batch_size, in_channels, height, width)
-        :return: (batch_size, group_size)
+        Performs a forward pass through the network.
+
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the network. It has the shape (batch_size, group_size).
         """
         feature_map = self.eqv_network(x)
         group_activatiobs = torch.mean(feature_map, dim=(1, 3, 4))
