@@ -1,3 +1,4 @@
+# type: ignore
 import os
 
 import pytorch_lightning as pl
@@ -42,7 +43,7 @@ CANON_HYPERPARAMS = {
 }
 
 PRED_HYPERPARAMS = {
-    "architecture": "Transformer",
+    "architecture": "GNN",
     "num_layers": 4,
     "hidden_dim": 32,
     "input_dim": 6,
@@ -56,8 +57,8 @@ HYPERPARAMS["canon_hyperparams"] = CANON_HYPERPARAMS
 HYPERPARAMS["pred_hyperparams"] = PRED_HYPERPARAMS
 
 
-def train_nbody():
-    hyperparams = HYPERPARAMS
+def train_nbody() -> None:
+    hyperparams = HYPERPARAMS  # type: ignore
 
     if not hyperparams["use_wandb"]:
         print("Wandb disable for logging.")
@@ -134,7 +135,7 @@ def train_nbody():
     trainer.fit(model, datamodule=nbody_data)
 
 
-def main():
+def main() -> None:
     train_nbody()
 
 

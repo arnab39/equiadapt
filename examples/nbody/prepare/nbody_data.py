@@ -1,4 +1,5 @@
 import pathlib
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 import pytorch_lightning as pl
@@ -10,17 +11,34 @@ DATA_PATH = SRC_PATH / "data"
 
 
 class NBodyDataset:
-    def __init__(self, partition="train", max_samples=3000, dataset_name="nbody_small"):
+    """
+    Dataset class for N-Body simulation data.
+    """
+
+    def __init__(
+        self,
+        partition: str = "train",
+        max_samples: int = 3000,
+        dataset_name: str = "nbody_small",
+    ):
+        """
+        Initialize the NBodyDataset.
+
+        Args:
+            partition (str): Partition of the dataset ("train", "val", or "test").
+            max_samples (int): Maximum number of samples to load.
+            dataset_name (str): Name of the dataset.
+        """
         self.partition = partition
         if self.partition == "val":
-            self.sufix = "valid"
+            self.suffix = "valid"
         else:
-            self.sufix = self.partition
+            self.suffix = self.partition
         self.dataset_name = dataset_name
         if dataset_name == "nbody":
-            self.sufix += "_charged5_initvel1"
+            self.suffix += "_charged5_initvel1"
         elif dataset_name == "nbody_small" or dataset_name == "nbody_small_out_dist":
-            self.sufix += "_charged5_initvel1small"
+            self.suffix += "_charged5_initvel1small"
         else:
             raise Exception("Wrong dataset name %s" % self.dataset_name)
 
@@ -28,16 +46,50 @@ class NBodyDataset:
         self.dataset_name = dataset_name
         self.data, self.edges = self.load()
 
-    def load(self):
-        loc = np.load(DATA_PATH / f"n_body_system/dataset/loc_{self.sufix}.npy")
-        vel = np.load(DATA_PATH / f"n_body_system/dataset/vel_{self.sufix}.npy")
-        edges = np.load(DATA_PATH / f"n_body_system/dataset/edges_{self.sufix}.npy")
-        charges = np.load(DATA_PATH / f"n_body_system/dataset/charges_{self.sufix}.npy")
+    def load(
+        self,
+    ) -> Tuple[
+        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+        List[torch.Tensor],
+    ]:
+        """
+        Load the N-Body simulation data.
+
+        Returns:
+            tuple: A tuple containing the loaded data and edges.
+        """
+        loc = np.load(DATA_PATH / f"n_body_system/dataset/loc_{self.suffix}.npy")
+        vel = np.load(DATA_PATH / f"n_body_system/dataset/vel_{self.suffix}.npy")
+        edges = np.load(DATA_PATH / f"n_body_system/dataset/edges_{self.suffix}.npy")
+        charges = np.load(
+            DATA_PATH / f"n_body_system/dataset/charges_{self.suffix}.npy"
+        )
 
         loc, vel, edge_attr, edges, charges = self.preprocess(loc, vel, edges, charges)
-        return (loc, vel, edge_attr, charges), edges
+        return (
+            torch.Tensor(loc),
+            torch.Tensor(vel),
+            torch.Tensor(edge_attr),
+            torch.Tensor(charges),
+        ), edges
 
-    def preprocess(self, loc, vel, edges, charges):
+    def preprocess(
+        self, loc: np.ndarray, vel: np.ndarray, edges: np.ndarray, charges: np.ndarray
+    ) -> Tuple[
+        torch.Tensor, torch.Tensor, torch.Tensor, List[torch.Tensor], torch.Tensor
+    ]:
+        """
+        Preprocess the loaded data.
+
+        Args:
+            loc (np.ndarray): Array of node locations.
+            vel (np.ndarray): Array of node velocities.
+            edges (np.ndarray): Array of edges.
+            charges (np.ndarray): Array of charges.
+
+        Returns:
+            tuple: A tuple containing the preprocessed data.
+        """
         # cast to torch and swap n_nodes <--> n_features dimensions
         loc, vel = torch.Tensor(loc).transpose(2, 3), torch.Tensor(vel).transpose(2, 3)
         n_nodes = loc.size(2)
@@ -50,27 +102,16 @@ class NBodyDataset:
         charges = charges[0 : self.max_samples]  # max_samples x 5 x 1
         edge_attr = []
 
-        # edges is currently 10000 x 5 x 5.
-        # i believe M = edges[i,:,:] is a symmetric matrix where M[j][k] = charges[i][j] * charges[i][k]
-        # Initialize edges and edge_attributes
         rows, cols = [], []
         for i in range(n_nodes):
             for j in range(n_nodes):
-                # if i != j, append charge(node_i)*charge(node_j) for all samples
-                # and save the combination of row and col
                 if i != j:
-                    # edge_attr.append(edges[:, i, j]) #COMMENTED THIS OUT! SEEMED TO USE UNEEDED ROWS
-                    # could we instead just use edge_attr.append(edges[:self.max_samples, i, j])? --> I think so. would save memory too
                     edge_attr.append(edges[: self.max_samples, i, j])
                     rows.append(i)
                     cols.append(j)
-        # Once loop is over,
-        # edge_attr = list all charge products between distinct nodes (20 x max_samples) (ie. product for all edges)
-        # where edge_attr[i] = product of charges for node rows[i] and cols[i]
+
         edges = [rows, cols]
-        edge_attr = (
-            torch.Tensor(edge_attr).transpose(0, 1).unsqueeze(2)
-        )  # swap n_nodes <--> batch_size and add nf dimension -> 10000 x 20 x 1
+        edge_attr = torch.Tensor(edge_attr).transpose(0, 1).unsqueeze(2)
 
         return (
             torch.Tensor(loc),
@@ -80,14 +121,37 @@ class NBodyDataset:
             torch.Tensor(charges),
         )
 
-    def set_max_samples(self, max_samples):
+    def set_max_samples(self, max_samples: int) -> None:
+        """
+        Set the maximum number of samples to load.
+
+        Args:
+            max_samples (int): Maximum number of samples.
+        """
         self.max_samples = int(max_samples)
         self.data, self.edges = self.load()
 
-    def get_n_nodes(self):
+    def get_n_nodes(self) -> int:
+        """
+        Get the number of nodes in the dataset.
+
+        Returns:
+            int: Number of nodes.
+        """
         return self.data[0].size(1)
 
-    def __getitem__(self, i):
+    def __getitem__(
+        self, i: int
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Get an item from the dataset.
+
+        Args:
+            i (int): Index of the item.
+
+        Returns:
+            tuple: A tuple containing the item data.
+        """
         loc, vel, edge_attr, charges = self.data
         loc, vel, edge_attr, charges = loc[i], vel[i], edge_attr[i], charges[i]
 
@@ -102,10 +166,26 @@ class NBodyDataset:
 
         return loc[frame_0], vel[frame_0], edge_attr, charges, loc[frame_T]
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """
+        Get the length of the dataset.
+
+        Returns:
+            int: Length of the dataset.
+        """
         return len(self.data[0])
 
-    def get_edges(self, batch_size, n_nodes):
+    def get_edges(self, batch_size: int, n_nodes: int) -> List[torch.Tensor]:
+        """
+        Get the edges of the dataset.
+
+        Args:
+            batch_size (int): Batch size.
+            n_nodes (int): Number of nodes.
+
+        Returns:
+            list: A list containing the edges.
+        """
         edges = [torch.LongTensor(self.edges[0]), torch.LongTensor(self.edges[1])]
         if batch_size == 1:
             return edges
@@ -119,19 +199,41 @@ class NBodyDataset:
 
 
 class NBodyDataModule(pl.LightningDataModule):
-    def __init__(self, hyperparams):
+    """
+    Data module for N-Body simulation data.
+    """
+
+    def __init__(self, hyperparams: Any) -> None:
+        """
+        Initialize the NBodyDataModule.
+
+        Args:
+            hyperparams (dict): Hyperparameters for the data module.
+        """
         super().__init__()
         self.hyperparams = hyperparams
 
-    def setup(self, stage=None):
-        if stage == "fit" or stage is None:
-            self.train_dataset = NBodyDataset(partition="train")
-            self.valid_dataset = NBodyDataset(partition="val")
-        if stage == "test":
-            self.test_dataset = NBodyDataset(partition="test")
+    def setup(self, stage: Optional[str] = None) -> None:
+        """
+        Setup the data module.
 
-    def train_dataloader(self):
-        train_loader = DataLoader(
+        Args:
+            stage (str): Stage of the data module ("fit" or "test").
+        """
+        if stage == "fit" or stage is None:
+            self.train_dataset: NBodyDataset = NBodyDataset(partition="train")
+            self.valid_dataset: NBodyDataset = NBodyDataset(partition="val")
+        if stage == "test":
+            self.test_dataset: NBodyDataset = NBodyDataset(partition="test")
+
+    def train_dataloader(self) -> torch.utils.data.DataLoader:
+        """
+        Get the train dataloader.
+
+        Returns:
+            torch.utils.data.DataLoader: Train dataloader.
+        """
+        train_loader: torch.utils.data.DataLoader = DataLoader(
             self.train_dataset,
             batch_size=self.hyperparams.batch_size,
             shuffle=True,
@@ -140,8 +242,14 @@ class NBodyDataModule(pl.LightningDataModule):
         )
         return train_loader
 
-    def val_dataloader(self):
-        train_loader = DataLoader(
+    def val_dataloader(self) -> torch.utils.data.DataLoader:
+        """
+        Get the validation dataloader.
+
+        Returns:
+            torch.utils.data.DataLoader: Validation dataloader.
+        """
+        train_loader: torch.utils.data.DataLoader = DataLoader(
             self.valid_dataset,
             batch_size=self.hyperparams.batch_size,
             shuffle=False,
