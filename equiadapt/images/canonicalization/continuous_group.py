@@ -13,12 +13,36 @@ from equiadapt.images.utils import get_action_on_image_features
 
 
 class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
+    """
+    This class represents a continuous group image canonicalization model.
+
+    The model is designed to be equivariant under a continuous group of transformations, which can include rotations and reflections.
+    Other specific continuous group image canonicalization classes can be derived from this class.
+
+    Methods:
+        __init__: Initializes the ContinuousGroupImageCanonicalization instance.
+        get_rotation_matrix_from_vector: This method takes the input vector and returns the rotation matrix.
+        get_groupelement: This method maps the input image to the group element.
+        transformations_before_canonicalization_network_forward: Applies transformations to the input image before forwarding it through the canonicalization network.
+        get_group_from_out_vectors: This method takes the output of the canonicalization network and returns the group element.
+        canonicalize: This method takes an image as input and returns the canonicalized image.
+        invert_canonicalization: Inverts the canonicalization process on the output of the canonicalized image.
+    """
+
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
         canonicalization_hyperparams: DictConfig,
         in_shape: tuple,
     ):
+        """
+        Initializes the ContinuousGroupImageCanonicalization instance.
+
+        Args:
+            canonicalization_network (torch.nn.Module): The canonicalization network.
+            canonicalization_hyperparams (DictConfig): The hyperparameters for the canonicalization process.
+            in_shape (tuple): The shape of the input images.
+        """
         super().__init__(canonicalization_network)
 
         assert (
@@ -60,14 +84,13 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
 
     def get_groupelement(self, x: torch.Tensor) -> dict:
         """
-        This method takes the input image and
-        maps it to the group element
+        This method takes the input image and maps it to the group element
 
         Args:
-            x: input image
+            x (torch.Tensor): input image
 
         Returns:
-            group_element: group element
+            dict: group element
         """
         raise NotImplementedError("get_groupelement method is not implemented")
 
@@ -75,8 +98,13 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         self, x: torch.Tensor
     ) -> torch.Tensor:
         """
-        This method takes an image as input and
-        returns the pre-canonicalized image
+        Applies transformations to the input image before forwarding it through the canonicalization network.
+
+        Args:
+            x (torch.Tensor): The input image.
+
+        Returns:
+            torch.Tensor: The transformed image.
         """
         x = self.crop_canonization(x)
         x = self.resize_canonization(x)
@@ -86,15 +114,14 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         self, out_vectors: torch.Tensor
     ) -> Tuple[dict, torch.Tensor]:
         """
-        This method takes the output of the canonicalization network and
-        returns the group element
+        This method takes the output of the canonicalization network and returns the group element
 
         Args:
-            out_vectors: output of the canonicalization network
+            out_vectors (torch.Tensor): output of the canonicalization network
 
         Returns:
-            group_element_dict: group element
-            group_element_representation: group element representation
+            dict: group element
+            torch.Tensor: group element representation
         """
         group_element_dict = {}
 
@@ -136,14 +163,14 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
-        This method takes an image as input and
-        returns the canonicalized image
+        This method takes an image as input and returns the canonicalized image
 
         Args:
-            x: input image
+            x (torch.Tensor): The input image.
+            targets (Optional[List]): The targets, if any.
 
         Returns:
-            x_canonicalized: canonicalized image
+            torch.Tensor: canonicalized image
         """
         self.device = x.device
 
@@ -186,9 +213,13 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         self, x_canonicalized_out: torch.Tensor, **kwargs: Any
     ) -> torch.Tensor:
         """
-        This method takes the output of canonicalized image as input and
-        returns output of the original image
+        Inverts the canonicalization process on the output of the canonicalized image.
 
+        Args:
+            x_canonicalized_out (torch.Tensor): The output of the canonicalized image.
+
+        Returns:
+            torch.Tensor: The output corresponding to the original image.
         """
         induced_rep_type = kwargs.get("induced_rep_type", "vector")
         return get_action_on_image_features(
@@ -200,12 +231,31 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
 
 
 class SteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
+    """
+    This class represents a steerable image canonicalization model.
+
+    The model is designed to be equivariant under a continuous group of euclidean transformations - rotations and reflections.
+
+    Methods:
+        __init__: Initializes the SteerableImageCanonicalization instance.
+        get_rotation_matrix_from_vector: This method takes the input vector and returns the rotation matrix.
+        get_groupelement: This method maps the input image to the group element.
+    """
+
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
         canonicalization_hyperparams: DictConfig,
         in_shape: tuple,
     ):
+        """
+        Initializes the SteerableImageCanonicalization instance.
+
+        Args:
+            canonicalization_network (torch.nn.Module): The canonicalization network.
+            canonicalization_hyperparams (DictConfig): The hyperparameters for the canonicalization process.
+            in_shape (tuple): The shape of the input images.
+        """
         super().__init__(
             canonicalization_network, canonicalization_hyperparams, in_shape
         )
@@ -216,10 +266,10 @@ class SteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
         This method takes the input vector and returns the rotation matrix
 
         Args:
-            vectors: input vector
+            vectors (torch.Tensor): input vector
 
         Returns:
-            rotation_matrices: rotation matrices
+            torch.Tensor: rotation matrices
         """
         v1 = vectors / torch.norm(vectors, dim=1, keepdim=True)
         v2 = torch.stack([-v1[:, 1], v1[:, 0]], dim=1)
@@ -228,16 +278,14 @@ class SteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
 
     def get_groupelement(self, x: torch.Tensor) -> dict:
         """
-        This method takes the input image and
-        maps it to the group element
+        This method takes the input image and maps it to the group element
 
         Args:
-            x: input image
+            x (torch.Tensor): input image
 
         Returns:
-            group_element: group element
+            dict: group element
         """
-
         group_element_dict: Dict[str, Any] = {}
 
         x = self.transformations_before_canonicalization_network_forward(x)
@@ -264,12 +312,33 @@ class SteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
 
 
 class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
+    """
+    This class represents an optimized steerable image canonicalization model.
+
+    The model is designed to be equivariant under a continuous group of transformations, which can include rotations and reflections.
+
+    Methods:
+        __init__: Initializes the OptimizedSteerableImageCanonicalization instance.
+        get_rotation_matrix_from_vector: This method takes the input vector and returns the rotation matrix.
+        group_augment: This method applies random rotations and reflections to the input images.
+        get_groupelement: This method maps the input image to the group element.
+        get_optimization_specific_loss: This method returns the optimization specific loss.
+    """
+
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
         canonicalization_hyperparams: DictConfig,
         in_shape: tuple,
     ):
+        """
+        Initializes the OptimizedSteerableImageCanonicalization instance.
+
+        Args:
+            canonicalization_network (torch.nn.Module): The canonicalization network.
+            canonicalization_hyperparams (DictConfig): The hyperparameters for the canonicalization process.
+            in_shape (tuple): The shape of the input images.
+        """
         super().__init__(
             canonicalization_network, canonicalization_hyperparams, in_shape
         )
@@ -280,10 +349,10 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
         This method takes the input vector and returns the rotation matrix
 
         Args:
-            vectors: input vector
+            vectors (torch.Tensor): input vector
 
         Returns:
-            rotation_matrices: rotation matrices
+            torch.Tensor: rotation matrices
         """
         v1 = vectors / torch.norm(vectors, dim=1, keepdim=True)
         v2 = torch.stack([-v1[:, 1], v1[:, 0]], dim=1)
@@ -292,8 +361,7 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
 
     def group_augment(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Augmentation of the input images by applying random rotations and,
-        if applicable, reflections, with corresponding transformation matrices.
+        Augmentation of the input images by applying random rotations and, if applicable, reflections, with corresponding transformation matrices.
 
         Args:
             x (torch.Tensor): Input images of shape (batch_size, in_channels, height, width).
@@ -345,16 +413,14 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
 
     def get_groupelement(self, x: torch.Tensor) -> dict:
         """
-        This method takes the input image and
-        maps it to the group element
+        Maps the input image to the group element.
 
         Args:
-            x: input image
+            x (torch.Tensor): The input image.
 
         Returns:
-            group_element: group element
+            dict: The group element.
         """
-
         group_element_dict: Dict[str, Any] = {}
 
         batch_size = x.shape[0]
@@ -412,7 +478,7 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
         This method returns the optimization specific loss
 
         Returns:
-            loss: optimization specific loss
+            torch.Tensor: optimization specific loss
         """
         (
             group_element_representations_augmented,
