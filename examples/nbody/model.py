@@ -36,7 +36,7 @@ class NBodyPipeline(pl.LightningModule):
         # Each input has 5 particles. This list defines all the edges, since our graph is fully connected.
         # vertex at self.edges[0][i] has an edge connecting to self.edges[1][i]
 
-    def training_step(self, batch: torch.Tensor):
+    def training_step(self, batch: torch.Tensor) -> torch.Tensor:
         """
         Performs one training step.
 
@@ -70,7 +70,13 @@ class NBodyPipeline(pl.LightningModule):
         # PIPELINE
 
         canonical_loc, canonical_vel = self.canonicalizer(
-            nodes, loc, edges, vel, edge_attr, charges
+            x=nodes,
+            targets=None,
+            loc=loc,
+            edges=edges,
+            vel=vel,
+            edge_attr=edge_attr,
+            charges=charges,
         )  # canonicalize the input data
 
         pred_loc = self.prediction_network(
@@ -89,7 +95,7 @@ class NBodyPipeline(pl.LightningModule):
 
         return loss
 
-    def validation_step(self, batch: torch.Tensor):
+    def validation_step(self, batch: torch.Tensor) -> torch.Tensor:
         batch_size, n_nodes, _ = batch[0].size()
         batch = [d.view(-1, d.size(2)) for d in batch]  # converts to 2D matrices
         loc, vel, edge_attr, charges, loc_end = batch
@@ -111,7 +117,13 @@ class NBodyPipeline(pl.LightningModule):
         # PIPELINE
 
         canonical_loc, canonical_vel = self.canonicalizer(
-            nodes, loc, edges, vel, edge_attr, charges
+            x=nodes,
+            targets=None,
+            loc=loc,
+            edges=edges,
+            vel=vel,
+            edge_attr=edge_attr,
+            charges=charges,
         )  # canonicalize the input data
 
         pred_loc = self.prediction_network(
@@ -130,7 +142,7 @@ class NBodyPipeline(pl.LightningModule):
 
         return loss
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> torch.optim.Optimizer:
         optimizer = torch.optim.Adam(
             [
                 {

@@ -1,11 +1,13 @@
+from typing import Optional, Tuple
+
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 
 class MLP(nn.Module):
     """a simple 4-layer MLP"""
 
-    def __init__(self, nin, nout, nh):
+    def __init__(self, nin: int, nout: int, nh: int):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(nin, nh),
@@ -17,7 +19,7 @@ class MLP(nn.Module):
             nn.Linear(nh, nout),
         )
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         return self.net(x)
 
 
@@ -31,16 +33,31 @@ class GCL_basic(nn.Module):
           `temp`: Softmax temperature.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def edge_model(self, source, target, edge_attr):
+    def edge_model(
+        self,
+        source: torch.Tensor,
+        target: torch.Tensor,
+        edge_attr: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         pass
 
-    def node_model(self, h, edge_index, edge_attr):
+    def node_model(
+        self,
+        h: torch.Tensor,
+        edge_index: Tuple[torch.Tensor, torch.Tensor],
+        edge_attr: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         pass
 
-    def forward(self, x, edge_index, edge_attr=None):
+    def forward(
+        self,
+        x: torch.Tensor,
+        edge_index: Tuple[torch.Tensor, torch.Tensor],
+        edge_attr: Optional[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Based on equation (2) in https://arxiv.org/pdf/2102.09844.pdf.
         A matrix of edge features is created and used to update node features (m and h in paper).
@@ -49,11 +66,11 @@ class GCL_basic(nn.Module):
             `x`: Matrix of node embeddings. Shape: (n_nodes * batch_size) x hidden_dim
             `edge_index`: Length 2 list of tensors, containing indices of adjacent nodes; each shape (n_edges * batch_size).
         """
-        row, col = edge_index
+        row, _ = edge_index
         # phi_e in the paper. returns a matrix m of edge features used to update node and feature embeddings.
         # x[row], x[col] are embeddings of adjacent nodes
         # edge_attr = edge attributes/features
-        edge_feat = self.edge_model(x[row], x[col], edge_attr)
+        edge_feat = self.edge_model(x[row], edge_attr)
         x = self.node_model(
             x, edge_index, edge_feat
         )  # updates node embeddings (phi_h in the paper)
@@ -74,15 +91,15 @@ class GCL(GCL_basic):
 
     def __init__(
         self,
-        input_nf,
-        output_nf,
-        hidden_dim,
-        edges_in_nf=0,
-        act_fn=nn.ReLU(),
-        bias=True,
-        attention=False,
-        t_eq=False,
-        recurrent=True,
+        input_nf: int,
+        output_nf: int,
+        hidden_dim: int,
+        edges_in_nf: int = 0,
+        act_fn: nn.Module = nn.ReLU(),
+        bias: bool = True,
+        attention: bool = False,
+        t_eq: bool = False,
+        recurrent: bool = True,
     ):
         super().__init__()
         self.attention = attention
@@ -112,18 +129,20 @@ class GCL(GCL_basic):
         # if recurrent:
         # self.gru = nn.GRUCell(hidden_dim, hidden_dim)
 
-    def edge_model(self, source, target, edge_attr):
+    def edge_model(
+        self,
+        source: torch.Tensor,
+        target: torch.Tensor,
+        edge_attr: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         """
         Returns matrix m from eqn. (2) in paper, of shape (batch_size * n_edges) x hidden_dim.
 
         Args:
             `source`: Embeddings of nodes start of edge. Shape: (batch_size * n_edges) x input_nf
-            `target`: Embeddings of nodes at end of edge. Shape: (batch_size * n_edges) x input_nf
             `edge_attr`: Attributes of edges. Shape: (batch_size * n_edges) x edge_attr_dim
         """
-        edge_in = torch.cat(
-            [source, target], dim=1
-        )  # (batch_size * n_edges) x (input_edge_nf)
+        edge_in = source
         if edge_attr is not None:
             edge_in = torch.cat(
                 [edge_in, edge_attr], dim=1
@@ -136,7 +155,12 @@ class GCL(GCL_basic):
             out = out * att
         return out  # (batch_size * n_edges) x hidden_dim
 
-    def node_model(self, h, edge_index, edge_attr):
+    def node_model(
+        self,
+        h: torch.Tensor,
+        edge_index: Tuple[torch.Tensor, torch.Tensor],
+        edge_attr: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         """
         Returns updated node embeddings, h, from paper. Shape: (n_nodes * batch_size) x output_nf
 
@@ -145,7 +169,7 @@ class GCL(GCL_basic):
             `edge_index`: Indices of adjacent nodes. Shape: (n_edges * batch_size) x 2
             `edge_attr`: Attributes of edges. Shape: (batch_size * n_edges) x hidden_dim (this is the output of edge_model)
         """
-        row, col = edge_index
+        row, _ = edge_index
         # m_i from paper, where m__i = sum of edge attributes for edges adjacent to i (n_nodes x edge_attr_dim)
         agg = unsorted_segment_sum(
             data=edge_attr, segment_ids=row, num_segments=h.size(0)
@@ -170,7 +194,12 @@ class GCL_rf(GCL_basic):
     """
 
     def __init__(
-        self, nf=64, edge_attr_nf=0, reg=0, act_fn=nn.LeakyReLU(0.2), clamp=False
+        self,
+        nf: int = 64,
+        edge_attr_nf: int = 0,
+        reg: float = 0,
+        act_fn: nn.Module = nn.LeakyReLU(0.2),
+        clamp: bool = False,
     ):
         super().__init__()
 
@@ -180,7 +209,12 @@ class GCL_rf(GCL_basic):
         self.phi = nn.Sequential(nn.Linear(edge_attr_nf + 1, nf), act_fn, layer)
         self.reg = reg
 
-    def edge_model(self, source, target, edge_attr):
+    def edge_model(
+        self,
+        source: torch.Tensor,
+        target: torch.Tensor,
+        edge_attr: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         x_diff = source - target
         radial = torch.sqrt(torch.sum(x_diff**2, dim=1)).unsqueeze(1)
         e_input = torch.cat([radial, edge_attr], dim=1)
@@ -190,14 +224,21 @@ class GCL_rf(GCL_basic):
             m_ij = torch.clamp(m_ij, min=-100, max=100)
         return m_ij
 
-    def node_model(self, x, edge_index, edge_attr):
+    def node_model(
+        self,
+        h: torch.Tensor,
+        edge_index: Tuple[torch.Tensor, torch.Tensor],
+        edge_attr: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         row, col = edge_index
-        agg = unsorted_segment_mean(edge_attr, row, num_segments=x.size(0))
-        x_out = x + agg - x * self.reg
+        agg = unsorted_segment_mean(edge_attr, row, num_segments=h.size(0))
+        x_out = h + agg - h * self.reg
         return x_out
 
 
-def unsorted_segment_sum(data, segment_ids, num_segments):
+def unsorted_segment_sum(
+    data: torch.Tensor, segment_ids: torch.Tensor, num_segments: int
+) -> torch.Tensor:
     """Custom PyTorch op to replicate TensorFlow's `unsorted_segment_sum`."""
     result_shape = (num_segments, data.size(1))
     result = data.new_full(result_shape, 0)  # Init empty result tensor.
@@ -206,7 +247,9 @@ def unsorted_segment_sum(data, segment_ids, num_segments):
     return result
 
 
-def unsorted_segment_mean(data, segment_ids, num_segments):
+def unsorted_segment_mean(
+    data: torch.Tensor, segment_ids: torch.Tensor, num_segments: int
+) -> torch.Tensor:
     result_shape = (num_segments, data.size(1), data.size(2))
     segment_ids = segment_ids.unsqueeze(-1).unsqueeze(-1)
     segment_ids = segment_ids.expand(-1, data.size(1), data.size(2))

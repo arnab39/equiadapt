@@ -92,9 +92,9 @@ class ContinuousGroupNBody(ContinuousGroupCanonicalization):
         Canonicalize the input data.
 
         Args:
-            nodes: Input data.
+            nodes: Node attributes.
             targets: Target data.
-            **kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments. Includes locs, edges, vel, edge_attr, and charges.
 
         Returns:
             The canonicalized location and velocity.
@@ -127,16 +127,7 @@ class ContinuousGroupNBody(ContinuousGroupCanonicalization):
     def invert_canonicalization(
         self, x_canonicalized_out: torch.Tensor, **kwargs: Any
     ) -> torch.Tensor:
-        """
-        Invert the canonicalization process.
-
-        Args:
-            x_canonicalized_out: The predicted position.
-
-        Returns:
-            The inverted location.
-
-        """
+        """This method takes as input the canonicalized output and returns the original output."""
         rotation_matrix, translation_vectors, _ = self.canonicalization_info_dict[
             "group_element"
         ].values()
