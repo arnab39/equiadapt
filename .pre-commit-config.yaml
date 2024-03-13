@@ -26,7 +26,7 @@ repos:
 
 ## If you want to avoid flake8 errors due to unused vars or imports:
 - repo: https://github.com/PyCQA/autoflake
-  rev: v2.1.1
+  rev: v2.3.1
   hooks:
   - id: autoflake
     args: [
@@ -66,7 +66,7 @@ repos:
 
 # Check for type errors with mypy:
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 'v1.8.0'
+  rev: 'v1.9.0'
   hooks:
   - id: mypy
     args: [--disallow-untyped-defs, --ignore-missing-imports]
