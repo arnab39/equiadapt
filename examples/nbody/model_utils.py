@@ -1,10 +1,12 @@
-from equiadapt.nbody.canonicalization_networks.euclideangraph_base_models import (
-    EGNN_vel,
-    VNDeepSets,
+from examples.nbody.networks.euclideangraph_base_models import (
     GNN,
     Transformer,
 )
 import torch
+
+from equiadapt.nbody.canonicalization_networks.custom_equivariant_networks import (
+    VNDeepSets,
+)
 
 
 def get_canonicalization_network(hyperparams):
@@ -20,7 +22,7 @@ def get_prediction_network(hyperparams):
     architecture = hyperparams.architecture
     model_dict = {
         "GNN": lambda: GNN(hyperparams),
-        "EGNN": lambda: EGNN_vel(hyperparams),
+        # "EGNN": lambda: EGNN_vel(hyperparams),
         "vndeepsets": lambda: VNDeepSets(hyperparams),
         "Transformer": lambda: Transformer(hyperparams),
     }
