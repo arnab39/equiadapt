@@ -29,6 +29,14 @@ def gram_schmidt(vectors: torch.Tensor) -> torch.Tensor:
 
     Returns:
         torch.Tensor: The orthogonalized vectors of the same shape as the input.
+
+    Examples:
+        >>> vectors = torch.tensor([[[1, 0, 0], [0, 1, 0], [0, 0, 1]]])
+        >>> result = gram_schmidt(vectors)
+        >>> print(result)
+        tensor([[[1.0000, 0.0000, 0.0000],
+                 [0.0000, 1.0000, 0.0000],
+                 [0.0000, 0.0000, 1.0000]]])
     """
     v1 = vectors[:, 0]
     v1 = v1 / torch.norm(v1, dim=1, keepdim=True)
@@ -188,7 +196,8 @@ class LieParameterization(torch.nn.Module):
         return en_rep
 
     def get_group_rep(self, params: torch.Tensor) -> torch.Tensor:
-        """Computes the representation for the specified Lie group.
+        """
+        Computes the representation for the specified Lie group.
 
         Args:
             params (torch.Tensor): Input parameters of shape (batch_size, param_dim).
