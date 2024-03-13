@@ -1,21 +1,22 @@
 # Note that for now we have only implemented canonicalizatin for rotation in the pointcloud setting.
 # This is meant to be a proof of concept and we are happy to receive contribution to extend this to other group actions.
 
+from omegaconf import DictConfig
 import torch
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 from equiadapt.common.utils import gram_schmidt
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Tuple, Union, Optional
 
 
 class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization):
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
-        canonicalization_hyperparams: dict,
+        canonicalization_hyperparams: DictConfig,
     ):
         super().__init__(canonicalization_network)
 
-    def get_groupelement(self, x: torch.Tensor):
+    def get_groupelement(self, x: torch.Tensor) -> dict:
         """
         This method takes the input image and
         maps it to the group element
@@ -29,7 +30,7 @@ class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization)
         raise NotImplementedError("get_groupelement method is not implemented")
 
     def canonicalize(
-        self, x: torch.Tensor, targets: List = None, **kwargs: Any
+        self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an image as input and
@@ -63,11 +64,11 @@ class EquivariantPointcloudCanonicalization(ContinuousGroupPointcloudCanonicaliz
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
-        canonicalization_hyperparams: dict,
+        canonicalization_hyperparams: DictConfig,
     ):
         super().__init__(canonicalization_network, canonicalization_hyperparams)
 
-    def get_groupelement(self, x: torch.Tensor):
+    def get_groupelement(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         """
         This method takes the input image and
         maps it to the group element
@@ -94,6 +95,6 @@ class EquivariantPointcloudCanonicalization(ContinuousGroupPointcloudCanonicaliz
             group_element_dict["rotation"]
         )
 
-        self.canonicalization_info_dict["group_element"] = group_element_dict
+        self.canonicalization_info_dict["group_element"] = group_element_dict  # type: ignore
 
         return group_element_dict

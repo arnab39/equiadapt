@@ -1,6 +1,6 @@
 import dotenv
 from omegaconf import DictConfig
-from typing import Dict, Optional
+from typing import Optional
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
@@ -29,21 +29,7 @@ def get_model_pipeline(hyperparams: DictConfig):
 def get_trainer(
     hyperparams: DictConfig, callbacks: list, wandb_logger: pl.loggers.WandbLogger
 ):
-    if hyperparams.experiment.run_mode == "auto_tune":
-        trainer = pl.Trainer(
-            max_epochs=hyperparams.experiment.num_epochs,
-            accelerator="auto",
-            auto_scale_batch_size=True,
-            auto_lr_find=True,
-            logger=wandb_logger,
-            callbacks=callbacks,
-            deterministic=hyperparams.experiment.deterministic,
-            num_nodes=hyperparams.experiment.num_nodes,
-            devices=hyperparams.experiment.num_gpus,
-            strategy="ddp",
-        )
-
-    elif hyperparams.experiment.run_mode == "dryrun":
+    if hyperparams.experiment.run_mode == "dryrun":
         trainer = pl.Trainer(
             fast_dev_run=5,
             max_epochs=hyperparams.experiment.training.num_epochs,
@@ -89,15 +75,15 @@ def get_callbacks(hyperparams: DictConfig):
     return [checkpoint_callback, early_stop_metric_callback]
 
 
-def get_recursive_hyperparams_identifier(hyperparams: Dict):
+def get_recursive_hyperparams_identifier(hyperparams: DictConfig):
     # get the identifier for the canonicalization network hyperparameters
     # recursively go through the dictionary and get the values and concatenate them
     identifier = ""
     for key, value in hyperparams.items():
         if isinstance(value, DictConfig):
-            identifier += f"_{get_recursive_hyperparams_identifier(value)}_"
+            identifier += f"_{get_recursive_hyperparams_identifier(value)}_"  # type: ignore
         else:
-            identifier += f"_{key}_{value}_"
+            identifier += f"_{key}_{value}_"  # type: ignore
     return identifier
 
 

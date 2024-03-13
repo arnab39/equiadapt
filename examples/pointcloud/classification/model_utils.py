@@ -4,7 +4,7 @@ from examples.pointcloud.common.networks import PointNet, DGCNN
 
 def get_prediction_network(
     architecture: str,
-    hyperparams: DictConfig = None,
+    hyperparams: DictConfig,
 ):
     """
     The function returns the prediction network based on the architecture type

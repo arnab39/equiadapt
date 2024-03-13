@@ -8,14 +8,14 @@ import math
 class RotationEquivariantConvLift(nn.Module):
     def __init__(
         self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        num_rotations=4,
-        stride=1,
-        padding=0,
-        bias=True,
-        device="cuda",
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        num_rotations: int = 4,
+        stride: int = 1,
+        padding: int = 0,
+        bias: bool = True,
+        device: str = "cuda",
     ):
         super().__init__()
         self.weights = nn.Parameter(
@@ -26,7 +26,7 @@ class RotationEquivariantConvLift(nn.Module):
             self.bias = nn.Parameter(torch.empty(out_channels).to(device))
             torch.nn.init.zeros_(self.bias)
         else:
-            self.bias = None
+            self.bias = None  # type: ignore
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.stride = stride
@@ -34,7 +34,9 @@ class RotationEquivariantConvLift(nn.Module):
         self.num_rotations = num_rotations
         self.kernel_size = kernel_size
 
-    def get_rotated_weights(self, weights, num_rotations=4):
+    def get_rotated_weights(
+        self, weights: torch.Tensor, num_rotations: int = 4
+    ) -> torch.Tensor:
         device = weights.device
         weights = weights.flatten(0, 1).unsqueeze(0).repeat(num_rotations, 1, 1, 1)
         rotated_weights = K.geometry.rotate(
@@ -52,7 +54,7 @@ class RotationEquivariantConvLift(nn.Module):
         ).transpose(0, 1)
         return rotated_weights.flatten(0, 1)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         x shape: (batch_size, in_channels, height, width)
         :return: (batch_size, out_channels, num_rotations, height, width)
@@ -72,14 +74,14 @@ class RotationEquivariantConvLift(nn.Module):
 class RotoReflectionEquivariantConvLift(nn.Module):
     def __init__(
         self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        num_rotations=4,
-        stride=1,
-        padding=0,
-        bias=True,
-        device="cuda",
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        num_rotations: int = 4,
+        stride: int = 1,
+        padding: int = 0,
+        bias: bool = True,
+        device: str = "cuda",
     ):
         super().__init__()
         num_group_elements = 2 * num_rotations
@@ -91,7 +93,7 @@ class RotoReflectionEquivariantConvLift(nn.Module):
             self.bias = nn.Parameter(torch.empty(out_channels).to(device))
             torch.nn.init.zeros_(self.bias)
         else:
-            self.bias = None
+            self.bias = None  # type: ignore
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.stride = stride
@@ -100,7 +102,9 @@ class RotoReflectionEquivariantConvLift(nn.Module):
         self.kernel_size = kernel_size
         self.num_group_elements = num_group_elements
 
-    def get_rotoreflected_weights(self, weights, num_rotations=4):
+    def get_rotoreflected_weights(
+        self, weights: torch.Tensor, num_rotations: int = 4
+    ) -> torch.Tensor:
         device = weights.device
         weights = weights.flatten(0, 1).unsqueeze(0).repeat(num_rotations, 1, 1, 1)
         rotated_weights = K.geometry.rotate(
@@ -120,7 +124,7 @@ class RotoReflectionEquivariantConvLift(nn.Module):
         ).transpose(0, 1)
         return rotoreflected_weights.flatten(0, 1)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         x shape: (batch_size, in_channels, height, width)
         :return: (batch_size, out_channels, num_group_elements, height, width)
@@ -146,14 +150,14 @@ class RotoReflectionEquivariantConvLift(nn.Module):
 class RotationEquivariantConv(nn.Module):
     def __init__(
         self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        num_rotations=4,
-        stride=1,
-        padding=0,
-        bias=True,
-        device="cuda",
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        num_rotations: int = 4,
+        stride: int = 1,
+        padding: int = 0,
+        bias: bool = True,
+        device: str = "cuda",
     ):
         super().__init__()
         self.weights = nn.Parameter(
@@ -166,7 +170,7 @@ class RotationEquivariantConv(nn.Module):
             self.bias = nn.Parameter(torch.empty(out_channels).to(device))
             torch.nn.init.zeros_(self.bias)
         else:
-            self.bias = None
+            self.bias = None  # type: ignore
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.stride = stride
@@ -188,7 +192,9 @@ class RotationEquivariantConv(nn.Module):
             0.0, 360.0, steps=num_rotations + 1, dtype=torch.float32
         )[:num_rotations].to(device)
 
-    def get_rotated_permuted_weights(self, weights, num_rotations=4):
+    def get_rotated_permuted_weights(
+        self, weights: torch.Tensor, num_rotations: int = 4
+    ) -> torch.Tensor:
         weights = weights.flatten(0, 1).unsqueeze(0).repeat(num_rotations, 1, 1, 1, 1)
         permuted_weights = torch.gather(weights, 2, self.permute_indices_along_group)
         rotated_permuted_weights = K.geometry.rotate(
@@ -214,7 +220,7 @@ class RotationEquivariantConv(nn.Module):
         )
         return rotated_permuted_weights
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         x shape: (batch_size, in_channels, num_rotations, height, width)
         :return: (batch_size, out_channels, num_rotations, height, width)
@@ -240,17 +246,17 @@ class RotationEquivariantConv(nn.Module):
 class RotoReflectionEquivariantConv(nn.Module):
     def __init__(
         self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        num_rotations=4,
-        stride=1,
-        padding=0,
-        bias=True,
-        device="cuda",
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        num_rotations: int = 4,
+        stride: int = 1,
+        padding: int = 0,
+        bias: bool = True,
+        device: str = "cuda",
     ):
         super().__init__()
-        num_group_elements = 2 * num_rotations
+        num_group_elements: int = 2 * num_rotations
         self.weights = nn.Parameter(
             torch.empty(
                 out_channels, in_channels, num_group_elements, kernel_size, kernel_size
@@ -261,7 +267,7 @@ class RotoReflectionEquivariantConv(nn.Module):
             self.bias = nn.Parameter(torch.empty(out_channels).to(device))
             torch.nn.init.zeros_(self.bias)
         else:
-            self.bias = None
+            self.bias = None  # type: ignore
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.stride = stride
@@ -310,7 +316,9 @@ class RotoReflectionEquivariantConv(nn.Module):
             ]
         ).to(device)
 
-    def get_rotoreflected_permuted_weights(self, weights, num_rotations=4):
+    def get_rotoreflected_permuted_weights(
+        self, weights: torch.Tensor, num_rotations: int = 4
+    ) -> torch.Tensor:
         weights = (
             weights.flatten(0, 1)
             .unsqueeze(0)
@@ -346,7 +354,7 @@ class RotoReflectionEquivariantConv(nn.Module):
         )
         return rotoreflected_permuted_weights
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         x shape: (batch_size, in_channels, num_group_elements, height, width)
         :return: (batch_size, out_channels, num_group_elements, height, width)
