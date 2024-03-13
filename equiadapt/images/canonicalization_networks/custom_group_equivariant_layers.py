@@ -7,6 +7,17 @@ import torch.nn.functional as F
 
 
 class RotationEquivariantConvLift(nn.Module):
+    """
+    This class represents a rotation equivariant convolutional layer with lifting.
+
+    The layer is equivariant to a group of rotations. The weights of the layer are initialized using the Kaiming uniform initialization method. The layer supports optional bias.
+
+    Methods:
+        __init__: Initializes the RotationEquivariantConvLift instance.
+        get_rotated_weights: Returns the weights of the layer after rotation.
+        forward: Performs a forward pass through the layer.
+    """
+
     def __init__(
         self,
         in_channels: int,
@@ -18,6 +29,19 @@ class RotationEquivariantConvLift(nn.Module):
         bias: bool = True,
         device: str = "cuda",
     ):
+        """
+        Initializes the RotationEquivariantConvLift instance.
+
+        Args:
+            in_channels (int): The number of input channels.
+            out_channels (int): The number of output channels.
+            kernel_size (int): The size of the kernel.
+            num_rotations (int, optional): The number of rotations in the group. Defaults to 4.
+            stride (int, optional): The stride of the convolution. Defaults to 1.
+            padding (int, optional): The padding of the convolution. Defaults to 0.
+            bias (bool, optional): Whether to include a bias term. Defaults to True.
+            device (str, optional): The device to run the layer on. Defaults to "cuda".
+        """
         super().__init__()
         self.weights = nn.Parameter(
             torch.empty(out_channels, in_channels, kernel_size, kernel_size).to(device)
@@ -38,6 +62,16 @@ class RotationEquivariantConvLift(nn.Module):
     def get_rotated_weights(
         self, weights: torch.Tensor, num_rotations: int = 4
     ) -> torch.Tensor:
+        """
+        Returns the weights of the layer after rotation.
+
+        Args:
+            weights (torch.Tensor): The weights of the layer.
+            num_rotations (int, optional): The number of rotations in the group. Defaults to 4.
+
+        Returns:
+            torch.Tensor: The weights after rotation.
+        """
         device = weights.device
         weights = weights.flatten(0, 1).unsqueeze(0).repeat(num_rotations, 1, 1, 1)
         rotated_weights = K.geometry.rotate(
@@ -57,8 +91,13 @@ class RotationEquivariantConvLift(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        x shape: (batch_size, in_channels, height, width)
-        :return: (batch_size, out_channels, num_rotations, height, width)
+        Performs a forward pass through the layer.
+
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the layer. It has the shape (batch_size, out_channels, num_rotations, height, width).
         """
         batch_size = x.shape[0]
         rotated_weights = self.get_rotated_weights(self.weights, self.num_rotations)
@@ -73,6 +112,17 @@ class RotationEquivariantConvLift(nn.Module):
 
 
 class RotoReflectionEquivariantConvLift(nn.Module):
+    """
+    This class represents a roto-reflection equivariant convolutional layer with lifting.
+
+    The layer is equivariant to a group of rotations and reflections. The weights of the layer are initialized using the Kaiming uniform initialization method. The layer supports optional bias.
+
+    Methods:
+        __init__: Initializes the RotoReflectionEquivariantConvLift instance.
+        get_rotoreflected_weights: Returns the weights of the layer after rotation, reflection, and permutation.
+        forward: Performs a forward pass through the layer.
+    """
+
     def __init__(
         self,
         in_channels: int,
@@ -84,6 +134,19 @@ class RotoReflectionEquivariantConvLift(nn.Module):
         bias: bool = True,
         device: str = "cuda",
     ):
+        """
+        Initializes the RotoReflectionEquivariantConvLift instance.
+
+        Args:
+            in_channels (int): The number of input channels.
+            out_channels (int): The number of output channels.
+            kernel_size (int): The size of the kernel.
+            num_rotations (int, optional): The number of rotations in the group. Defaults to 4.
+            stride (int, optional): The stride of the convolution. Defaults to 1.
+            padding (int, optional): The padding of the convolution. Defaults to 0.
+            bias (bool, optional): Whether to include a bias term. Defaults to True.
+            device (str, optional): The device to run the layer on. Defaults to "cuda".
+        """
         super().__init__()
         num_group_elements = 2 * num_rotations
         self.weights = nn.Parameter(
@@ -106,6 +169,16 @@ class RotoReflectionEquivariantConvLift(nn.Module):
     def get_rotoreflected_weights(
         self, weights: torch.Tensor, num_rotations: int = 4
     ) -> torch.Tensor:
+        """
+        Returns the weights of the layer after rotation and reflection.
+
+        Args:
+            weights (torch.Tensor): The weights of the layer.
+            num_rotations (int, optional): The number of rotations in the group. Defaults to 4.
+
+        Returns:
+            torch.Tensor: The weights after rotation, reflection, and permutation.
+        """
         device = weights.device
         weights = weights.flatten(0, 1).unsqueeze(0).repeat(num_rotations, 1, 1, 1)
         rotated_weights = K.geometry.rotate(
@@ -127,8 +200,13 @@ class RotoReflectionEquivariantConvLift(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        x shape: (batch_size, in_channels, height, width)
-        :return: (batch_size, out_channels, num_group_elements, height, width)
+        Performs a forward pass through the layer.
+
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the layer. It has the shape (batch_size, out_channels, num_group_elements, height, width).
         """
         batch_size = x.shape[0]
         rotoreflected_weights = self.get_rotoreflected_weights(
@@ -149,6 +227,17 @@ class RotoReflectionEquivariantConvLift(nn.Module):
 
 
 class RotationEquivariantConv(nn.Module):
+    """
+    This class represents a rotation equivariant convolutional layer.
+
+    The layer is equivariant to a group of rotations. The weights of the layer are initialized using the Kaiming uniform initialization method. The layer supports optional bias.
+
+    Methods:
+        __init__: Initializes the RotationEquivariantConv instance.
+        get_rotated_permuted_weights: Returns the weights of the layer after rotation and permutation.
+        forward: Performs a forward pass through the layer.
+    """
+
     def __init__(
         self,
         in_channels: int,
@@ -160,6 +249,19 @@ class RotationEquivariantConv(nn.Module):
         bias: bool = True,
         device: str = "cuda",
     ):
+        """
+        Initializes the RotationEquivariantConv instance.
+
+        Args:
+            in_channels (int): The number of input channels.
+            out_channels (int): The number of output channels.
+            kernel_size (int): The size of the kernel.
+            num_rotations (int, optional): The number of rotations in the group. Defaults to 4.
+            stride (int, optional): The stride of the convolution. Defaults to 1.
+            padding (int, optional): The padding of the convolution. Defaults to 0.
+            bias (bool, optional): Whether to include a bias term. Defaults to True.
+            device (str, optional): The device to run the layer on. Defaults to "cuda".
+        """
         super().__init__()
         self.weights = nn.Parameter(
             torch.empty(
@@ -196,6 +298,16 @@ class RotationEquivariantConv(nn.Module):
     def get_rotated_permuted_weights(
         self, weights: torch.Tensor, num_rotations: int = 4
     ) -> torch.Tensor:
+        """
+        Returns the weights of the layer after rotation and permutation.
+
+        Args:
+            weights (torch.Tensor): The weights of the layer.
+            num_rotations (int, optional): The number of rotations in the group. Defaults to 4.
+
+        Returns:
+            torch.Tensor: The weights after rotation and permutation.
+        """
         weights = weights.flatten(0, 1).unsqueeze(0).repeat(num_rotations, 1, 1, 1, 1)
         permuted_weights = torch.gather(weights, 2, self.permute_indices_along_group)
         rotated_permuted_weights = K.geometry.rotate(
@@ -223,8 +335,13 @@ class RotationEquivariantConv(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        x shape: (batch_size, in_channels, num_rotations, height, width)
-        :return: (batch_size, out_channels, num_rotations, height, width)
+        Performs a forward pass through the layer.
+
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, num_rotations, height, width).
+
+        Returns:
+            torch.Tensor: The output of the layer. It has the shape (batch_size, out_channels, num_rotations, height, width).
         """
         batch_size = x.shape[0]
         x = x.flatten(1, 2)
@@ -245,6 +362,17 @@ class RotationEquivariantConv(nn.Module):
 
 
 class RotoReflectionEquivariantConv(nn.Module):
+    """
+    This class represents a roto-reflection equivariant convolutional layer.
+
+    The layer is equivariant to a group of rotations and reflections. The weights of the layer are initialized using the Kaiming uniform initialization method. The layer supports optional bias.
+
+    Methods:
+        __init__: Initializes the RotoReflectionEquivariantConv instance.
+        get_rotoreflected_permuted_weights: Returns the weights of the layer after rotation, reflection, and permutation.
+        forward: Performs a forward pass through the layer.
+    """
+
     def __init__(
         self,
         in_channels: int,
@@ -256,6 +384,19 @@ class RotoReflectionEquivariantConv(nn.Module):
         bias: bool = True,
         device: str = "cuda",
     ):
+        """
+        Initializes the RotoReflectionEquivariantConv instance.
+
+        Args:
+            in_channels (int): The number of input channels.
+            out_channels (int): The number of output channels.
+            kernel_size (int): The size of the kernel.
+            num_rotations (int, optional): The number of rotations in the group. Defaults to 4.
+            stride (int, optional): The stride of the convolution. Defaults to 1.
+            padding (int, optional): The padding of the convolution. Defaults to 0.
+            bias (bool, optional): Whether to include a bias term. Defaults to True.
+            device (str, optional): The device to run the layer on. Defaults to "cuda".
+        """
         super().__init__()
         num_group_elements: int = 2 * num_rotations
         self.weights = nn.Parameter(
@@ -320,6 +461,16 @@ class RotoReflectionEquivariantConv(nn.Module):
     def get_rotoreflected_permuted_weights(
         self, weights: torch.Tensor, num_rotations: int = 4
     ) -> torch.Tensor:
+        """
+        Returns the weights of the layer after rotation, reflection, and permutation.
+
+        Args:
+            weights (torch.Tensor): The weights of the layer.
+            num_rotations (int, optional): The number of rotations in the group. Defaults to 4.
+
+        Returns:
+            torch.Tensor: The weights after rotation, reflection, and permutation.
+        """
         weights = (
             weights.flatten(0, 1)
             .unsqueeze(0)
@@ -357,8 +508,13 @@ class RotoReflectionEquivariantConv(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        x shape: (batch_size, in_channels, num_group_elements, height, width)
-        :return: (batch_size, out_channels, num_group_elements, height, width)
+        Performs a forward pass through the layer.
+
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, num_group_elements, height, width).
+
+        Returns:
+            torch.Tensor: The output of the layer. It has the shape (batch_size, out_channels, num_group_elements, height, width).
         """
         batch_size = x.shape[0]
         x = x.flatten(1, 2)
