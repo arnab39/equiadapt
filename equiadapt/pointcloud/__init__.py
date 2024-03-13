@@ -1,3 +1,5 @@
+"""This package contains modules for the equiadapt pointcloud canonicalization."""
+
 from equiadapt.pointcloud import canonicalization, canonicalization_networks
 from equiadapt.pointcloud.canonicalization import (
     ContinuousGroupPointcloudCanonicalization,

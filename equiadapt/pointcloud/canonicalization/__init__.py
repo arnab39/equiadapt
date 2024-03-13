@@ -1,4 +1,5 @@
-from equiadapt.pointcloud.canonicalization import continuous_group
+"""This module contains the pointcloud canonicalization methods."""
+
 from equiadapt.pointcloud.canonicalization.continuous_group import (
     ContinuousGroupPointcloudCanonicalization,
     EquivariantPointcloudCanonicalization,
@@ -7,5 +8,4 @@ from equiadapt.pointcloud.canonicalization.continuous_group import (
 __all__ = [
     "ContinuousGroupPointcloudCanonicalization",
     "EquivariantPointcloudCanonicalization",
-    "continuous_group",
 ]
