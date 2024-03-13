@@ -1,6 +1,4 @@
-from equiadapt.pointcloud import canonicalization
-from equiadapt.pointcloud import canonicalization_networks
-
+from equiadapt.pointcloud import canonicalization, canonicalization_networks
 from equiadapt.pointcloud.canonicalization import (
     ContinuousGroupPointcloudCanonicalization,
     EquivariantPointcloudCanonicalization,
@@ -12,7 +10,6 @@ from equiadapt.pointcloud.canonicalization_networks import (
     VNBilinear,
     VNLeakyReLU,
     VNLinear,
-    VNLinearAndLeakyReLU,
     VNLinearLeakyReLU,
     VNMaxPool,
     VNSmall,
@@ -33,7 +30,6 @@ __all__ = [
     "VNBilinear",
     "VNLeakyReLU",
     "VNLinear",
-    "VNLinearAndLeakyReLU",
     "VNLinearLeakyReLU",
     "VNMaxPool",
     "VNSmall",

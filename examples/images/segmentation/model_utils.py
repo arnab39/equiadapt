@@ -89,7 +89,6 @@ class MaskRCNNModel(nn.Module):
 
 
 class SAMModel(nn.Module):
-
     def __init__(
         self,
         architecture_type: str,
@@ -148,7 +147,6 @@ class SAMModel(nn.Module):
 
 
 class FocalLoss(nn.Module):
-
     def __init__(self, weight=None, size_average=True):
         super().__init__()
         self.name = "focal_loss"
@@ -169,7 +167,6 @@ class FocalLoss(nn.Module):
 
 
 class DiceLoss(nn.Module):
-
     def __init__(self, weight=None, size_average=True):
         super().__init__()
         self.name = "dice_loss"

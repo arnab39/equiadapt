@@ -1,14 +1,18 @@
+from typing import Optional
+
 import torch
 import torch.nn as nn
+from omegaconf import DictConfig
+
 from equiadapt.pointcloud.canonicalization_networks.vector_neuron_layers import (
+    VNBatchNorm,
     VNLinearLeakyReLU,
     VNMaxPool,
-    VNBatchNorm,
     mean_pool,
 )
 
 
-def knn(x, k):
+def knn(x: torch.Tensor, k: int) -> torch.Tensor:
     inner = -2 * torch.matmul(x.transpose(2, 1), x)
     xx = torch.sum(x**2, dim=1, keepdim=True)
     pairwise_distance = -xx - inner - xx.transpose(2, 1)
@@ -17,7 +21,9 @@ def knn(x, k):
     return idx
 
 
-def get_graph_feature_cross(x, k=20, idx=None):
+def get_graph_feature_cross(
+    x: torch.Tensor, k: int = 20, idx: Optional[torch.Tensor] = None
+) -> torch.Tensor:
     batch_size = x.size(0)
     num_points = x.size(3)
     x = x.view(batch_size, -1, num_points)
@@ -47,7 +53,7 @@ def get_graph_feature_cross(x, k=20, idx=None):
 
 
 class VNSmall(torch.nn.Module):
-    def __init__(self, hyperparams):
+    def __init__(self, hyperparams: DictConfig):
         super().__init__()
         self.n_knn = hyperparams.n_knn
         self.pooling = hyperparams.pooling
@@ -60,14 +66,14 @@ class VNSmall(torch.nn.Module):
         if self.pooling == "max":
             self.pool = VNMaxPool(64 // 3)
         elif self.pooling == "mean":
-            self.pool = mean_pool
+            self.pool = mean_pool  # type: ignore
         else:
             raise ValueError(f"Pooling type {self.pooling} not supported")
 
         # Wild idea -- Just use a linear layer to predict the output
         # self.conv = VNLinear(3, 12 // 3)
 
-    def forward(self, point_cloud):
+    def forward(self, point_cloud: torch.Tensor) -> torch.Tensor:
 
         point_cloud = point_cloud.unsqueeze(1)
         feat = get_graph_feature_cross(point_cloud, k=self.n_knn)

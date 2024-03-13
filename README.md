@@ -180,10 +180,6 @@ If you find this library or the associated papers useful, please cite the follow
 }
 ```
 
-# Contributing
-
-This repository is a work in progress. We are actively working on improving the codebase and adding more features. If you are interested in contributing, please raise an issue or submit a pull request. We will be happy to help you get started.
-
 # Contact
 
 For questions related to this code, please raise an issue and you can mail us at:
@@ -195,7 +191,7 @@ For questions related to this code, please raise an issue and you can mail us at
 
 You can check out the [contributor's guide](CONTRIBUTING.md).
 
-This project uses `pre-commit`_, you can install it before making any
+This project uses `pre-commit`, you can install it before making any
 changes::
 
     pip install pre-commit

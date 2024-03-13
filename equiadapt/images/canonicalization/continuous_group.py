@@ -1,8 +1,9 @@
 import math
-from typing import Any, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import kornia as K
 import torch
+from omegaconf import DictConfig
 from torch.nn import functional as F
 from torchvision import transforms
 
@@ -15,7 +16,7 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
-        canonicalization_hyperparams: dict,
+        canonicalization_hyperparams: DictConfig,
         in_shape: tuple,
     ):
         super().__init__(canonicalization_network)
@@ -55,9 +56,9 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
             if is_grayscale
             else transforms.Resize(size=canonicalization_hyperparams.resize_shape)
         )
-        self.group_info_dict = {}
+        self.group_info_dict: Dict[str, Any] = {}
 
-    def get_groupelement(self, x: torch.Tensor):
+    def get_groupelement(self, x: torch.Tensor) -> dict:
         """
         This method takes the input image and
         maps it to the group element
@@ -70,7 +71,9 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         """
         raise NotImplementedError("get_groupelement method is not implemented")
 
-    def transformations_before_canonicalization_network_forward(self, x: torch.Tensor):
+    def transformations_before_canonicalization_network_forward(
+        self, x: torch.Tensor
+    ) -> torch.Tensor:
         """
         This method takes an image as input and
         returns the pre-canonicalized image
@@ -79,7 +82,9 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         x = self.resize_canonization(x)
         return x
 
-    def get_group_from_out_vectors(self, out_vectors: torch.Tensor):
+    def get_group_from_out_vectors(
+        self, out_vectors: torch.Tensor
+    ) -> Tuple[dict, torch.Tensor]:
         """
         This method takes the output of the canonicalization network and
         returns the group element
@@ -128,7 +133,7 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         )
 
     def canonicalize(
-        self, x: torch.Tensor, targets: List = None, **kwargs: Any
+        self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an image as input and
@@ -178,17 +183,18 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
         return x
 
     def invert_canonicalization(
-        self, x_canonicalized_out: torch.Tensor, induced_rep_type: str = "vector"
-    ):
+        self, x_canonicalized_out: torch.Tensor, **kwargs: Any
+    ) -> torch.Tensor:
         """
         This method takes the output of canonicalized image as input and
         returns output of the original image
 
         """
+        induced_rep_type = kwargs.get("induced_rep_type", "vector")
         return get_action_on_image_features(
             feature_map=x_canonicalized_out,
             group_info_dict=self.group_info_dict,
-            group_element_dict=self.canonicalization_info_dict["group_element"],
+            group_element_dict=self.canonicalization_info_dict["group_element"],  # type: ignore
             induced_rep_type=induced_rep_type,
         )
 
@@ -197,7 +203,7 @@ class SteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
-        canonicalization_hyperparams: dict,
+        canonicalization_hyperparams: DictConfig,
         in_shape: tuple,
     ):
         super().__init__(
@@ -205,7 +211,7 @@ class SteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
         )
         self.group_type = canonicalization_network.group_type
 
-    def get_rotation_matrix_from_vector(self, vectors: torch.Tensor):
+    def get_rotation_matrix_from_vector(self, vectors: torch.Tensor) -> torch.Tensor:
         """
         This method takes the input vector and returns the rotation matrix
 
@@ -220,7 +226,7 @@ class SteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
         rotation_matrices = torch.stack([v1, v2], dim=1)
         return rotation_matrices
 
-    def get_groupelement(self, x: torch.Tensor):
+    def get_groupelement(self, x: torch.Tensor) -> dict:
         """
         This method takes the input image and
         maps it to the group element
@@ -232,7 +238,7 @@ class SteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
             group_element: group element
         """
 
-        group_element_dict = {}
+        group_element_dict: Dict[str, Any] = {}
 
         x = self.transformations_before_canonicalization_network_forward(x)
 
@@ -244,14 +250,15 @@ class SteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
         if not hasattr(self, "canonicalization_info_dict"):
             self.canonicalization_info_dict = {}
 
-        group_element_dict, group_element_representation = (
-            self.get_group_from_out_vectors(out_vectors)
-        )
+        (
+            group_element_dict,
+            group_element_representation,
+        ) = self.get_group_from_out_vectors(out_vectors)
         self.canonicalization_info_dict["group_element_matrix_representation"] = (
             group_element_representation
         )
 
-        self.canonicalization_info_dict["group_element"] = group_element_dict
+        self.canonicalization_info_dict["group_element"] = group_element_dict  # type: ignore
 
         return group_element_dict
 
@@ -260,7 +267,7 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
-        canonicalization_hyperparams: dict,
+        canonicalization_hyperparams: DictConfig,
         in_shape: tuple,
     ):
         super().__init__(
@@ -268,7 +275,7 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
         )
         self.group_type = canonicalization_hyperparams.group_type
 
-    def get_rotation_matrix_from_vector(self, vectors: torch.Tensor):
+    def get_rotation_matrix_from_vector(self, vectors: torch.Tensor) -> torch.Tensor:
         """
         This method takes the input vector and returns the rotation matrix
 
@@ -283,7 +290,7 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
         rotation_matrices = torch.stack([v1, v2], dim=1)
         return rotation_matrices
 
-    def group_augment(self, x):
+    def group_augment(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Augmentation of the input images by applying random rotations and,
         if applicable, reflections, with corresponding transformation matrices.
@@ -322,7 +329,7 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
         x = self.pad(x)
 
         # Note: F.affine_grid expects theta of shape (N, 2, 3) for 2D affine transformations
-        grid = F.affine_grid(rotation_matrices, x.size(), align_corners=False)
+        grid = F.affine_grid(rotation_matrices, list(x.size()), align_corners=False)
 
         augmented_images = F.grid_sample(x, grid, align_corners=False)
 
@@ -336,7 +343,7 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
         # Return augmented images and the transformation matrices used
         return augmented_images, rotation_matrices[:, :, :2]
 
-    def get_groupelement(self, x: torch.Tensor):
+    def get_groupelement(self, x: torch.Tensor) -> dict:
         """
         This method takes the input image and
         maps it to the group element
@@ -348,7 +355,7 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
             group_element: group element
         """
 
-        group_element_dict = {}
+        group_element_dict: Dict[str, Any] = {}
 
         batch_size = x.shape[0]
 
@@ -378,14 +385,15 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
         if not hasattr(self, "canonicalization_info_dict"):
             self.canonicalization_info_dict = {}
 
-        group_element_dict, group_element_representations = (
-            self.get_group_from_out_vectors(out_vectors)
-        )
+        (
+            group_element_dict,
+            group_element_representations,
+        ) = self.get_group_from_out_vectors(out_vectors)
         # Store the matrix representation of the group element for regularization and identity metric
         self.canonicalization_info_dict["group_element_matrix_representation"] = (
             group_element_representations
         )
-        self.canonicalization_info_dict["group_element"] = group_element_dict
+        self.canonicalization_info_dict["group_element"] = group_element_dict  # type: ignore
 
         _, group_element_representations_augmented = self.get_group_from_out_vectors(
             out_vectors_augmented
@@ -399,7 +407,7 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
 
         return group_element_dict
 
-    def get_optimization_specific_loss(self):
+    def get_optimization_specific_loss(self) -> torch.Tensor:
         """
         This method returns the optimization specific loss
 

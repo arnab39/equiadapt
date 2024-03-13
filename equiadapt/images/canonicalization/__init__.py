@@ -1,6 +1,4 @@
-from equiadapt.images.canonicalization import continuous_group
-from equiadapt.images.canonicalization import discrete_group
-
+from equiadapt.images.canonicalization import continuous_group, discrete_group
 from equiadapt.images.canonicalization.continuous_group import (
     ContinuousGroupImageCanonicalization,
     OptimizedSteerableImageCanonicalization,

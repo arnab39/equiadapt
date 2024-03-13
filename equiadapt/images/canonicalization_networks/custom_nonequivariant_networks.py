@@ -1,6 +1,7 @@
 from typing import List
 
-import torch, torchvision
+import torch
+import torchvision
 from torch import nn
 
 

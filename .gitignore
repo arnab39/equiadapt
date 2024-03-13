@@ -55,6 +55,7 @@ tutorials/images/utils/sam_vit_h_4b8939.pth
 tutorials/images/understanding_continuous_canonicalization.ipynb
 tutorials/images/understanding_discrete_canonicalization_old.ipynb
 old_conda_env.yaml
+conda_env_from_history.yaml
 
 # pyenv
 .python-version
@@ -112,11 +113,10 @@ dmypy.json
 # Ignore scripts to run experiments in mila
 mila_scripts/
 
-escnn
 *__pycache__/
-rotmnist_sweep_output/
-cifar10_sweep_output/
+*_output/
 wandb/
+*.png
 
 # Docs
 docs/api/

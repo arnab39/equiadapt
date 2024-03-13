@@ -1,9 +1,11 @@
+from typing import List, Tuple
+
 import kornia as K
 import torch
 from torchvision import transforms
 
 
-def roll_by_gather(feature_map: torch.Tensor, shifts: torch.Tensor):
+def roll_by_gather(feature_map: torch.Tensor, shifts: torch.Tensor) -> torch.Tensor:
     device = shifts.device
     # assumes 2D array
     batch, channel, group, x_dim, y_dim = feature_map.shape
@@ -22,7 +24,7 @@ def get_action_on_image_features(
     group_info_dict: dict,
     group_element_dict: dict,
     induced_rep_type: str = "regular",
-):
+) -> torch.Tensor:
     """
     This function takes the feature map and the action and returns the feature map
     after the action has been applied
@@ -74,20 +76,22 @@ def get_action_on_image_features(
         raise ValueError("induced_rep_type must be regular, scalar or vector")
 
 
-def flip_boxes(boxes, width):
+def flip_boxes(boxes: torch.Tensor, width: int) -> torch.Tensor:
     boxes[:, [0, 2]] = width - boxes[:, [2, 0]]
     return boxes
 
 
-def flip_masks(masks):
+def flip_masks(masks: torch.Tensor) -> torch.Tensor:
     return masks.flip(-1)
 
 
-def rotate_masks(masks, angle):
+def rotate_masks(masks: torch.Tensor, angle: torch.Tensor) -> torch.Tensor:
     return transforms.functional.rotate(masks, angle)
 
 
-def rotate_points(origin, point, angle):
+def rotate_points(
+    origin: List[float], point: torch.Tensor, angle: torch.Tensor
+) -> Tuple[torch.Tensor, torch.Tensor]:
     ox, oy = origin
     px, py = point
 
@@ -96,9 +100,9 @@ def rotate_points(origin, point, angle):
     return qx, qy
 
 
-def rotate_boxes(boxes, angle, width):
+def rotate_boxes(boxes: torch.Tensor, angle: torch.Tensor, width: int) -> torch.Tensor:
     # rotate points
-    origin = [width / 2, width / 2]
+    origin: List[float] = [width / 2, width / 2]
     x_min_rot, y_min_rot = rotate_points(origin, boxes[:, :2].T, torch.deg2rad(angle))
     x_max_rot, y_max_rot = rotate_points(origin, boxes[:, 2:].T, torch.deg2rad(angle))
 

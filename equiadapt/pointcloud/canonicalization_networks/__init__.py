@@ -1,6 +1,7 @@
-from equiadapt.pointcloud.canonicalization_networks import equivariant_networks
-from equiadapt.pointcloud.canonicalization_networks import vector_neuron_layers
-
+from equiadapt.pointcloud.canonicalization_networks import (
+    equivariant_networks,
+    vector_neuron_layers,
+)
 from equiadapt.pointcloud.canonicalization_networks.equivariant_networks import (
     VNSmall,
     get_graph_feature_cross,
@@ -12,7 +13,6 @@ from equiadapt.pointcloud.canonicalization_networks.vector_neuron_layers import 
     VNBilinear,
     VNLeakyReLU,
     VNLinear,
-    VNLinearAndLeakyReLU,
     VNLinearLeakyReLU,
     VNMaxPool,
     VNSoftplus,
@@ -26,7 +26,6 @@ __all__ = [
     "VNBilinear",
     "VNLeakyReLU",
     "VNLinear",
-    "VNLinearAndLeakyReLU",
     "VNLinearLeakyReLU",
     "VNMaxPool",
     "VNSmall",

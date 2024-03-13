@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-import examples.images.segmentation.prepare.vision_transforms as T
 import pytorch_lightning as pl
 import torch
 import torchvision.transforms as transforms
@@ -10,9 +9,10 @@ from pycocotools.coco import COCO
 from segment_anything.utils.transforms import ResizeLongestSide
 from torch.utils.data import DataLoader, Dataset
 
+import examples.images.segmentation.prepare.vision_transforms as T
+
 
 class ResizeAndPad:
-
     def __init__(self, target_size):
         self.target_size = target_size
         self.transform = ResizeLongestSide(target_size)
@@ -126,7 +126,6 @@ class COCODataModule(pl.LightningDataModule):
 
 
 class COCODataset(Dataset):
-
     def __init__(self, root_dir, annotation_file, transform=None, sam_transform=None):
         self.root_dir = root_dir
         self.transform = transform

@@ -1,21 +1,21 @@
 import os
+
 import hydra
 import omegaconf
-import torch
-import wandb
-
-from omegaconf import DictConfig, OmegaConf
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import WandbLogger
-
+import torch
+from omegaconf import DictConfig, OmegaConf
 from prepare import ShapeNetDataModule
+from pytorch_lightning.loggers import WandbLogger
 from train_utils import (
-    get_model_pipeline,
     get_callbacks,
     get_checkpoint_name,
+    get_model_pipeline,
     get_trainer,
     load_envs,
 )
+
+import wandb
 
 
 def train_pointcloud(hyperparams: DictConfig):
@@ -50,7 +50,7 @@ def train_pointcloud(hyperparams: DictConfig):
 
     # initialize wandb
     wandb.init(
-        config=OmegaConf.to_container(hyperparams, resolve=True),
+        config=OmegaConf.to_container(hyperparams, resolve=True),  # type: ignore
         entity=hyperparams["wandb"]["wandb_entity"],
         project=hyperparams["wandb"]["wandb_project"],
         dir=hyperparams["wandb"]["wandb_dir"],
