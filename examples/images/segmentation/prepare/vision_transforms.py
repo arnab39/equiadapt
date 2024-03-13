@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 from torch import Tensor, nn
@@ -6,7 +6,7 @@ from torchvision.transforms import functional as F
 from torchvision.transforms import transforms as T
 
 
-def _flip_coco_person_keypoints(kps, width):
+def _flip_coco_person_keypoints(kps: Tensor, width: int) -> Tensor:
     flip_inds = [0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15]
     flipped_data = kps[:, flip_inds]
     flipped_data[..., 0] = width - flipped_data[..., 0]
@@ -17,10 +17,12 @@ def _flip_coco_person_keypoints(kps, width):
 
 
 class Compose:
-    def __init__(self, transforms):
+    def __init__(self, transforms: List[nn.Module]) -> None:
         self.transforms = transforms
 
-    def __call__(self, image, target):
+    def __call__(
+        self, image: Tensor, target: Optional[Dict[str, Tensor]]
+    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         for t in self.transforms:
             image, target = t(image, target)
         return image, target
