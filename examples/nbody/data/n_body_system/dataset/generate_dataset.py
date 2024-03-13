@@ -61,7 +61,7 @@ elif args.simulation == "charged":
     )
     suffix = "_charged"
 else:
-    raise ValueError("Simulation {} not implemented".format(args.simulation))
+    raise ValueError(f"Simulation {args.simulation} not implemented")
 
 suffix += str(args.n_balls) + "_initvel%d" % args.initial_vel + args.sufix
 np.random.seed(args.seed)
@@ -80,7 +80,7 @@ def generate_dataset(num_sims, length, sample_freq):
             T=length, sample_freq=sample_freq
         )
         if i % 100 == 0:
-            print("Iter: {}, Simulation time: {}".format(i, time.time() - t))
+            print(f"Iter: {i}, Simulation time: {time.time() - t}")
         loc_all.append(loc)
         vel_all.append(vel)
         edges_all.append(edges)
@@ -96,17 +96,17 @@ def generate_dataset(num_sims, length, sample_freq):
 
 if __name__ == "__main__":
 
-    print("Generating {} training simulations".format(args.num_train))
+    print(f"Generating {args.num_train} training simulations")
     loc_train, vel_train, edges_train, charges_train = generate_dataset(
         args.num_train, args.length, args.sample_freq
     )
 
-    print("Generating {} validation simulations".format(args.num_valid))
+    print(f"Generating {args.num_valid} validation simulations")
     loc_valid, vel_valid, edges_valid, charges_valid = generate_dataset(
         args.num_valid, args.length, args.sample_freq
     )
 
-    print("Generating {} test simulations".format(args.num_test))
+    print(f"Generating {args.num_test} test simulations")
     loc_test, vel_test, edges_test, charges_test = generate_dataset(
         args.num_test, args.length_test, args.sample_freq
     )

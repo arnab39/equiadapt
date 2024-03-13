@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class SpringSim(object):
+class SpringSim:
     def __init__(
         self,
         n_balls=5,
@@ -173,7 +173,7 @@ class SpringSim(object):
             return loc, vel, edges
 
 
-class ChargedParticlesSim(object):
+class ChargedParticlesSim:
     def __init__(
         self,
         n_balls=5,
@@ -356,7 +356,7 @@ if __name__ == "__main__":
     loc, vel, edges, charges = sim.sample_trajectory(T=5000, sample_freq=100)
 
     print(edges)
-    print("Simulation time: {}".format(time.time() - t))
+    print(f"Simulation time: {time.time() - t}")
     vel_norm = np.sqrt((vel**2).sum(axis=1))
     plt.figure()
     axes = plt.gca()

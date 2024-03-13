@@ -12,7 +12,7 @@ EPS = 1e-6
 
 class VNLinear(nn.Module):
     def __init__(self, in_channels: int, out_channels: int):
-        super(VNLinear, self).__init__()
+        super().__init__()
         self.map_to_feat = nn.Linear(in_channels, out_channels, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -25,7 +25,7 @@ class VNLinear(nn.Module):
 
 class VNBilinear(nn.Module):
     def __init__(self, in_channels1: int, in_channels2: int, out_channels: int):
-        super(VNBilinear, self).__init__()
+        super().__init__()
         self.map_to_feat = nn.Bilinear(
             in_channels1, in_channels2, out_channels, bias=False
         )
@@ -46,7 +46,7 @@ class VNSoftplus(nn.Module):
         share_nonlinearity: bool = False,
         negative_slope: float = 0.0,
     ):
-        super(VNSoftplus, self).__init__()
+        super().__init__()
         if share_nonlinearity:
             self.map_to_dir = nn.Linear(in_channels, 1, bias=False)
         else:
@@ -81,7 +81,7 @@ class VNLeakyReLU(nn.Module):
         share_nonlinearity: bool = False,
         negative_slope: float = 0.2,
     ):
-        super(VNLeakyReLU, self).__init__()
+        super().__init__()
         if share_nonlinearity:
             self.map_to_dir = nn.Linear(in_channels, 1, bias=False)
         else:
@@ -111,7 +111,7 @@ class VNLinearLeakyReLU(nn.Module):
         share_nonlinearity: bool = False,
         negative_slope: float = 0.2,
     ):
-        super(VNLinearLeakyReLU, self).__init__()
+        super().__init__()
         self.dim = dim
         self.negative_slope = negative_slope
 
@@ -144,7 +144,7 @@ class VNLinearLeakyReLU(nn.Module):
 
 class VNBatchNorm(nn.Module):
     def __init__(self, num_features: int, dim: int):
-        super(VNBatchNorm, self).__init__()
+        super().__init__()
         self.dim = dim
         if dim == 3 or dim == 4:
             self.bn1d = nn.BatchNorm1d(num_features)
@@ -170,7 +170,7 @@ class VNBatchNorm(nn.Module):
 
 class VNMaxPool(nn.Module):
     def __init__(self, in_channels: int):
-        super(VNMaxPool, self).__init__()
+        super().__init__()
         self.map_to_dir = nn.Linear(in_channels, in_channels, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -198,7 +198,7 @@ class VNStdFeature(nn.Module):
         share_nonlinearity: bool = False,
         negative_slope: float = 0.2,
     ):
-        super(VNStdFeature, self).__init__()
+        super().__init__()
         self.dim = dim
         self.normalize_frame = normalize_frame
 

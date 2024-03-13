@@ -32,7 +32,7 @@ class GCL_basic(nn.Module):
     """
 
     def __init__(self):
-        super(GCL_basic, self).__init__()
+        super().__init__()
 
     def edge_model(self, source, target, edge_attr):
         pass
@@ -84,7 +84,7 @@ class GCL(GCL_basic):
         t_eq=False,
         recurrent=True,
     ):
-        super(GCL, self).__init__()
+        super().__init__()
         self.attention = attention
         self.t_eq = t_eq
         self.recurrent = recurrent
@@ -172,7 +172,7 @@ class GCL_rf(GCL_basic):
     def __init__(
         self, nf=64, edge_attr_nf=0, reg=0, act_fn=nn.LeakyReLU(0.2), clamp=False
     ):
-        super(GCL_rf, self).__init__()
+        super().__init__()
 
         self.clamp = clamp
         layer = nn.Linear(nf, 1, bias=False)

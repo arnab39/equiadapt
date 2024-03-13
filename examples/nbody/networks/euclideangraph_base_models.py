@@ -27,7 +27,7 @@ class BaseEuclideangraphModel(nn.Module):
 # Model based on https://arxiv.org/pdf/2102.09844.pdf, equations 3-6.
 class GNN(BaseEuclideangraphModel):
     def __init__(self, hyperparams):
-        super(GNN, self).__init__(hyperparams)
+        super().__init__(hyperparams)
         self.model = "GNN"
         self.hidden_dim = hyperparams.hidden_dim
         self.input_dim = hyperparams.input_dim
@@ -83,7 +83,7 @@ class GNN(BaseEuclideangraphModel):
 
 class Transformer(BaseEuclideangraphModel):
     def __init__(self, hyperparams):
-        super(Transformer, self).__init__(hyperparams)
+        super().__init__(hyperparams)
         print(hyperparams)
         self.model = "Transformer"
         self.hidden_dim = hyperparams.hidden_dim  # 32

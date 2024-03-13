@@ -46,7 +46,7 @@ def get_graph_feature(x, k=20, idx=None, dim9=False):
 
 class PointNet(nn.Module):
     def __init__(self, hyperparams: DictConfig):
-        super(PointNet, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv1d(3, 64, kernel_size=1, bias=False)
         self.conv2 = nn.Conv1d(64, 64, kernel_size=1, bias=False)
         self.conv3 = nn.Conv1d(64, 64, kernel_size=1, bias=False)
@@ -191,7 +191,7 @@ class DGCNN(nn.Module):
 
 class Transform_Net(nn.Module):
     def __init__(self, hyperparams: DictConfig):
-        super(Transform_Net, self).__init__()
+        super().__init__()
         self.k = 3
 
         self.bn1 = nn.BatchNorm2d(64)
@@ -258,7 +258,7 @@ class Transform_Net(nn.Module):
 
 class DGCNN_partseg(nn.Module):
     def __init__(self, hyperparams: DictConfig, seg_num_all: int = 50):
-        super(DGCNN_partseg, self).__init__()
+        super().__init__()
         self.seg_num_all = seg_num_all
         self.k = hyperparams.k
         self.transform_net = Transform_Net(hyperparams=hyperparams)

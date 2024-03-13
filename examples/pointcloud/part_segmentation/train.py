@@ -95,7 +95,7 @@ def train_pointcloud(hyperparams: DictConfig):
 load_envs()
 
 
-@hydra.main(config_path=str("./configs/"), config_name="default")
+@hydra.main(config_path="./configs/", config_name="default")
 def main(cfg: omegaconf.DictConfig):
     train_pointcloud(cfg)
 
