@@ -4,6 +4,16 @@ from escnn import gspaces
 
 
 class ESCNNEquivariantNetwork(torch.nn.Module):
+    """
+    This class represents an Equivariant Convolutional Neural Network (Equivariant CNN).
+
+    The network is equivariant to a group of transformations, which can be either rotations or roto-reflections. The network consists of a sequence of equivariant convolutional layers, each followed by batch normalization, a ReLU activation function, and dropout. The number of output channels of the convolutional layers is the same for all layers.
+
+    Methods:
+        __init__: Initializes the ESCNNEquivariantNetwork instance.
+        forward: Performs a forward pass through the network.
+    """
+
     def __init__(
         self,
         in_shape: tuple,
@@ -13,6 +23,17 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
         num_rotations: int = 4,
         num_layers: int = 1,
     ):
+        """
+        Initializes the ESCNNEquivariantNetwork instance.
+
+        Args:
+            in_shape (tuple): The shape of the input data. It should be a tuple of the form (in_channels, height, width).
+            out_channels (int): The number of output channels of the convolutional layers.
+            kernel_size (int): The size of the kernel of the convolutional layers.
+            group_type (str, optional): The type of the group of transformations. It can be either "rotation" or "roto-reflection". Defaults to "rotation".
+            num_rotations (int, optional): The number of rotations in the group. Defaults to 4.
+            num_layers (int, optional): The number of convolutional layers. Defaults to 1.
+        """
         super().__init__()
 
         self.in_channels = in_shape[0]
@@ -67,11 +88,13 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        The forward takes an image as input and returns the activations of
-        each group element as output.
+        Performs a forward pass through the network.
 
-        x shape: (batch_size, in_channels, height, width)
-        :return: (batch_size, group_size)
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the network. It has the shape (batch_size, num_group_elements).
         """
         x = escnn.nn.GeometricTensor(x, self.in_type)
         out = self.eqv_network(x)
@@ -91,6 +114,16 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
 
 
 class ESCNNSteerableNetwork(torch.nn.Module):
+    """
+    This class represents a Steerable Equivariant Convolutional Neural Network (Equivariant CNN).
+
+    The network is equivariant under all planar rotations. The network consists of a sequence of equivariant convolutional layers, each followed by batch normalization and a FourierELU activation function. The number of output channels of the convolutional layers is the same for all layers.
+
+    Methods:
+        __init__: Initializes the ESCNNSteerableNetwork instance.
+        forward: Performs a forward pass through the network.
+    """
+
     def __init__(
         self,
         in_shape: tuple,
@@ -99,6 +132,16 @@ class ESCNNSteerableNetwork(torch.nn.Module):
         group_type: str = "rotation",
         num_layers: int = 1,
     ):
+        """
+        Initializes the ESCNNSteerableNetwork instance.
+
+        Args:
+            in_shape (tuple): The shape of the input data. It should be a tuple of the form (in_channels, height, width).
+            out_channels (int): The number of output channels of the convolutional layers.
+            kernel_size (int, optional): The size of the kernel of the convolutional layers. Defaults to 9.
+            group_type (str, optional): The type of the group of transformations. It can be either "rotation" or "roto-reflection". Defaults to "rotation".
+            num_layers (int, optional): The number of convolutional layers. Defaults to 1.
+        """
         super().__init__()
 
         self.group_type = group_type
@@ -155,6 +198,15 @@ class ESCNNSteerableNetwork(torch.nn.Module):
         self.block = escnn.nn.SequentialModule(*modules)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Performs a forward pass through the network.
+
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the network. It has the shape (batch_size, 2, 2).
+        """
         x = escnn.nn.GeometricTensor(x, self.in_type)
         out = self.block(x)
 
@@ -170,6 +222,16 @@ class ESCNNSteerableNetwork(torch.nn.Module):
 
 # wide resnet equivariant network and utilities
 class ESCNNWideBottleneck(torch.nn.Module):
+    """
+    This class represents a wide bottleneck layer for an Equivariant Convolutional Neural Network (Equivariant CNN).
+
+    The layer consists of a sequence of equivariant convolutional layers, each followed by batch normalization and a ReLU activation function. The number of output channels of the convolutional layers is the same for all layers. The input is added to the output of the layer (residual connection).
+
+    Methods:
+        __init__: Initializes the ESCNNWideBottleneck instance.
+        forward: Performs a forward pass through the layer.
+    """
+
     def __init__(
         self,
         in_type: escnn.nn.FieldType,
@@ -177,6 +239,15 @@ class ESCNNWideBottleneck(torch.nn.Module):
         out_type: escnn.nn.FieldType,
         kernel_size: int = 3,
     ):
+        """
+        Initializes the ESCNNWideBottleneck instance.
+
+        Args:
+            in_type (escnn.nn.FieldType): The type of the input field.
+            middle_type (escnn.nn.FieldType): The type of the middle field.
+            out_type (escnn.nn.FieldType): The type of the output field.
+            kernel_size (int, optional): The size of the kernel of the convolutional layers. Defaults to 3.
+        """
         super().__init__()
         self.in_type = in_type
         self.middle_type = middle_type
@@ -196,12 +267,31 @@ class ESCNNWideBottleneck(torch.nn.Module):
         )
 
     def forward(self, x: escnn.nn.GeometricTensor) -> escnn.nn.GeometricTensor:
+        """
+        Performs a forward pass through the layer.
+
+        Args:
+            x (escnn.nn.GeometricTensor): The input data.
+
+        Returns:
+            escnn.nn.GeometricTensor: The output of the layer. The input is added to the output (residual connection).
+        """
         out = self.conv_network(x)
         out += x
         return out
 
 
 class ESCNNWideBasic(torch.nn.Module):
+    """
+    This class represents a wide basic layer for an Equivariant Convolutional Neural Network (Equivariant CNN).
+
+    The layer consists of a sequence of equivariant convolutional layers, each followed by batch normalization and a ReLU activation function. The number of output channels of the convolutional layers is the same for all layers. The input is added to the output of the layer (residual connection).
+
+    Methods:
+        __init__: Initializes the ESCNNWideBasic instance.
+        forward: Performs a forward pass through the layer.
+    """
+
     def __init__(
         self,
         in_type: escnn.nn.FieldType,
@@ -209,6 +299,15 @@ class ESCNNWideBasic(torch.nn.Module):
         out_type: escnn.nn.FieldType,
         kernel_size: int = 3,
     ):
+        """
+        Initializes the ESCNNWideBasic instance.
+
+        Args:
+            in_type (escnn.nn.FieldType): The type of the input field.
+            middle_type (escnn.nn.FieldType): The type of the middle field.
+            out_type (escnn.nn.FieldType): The type of the output field.
+            kernel_size (int, optional): The size of the kernel of the convolutional layers. Defaults to 3.
+        """
         super().__init__()
         self.in_type = in_type
         self.middle_type = middle_type
@@ -229,6 +328,15 @@ class ESCNNWideBasic(torch.nn.Module):
             )
 
     def forward(self, x: escnn.nn.GeometricTensor) -> escnn.nn.GeometricTensor:
+        """
+        Performs a forward pass through the layer.
+
+        Args:
+            x (escnn.nn.GeometricTensor): The input data.
+
+        Returns:
+            escnn.nn.GeometricTensor: The output of the layer. The input is added to the output (residual connection).
+        """
         out = self.conv_network(x)
         shortcut = self.shortcut(x) if self.shortcut is not None else x
         out += shortcut
@@ -236,6 +344,16 @@ class ESCNNWideBasic(torch.nn.Module):
 
 
 class ESCNNWRNEquivariantNetwork(torch.nn.Module):
+    """
+    This class represents a Wide Residual Network (WRN) that is equivariant under rotations or roto-reflections.
+
+    The network consists of a sequence of equivariant convolutional layers, each followed by batch normalization and a ReLU activation function. The number of output channels of the convolutional layers is the same for all layers. The input is added to the output of the layer (residual connection).
+
+    Methods:
+        __init__: Initializes the ESCNNWRNEquivariantNetwork instance.
+        forward: Performs a forward pass through the network.
+    """
+
     def __init__(
         self,
         in_shape: tuple,
@@ -245,6 +363,17 @@ class ESCNNWRNEquivariantNetwork(torch.nn.Module):
         num_layers: int = 12,
         num_rotations: int = 4,
     ):
+        """
+        Initializes the ESCNNWRNEquivariantNetwork instance.
+
+        Args:
+            in_shape (tuple): The shape of the input data. It should be a tuple of the form (in_channels, height, width).
+            out_channels (int, optional): The number of output channels of the convolutional layers. Defaults to 64.
+            kernel_size (int, optional): The size of the kernel of the convolutional layers. Defaults to 9.
+            group_type (str, optional): The type of the group of transformations. It can be either "rotation" or "roto-reflection". Defaults to "rotation".
+            num_layers (int, optional): The number of convolutional layers. Defaults to 12.
+            num_rotations (int, optional): The number of discrete rotations. Defaults to 4.
+        """
         super().__init__()
 
         self.group_type = group_type
@@ -325,8 +454,13 @@ class ESCNNWRNEquivariantNetwork(torch.nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        x shape: (batch_size, in_channels, height, width)
-        :return: (batch_size, group_size)
+        Performs a forward pass through the network.
+
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the network. It has the shape (batch_size, group_size).
         """
         # x = torch.stack(x)
         x = escnn.nn.GeometricTensor(x, self.in_type)

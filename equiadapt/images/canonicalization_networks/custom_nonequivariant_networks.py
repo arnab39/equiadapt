@@ -6,6 +6,16 @@ from torch import nn
 
 
 class ConvNetwork(nn.Module):
+    """
+    This class represents a convolutional neural network.
+
+    The network consists of a sequence of convolutional layers, each followed by batch normalization and a GELU activation function. The number of output channels of the convolutional layers increases after every third layer. The network ends with a fully connected layer.
+
+    Methods:
+        __init__: Initializes the ConvNetwork instance.
+        forward: Performs a forward pass through the network.
+    """
+
     def __init__(
         self,
         in_shape: tuple,
@@ -14,6 +24,16 @@ class ConvNetwork(nn.Module):
         num_layers: int = 2,
         out_vector_size: int = 128,
     ):
+        """
+        Initializes the ConvNetwork instance.
+
+        Args:
+            in_shape (tuple): The shape of the input data. It should be a tuple of the form (in_channels, height, width).
+            out_channels (int): The number of output channels of the first convolutional layer.
+            kernel_size (int): The size of the kernel of the convolutional layers.
+            num_layers (int, optional): The number of convolutional layers. Defaults to 2.
+            out_vector_size (int, optional): The size of the output vector of the network. Defaults to 128.
+        """
         super().__init__()
 
         in_channels = in_shape[0]
@@ -46,8 +66,13 @@ class ConvNetwork(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        x shape: (batch_size, in_channels, height, width)
-        :return: (batch_size, 1)
+        Performs a forward pass through the network.
+
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the network. It has the shape (batch_size, out_vector_size).
         """
         batch_size = x.shape[0]
         out = self.enc_network(x)
@@ -56,6 +81,16 @@ class ConvNetwork(nn.Module):
 
 
 class ResNet18Network(nn.Module):
+    """
+    This class represents a neural network based on the ResNet-18 architecture.
+
+    The network uses a pre-trained ResNet-18 model without its weights. The final fully connected layer of the ResNet-18 model is replaced with a new fully connected layer.
+
+    Attributes:
+        resnet18 (torchvision.models.ResNet): The ResNet-18 model.
+        out_vector_size (int): The size of the output vector of the network.
+    """
+
     def __init__(
         self,
         in_shape: tuple,
@@ -64,6 +99,16 @@ class ResNet18Network(nn.Module):
         num_layers: int = 2,
         out_vector_size: int = 128,
     ):
+        """
+        Initializes the ResNet18Network instance.
+
+        Args:
+            in_shape (tuple): The shape of the input data. It should be a tuple of the form (in_channels, height, width).
+            out_channels (int): The number of output channels of the first convolutional layer.
+            kernel_size (int): The size of the kernel of the convolutional layers.
+            num_layers (int, optional): The number of convolutional layers. Defaults to 2.
+            out_vector_size (int, optional): The size of the output vector of the network. Defaults to 128.
+        """
         super().__init__()
         self.resnet18 = torchvision.models.resnet18(weights=None)
         self.resnet18.fc = nn.Sequential(
@@ -74,7 +119,12 @@ class ResNet18Network(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        x shape: (batch_size, in_channels, height, width)
-        :return: (batch_size, 1)
+        Performs a forward pass through the network.
+
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the network. It has the shape (batch_size, 1).
         """
         return self.resnet18(x)
