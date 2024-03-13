@@ -1,12 +1,12 @@
 # .coveragerc to control coverage.py
 [run]
 branch = True
-source = equiadapt
+source = /src/equiadapt/
 # omit = bad_file.py
 
 [paths]
 source =
-    equiadapt/
+    /src/equiadapt/
     */site-packages/
 
 [report]

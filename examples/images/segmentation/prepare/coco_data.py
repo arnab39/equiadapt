@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader, Dataset
 
 
 class ResizeAndPad:
-
     def __init__(self, target_size):
         self.target_size = target_size
         self.transform = ResizeLongestSide(target_size)
@@ -126,7 +125,6 @@ class COCODataModule(pl.LightningDataModule):
 
 
 class COCODataset(Dataset):
-
     def __init__(self, root_dir, annotation_file, transform=None, sam_transform=None):
         self.root_dir = root_dir
         self.transform = transform
