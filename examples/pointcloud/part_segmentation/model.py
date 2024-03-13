@@ -1,9 +1,12 @@
+from typing import List, Optional, Tuple, Union
+
 import numpy as np
 import pytorch_lightning as pl
 import sklearn.metrics as metrics
 import torch
 import torch.nn.functional as F
 from model_utils import get_prediction_network
+from omegaconf import DictConfig
 from pytorch3d.transforms import Rotate, RotateAxisAngle, random_rotations
 from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
 
@@ -38,7 +41,7 @@ index_start = [0, 4, 6, 8, 12, 16, 19, 22, 24, 28, 30, 36, 38, 41, 44, 47]
 
 
 class PointcloudClassificationPipeline(pl.LightningModule):
-    def __init__(self, hyperparams):
+    def __init__(self, hyperparams: DictConfig) -> None:
         super().__init__()
         self.hyperparams = hyperparams
 
@@ -59,7 +62,9 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         self.save_hyperparameters()
 
-    def maybe_transform_points(self, points, rotation_type):
+    def maybe_transform_points(
+        self, points: torch.Tensor, rotation_type: str
+    ) -> torch.Tensor:
         """
         Apply random rotation to the pointcloud
 
@@ -85,13 +90,13 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             points = trot.transform_points(points)
         return points
 
-    def augment_points(self, points):
+    def augment_points(self, points: torch.Tensor) -> torch.Tensor:
         points = random_point_dropout(points)
         points = random_scale_point_cloud(points)
         points = random_shift_point_cloud(points)
         return points
 
-    def get_label_one_hot(self, label):
+    def get_label_one_hot(self, label: torch.Tensor) -> torch.Tensor:
         label_one_hot = np.zeros((label.shape[0], 16))
         for idx in range(label.shape[0]):
             label_one_hot[idx, label[idx]] = 1
@@ -100,7 +105,9 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         )
         return label_one_hot
 
-    def training_step(self, batch):
+    def training_step(
+        self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+    ) -> torch.Tensor:
         points, targets, seg = batch
         label_one_hot = self.get_label_one_hot(targets)
 
@@ -160,14 +167,16 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return loss
 
-    def on_validation_epoch_start(self):
-        self.test_pred_cls = []
-        self.test_true_cls = []
-        self.test_pred_seg = []
-        self.test_true_seg = []
-        self.test_label_seg = []
+    def on_validation_epoch_start(self) -> None:
+        self.test_pred_cls: List[np.ndarray] = []
+        self.test_true_cls: List[np.ndarray] = []
+        self.test_pred_seg: List[np.ndarray] = []
+        self.test_true_seg: List[np.ndarray] = []
+        self.test_label_seg: List[np.ndarray] = []
 
-    def validation_step(self, batch):
+    def validation_step(
+        self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+    ) -> torch.Tensor:
         points, targets, seg = batch
 
         label_one_hot = self.get_label_one_hot(targets)
@@ -198,7 +207,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return pred
 
-    def on_validation_epoch_end(self):
+    def on_validation_epoch_end(self) -> dict:
         test_true = np.concatenate(self.test_true_cls)
         test_pred = np.concatenate(self.test_pred_cls)
         test_acc = metrics.accuracy_score(test_true, test_pred)
@@ -218,14 +227,16 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return validation_metrics
 
-    def on_test_epoch_start(self):
+    def on_test_epoch_start(self) -> None:
         self.test_pred_cls = []
         self.test_true_cls = []
         self.test_pred_seg = []
         self.test_true_seg = []
         self.test_label_seg = []
 
-    def test_step(self, batch):
+    def test_step(
+        self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+    ) -> torch.Tensor:
         points, targets, seg = batch
 
         label_one_hot = self.get_label_one_hot(targets)
@@ -256,7 +267,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return pred
 
-    def on_test_epoch_end(self):
+    def on_test_epoch_end(self) -> dict:
         test_true = np.concatenate(self.test_true_cls)
         test_pred = np.concatenate(self.test_pred_cls)
         test_acc = metrics.accuracy_score(test_true, test_pred)
@@ -276,7 +287,13 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return test_metrics
 
-    def get_loss(self, predictions, targets, smoothing=False, ignore_index=255):
+    def get_loss(
+        self,
+        predictions: torch.Tensor,
+        targets: torch.Tensor,
+        smoothing: bool = False,
+        ignore_index: int = 255,
+    ) -> torch.Tensor:
         targets = targets.contiguous().view(-1)
         if smoothing:
             eps = 0.2
@@ -293,7 +310,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return loss
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> Union[torch.optim.Optimizer, dict]:
         if self.hyperparams.experiment.training.optimizer == "Adam":
             optimizer = torch.optim.Adam(
                 [
@@ -350,7 +367,13 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             raise NotImplementedError
 
 
-def calculate_shape_IoU(pred_np, seg_np, label, class_choice, visual=False):
+def calculate_shape_IoU(
+    pred_np: np.ndarray,
+    seg_np: np.ndarray,
+    label: np.ndarray,
+    class_choice: Optional[str] = None,
+    visual: bool = False,
+) -> List[float]:
     if not visual:
         label = label.squeeze()
     shape_ious = []

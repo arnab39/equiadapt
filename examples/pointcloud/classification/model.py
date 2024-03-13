@@ -1,9 +1,12 @@
+from typing import List, Tuple, Union
+
 import numpy as np
 import pytorch_lightning as pl
 import sklearn.metrics as metrics
 import torch
 import torch.nn.functional as F
 from model_utils import get_prediction_network
+from OmegaConf import DictConfig
 from pytorch3d.transforms import Rotate, RotateAxisAngle, random_rotations
 from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
 
@@ -17,7 +20,7 @@ from examples.pointcloud.common.utils import (
 
 
 class PointcloudClassificationPipeline(pl.LightningModule):
-    def __init__(self, hyperparams):
+    def __init__(self, hyperparams: DictConfig):
         super().__init__()
         self.hyperparams = hyperparams
 
@@ -38,7 +41,9 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         self.save_hyperparameters()
 
-    def maybe_transform_points(self, points, rotation_type):
+    def maybe_transform_points(
+        self, points: torch.Tensor, rotation_type: str
+    ) -> torch.Tensor:
         """
         Apply random rotation to the pointcloud
 
@@ -63,13 +68,13 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             points = trot.transform_points(points)
         return points
 
-    def augment_points(self, points):
+    def augment_points(self, points: torch.Tensor) -> torch.Tensor:
         points = random_point_dropout(points)
         points = random_scale_point_cloud(points)
         points = random_shift_point_cloud(points)
         return points
 
-    def training_step(self, batch):
+    def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
         points, targets = batch
         targets = targets.squeeze()
 
@@ -128,11 +133,11 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return loss
 
-    def on_validation_epoch_start(self):
-        self.test_pred = []
-        self.test_true = []
+    def on_validation_epoch_start(self) -> None:
+        self.test_pred: List[np.ndarray] = []
+        self.test_true: List[np.ndarray] = []
 
-    def validation_step(self, batch):
+    def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
         points, targets = batch
         targets = targets.squeeze()
 
@@ -155,7 +160,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return preds
 
-    def on_validation_epoch_end(self):
+    def on_validation_epoch_end(self) -> dict:
         test_true = np.concatenate(self.test_true)
         test_pred = np.concatenate(self.test_pred)
         test_acc = metrics.accuracy_score(test_true, test_pred)
@@ -170,11 +175,11 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return {"val/acc": test_acc, "val/avg_per_class_acc": avg_per_class_acc}
 
-    def on_test_epoch_start(self):
+    def on_test_epoch_start(self) -> None:
         self.test_pred = []
         self.test_true = []
 
-    def test_step(self, batch):
+    def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
         points, targets = batch
         targets = targets.squeeze()
 
@@ -197,7 +202,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return preds
 
-    def on_test_epoch_end(self):
+    def on_test_epoch_end(self) -> dict:
         test_true = np.concatenate(self.test_true)
         test_pred = np.concatenate(self.test_pred)
         test_acc = metrics.accuracy_score(test_true, test_pred)
@@ -212,7 +217,13 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return {"test/acc": test_acc, "test/avg_per_class_acc": avg_per_class_acc}
 
-    def get_loss(self, predictions, targets, smoothing=False, ignore_index=255):
+    def get_loss(
+        self,
+        predictions: torch.Tensor,
+        targets: torch.Tensor,
+        smoothing: bool = False,
+        ignore_index: int = 255,
+    ) -> torch.Tensor:
         targets = targets.contiguous().view(-1)
         if smoothing:
             eps = 0.2
@@ -229,7 +240,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         return loss
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> Union[torch.optim.Optimizer, dict]:
         # torch.autograd.set_detect_anomaly(True)
         if self.hyperparams.experiment.training.optimizer == "Adam":
             optimizer = torch.optim.Adam(

@@ -1,3 +1,4 @@
+import torch
 from omegaconf import DictConfig
 
 from examples.pointcloud.common.networks import DGCNN, PointNet
@@ -6,7 +7,7 @@ from examples.pointcloud.common.networks import DGCNN, PointNet
 def get_prediction_network(
     architecture: str,
     hyperparams: DictConfig,
-):
+) -> torch.nn.Module:
     """
     The function returns the prediction network based on the architecture type
     """
