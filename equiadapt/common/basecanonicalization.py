@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Optional
 
 import torch
 
@@ -13,7 +13,7 @@ class BaseCanonicalization(torch.nn.Module):
         self.canonicalization_info_dict: Dict[str, torch.Tensor] = {}
 
     def forward(
-        self, x: torch.Tensor, targets: List = None, **kwargs: Any
+        self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         Forward method for the canonicalization which takes the input data and
@@ -33,7 +33,7 @@ class BaseCanonicalization(torch.nn.Module):
         return self.canonicalize(x, targets, **kwargs)
 
     def canonicalize(
-        self, x: torch.Tensor, targets: List = None, **kwargs: Any
+        self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an input data with, optionally, targets that need to be canonicalized
@@ -48,7 +48,9 @@ class BaseCanonicalization(torch.nn.Module):
         """
         raise NotImplementedError()
 
-    def invert_canonicalization(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
+    def invert_canonicalization(
+        self, x_canonicalized_out: torch.Tensor, **kwargs: Any
+    ) -> torch.Tensor:
         """
         This method takes the output of the canonicalized data
         and returns the output for the original data orientation
@@ -69,14 +71,16 @@ class IdentityCanonicalization(BaseCanonicalization):
         super().__init__(canonicalization_network)
 
     def canonicalize(
-        self, x: torch.Tensor, targets: List = None, **kwargs: Any
+        self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         if targets:
             return x, targets
         return x
 
-    def invert_canonicalization(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
-        return x
+    def invert_canonicalization(
+        self, x_canonicalized_out: torch.Tensor, **kwargs: Any
+    ) -> torch.Tensor:
+        return x_canonicalized_out
 
     def get_prior_regularization_loss(self) -> torch.Tensor:
         return torch.tensor(0.0)
@@ -135,7 +139,7 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
         return group_element_onehot
 
     def canonicalize(
-        self, x: torch.Tensor, targets: List = None, **kwargs: Any
+        self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an input data and
@@ -145,7 +149,9 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
         """
         raise NotImplementedError()
 
-    def invert_canonicalization(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
+    def invert_canonicalization(
+        self, x_canonicalized_out: torch.Tensor, **kwargs: Any
+    ) -> torch.Tensor:
         """
         This method takes the output of the canonicalized data
         and returns the output for the original data orientation
@@ -185,7 +191,7 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
         raise NotImplementedError()
 
     def canonicalize(
-        self, x: torch.Tensor, targets: List = None, **kwargs: Any
+        self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
         This method takes an input data and
@@ -195,7 +201,9 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
         """
         raise NotImplementedError()
 
-    def invert_canonicalization(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
+    def invert_canonicalization(
+        self, x_canonicalized_out: torch.Tensor, **kwargs: Any
+    ) -> torch.Tensor:
         """
         This method takes the output of the canonicalized data
         and returns the output for the original data orientation

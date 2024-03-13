@@ -50,7 +50,7 @@ def train_pointcloud(hyperparams: DictConfig):
 
     # initialize wandb
     wandb.init(
-        config=OmegaConf.to_container(hyperparams, resolve=True),
+        config=OmegaConf.to_container(hyperparams, resolve=True),  # type: ignore
         entity=hyperparams["wandb"]["wandb_entity"],
         project=hyperparams["wandb"]["wandb_project"],
         dir=hyperparams["wandb"]["wandb_dir"],
