@@ -1,17 +1,19 @@
 # Note that for now we have only implemented canonicalizatin for rotation in the pointcloud setting.
 # This is meant to be a proof of concept and we are happy to receive contribution to extend this to other group actions.
+from typing import Any, List, Tuple, Union
 
+from omegaconf import DictConfig
 import torch
+
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 from equiadapt.common.utils import gram_schmidt
-from typing import Any, List, Tuple, Union
 
 
 class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization):
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
-        canonicalization_hyperparams: dict,
+        canonicalization_hyperparams: DictConfig,
     ):
         super().__init__(canonicalization_network)
 

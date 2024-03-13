@@ -5,6 +5,7 @@ import kornia as K
 import torch
 from torch.nn import functional as F
 from torchvision import transforms
+from omegaconf import DictConfig
 
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 from equiadapt.common.utils import gram_schmidt
@@ -15,7 +16,7 @@ class ContinuousGroupImageCanonicalization(ContinuousGroupCanonicalization):
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
-        canonicalization_hyperparams: dict,
+        canonicalization_hyperparams: DictConfig,
         in_shape: tuple,
     ):
         super().__init__(canonicalization_network)
@@ -244,9 +245,10 @@ class SteerableImageCanonicalization(ContinuousGroupImageCanonicalization):
         if not hasattr(self, "canonicalization_info_dict"):
             self.canonicalization_info_dict = {}
 
-        group_element_dict, group_element_representation = (
-            self.get_group_from_out_vectors(out_vectors)
-        )
+        (
+            group_element_dict,
+            group_element_representation,
+        ) = self.get_group_from_out_vectors(out_vectors)
         self.canonicalization_info_dict["group_element_matrix_representation"] = (
             group_element_representation
         )
@@ -378,9 +380,10 @@ class OptimizedSteerableImageCanonicalization(ContinuousGroupImageCanonicalizati
         if not hasattr(self, "canonicalization_info_dict"):
             self.canonicalization_info_dict = {}
 
-        group_element_dict, group_element_representations = (
-            self.get_group_from_out_vectors(out_vectors)
-        )
+        (
+            group_element_dict,
+            group_element_representations,
+        ) = self.get_group_from_out_vectors(out_vectors)
         # Store the matrix representation of the group element for regularization and identity metric
         self.canonicalization_info_dict["group_element_matrix_representation"] = (
             group_element_representations
