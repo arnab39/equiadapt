@@ -5,7 +5,7 @@ import torch
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 
 
-class ContinuousGroupNBody(ContinuousGroupCanonicalization):
+class EuclideanGroupNBody(ContinuousGroupCanonicalization):
     """
     A class representing the continuous group for N-body canonicalization.
 

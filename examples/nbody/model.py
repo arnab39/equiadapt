@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from omegaconf import DictConfig
 
-from equiadapt.nbody.canonicalization.continuous_group import ContinuousGroupNBody
+from equiadapt.nbody.canonicalization.euclidean_group import EuclideanGroupNBody
 from examples.nbody.model_utils import (
     get_canonicalization_network,
     get_edges,
@@ -20,7 +20,7 @@ class NBodyPipeline(pl.LightningModule):
             hyperparams.canon_hyperparams
         )
 
-        self.canonicalizer = ContinuousGroupNBody(canonicalization_network, hyperparams)
+        self.canonicalizer = EuclideanGroupNBody(canonicalization_network, hyperparams)
 
         self.learning_rate = (
             hyperparams.learning_rate if hasattr(hyperparams, "learning_rate") else None
