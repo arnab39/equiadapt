@@ -13,7 +13,7 @@ def obtain(dir_path):
     dir_path = os.path.expanduser(dir_path)
     print("Downloading the dataset")
 
-    ## Download the main zip file
+    # Download the main zip file
     url_req.urlretrieve(
         "http://www.iro.umontreal.ca/~lisa/icml2007data/mnist_rotation_new.zip",
         os.path.join(dir_path, "mnist_rotated.zip"),
@@ -66,7 +66,7 @@ def obtain(dir_path):
     valid_file.close()
     train_file.close()
 
-    ## Delete Temp file
+    # Delete Temp file
     os.remove(os.path.join(dir_path, "mnist_rotated.zip"))
 
     print("Done")
@@ -110,7 +110,7 @@ class RotatedMNISTDataModule(pl.LightningDataModule):
         super().__init__()
         self.data_path = hyperparams.data_path
         self.hyperparams = hyperparams
-        if download == True or not os.path.exists(self.data_path):
+        if download or not os.path.exists(self.data_path):
             obtain(self.data_path)
 
     def setup(self, stage=None):

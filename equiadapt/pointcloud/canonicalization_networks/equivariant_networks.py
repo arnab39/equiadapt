@@ -4,6 +4,7 @@ from equiadapt.pointcloud.canonicalization_networks.vector_neuron_layers import 
     VNLinearLeakyReLU,
     VNMaxPool,
     VNBatchNorm,
+    mean_pool,
 )
 
 
@@ -14,10 +15,6 @@ def knn(x, k):
 
     idx = pairwise_distance.topk(k=k, dim=-1)[1]  # (batch_size, num_points, k)
     return idx
-
-
-def mean_pool(x, dim=-1, keepdim=False):
-    return x.mean(dim=dim, keepdim=keepdim)
 
 
 def get_graph_feature_cross(x, k=20, idx=None):

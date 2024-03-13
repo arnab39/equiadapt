@@ -103,7 +103,7 @@ class SAMModel(nn.Module):
         )
 
     def forward(self, images, targets):
-        if type(images) == list:
+        if isinstance(images, list):
             images = torch.stack(images)
         _, _, H, W = images.shape
         image_embeddings = self.model.image_encoder(images)

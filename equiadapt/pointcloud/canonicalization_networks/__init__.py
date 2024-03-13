@@ -5,7 +5,6 @@ from equiadapt.pointcloud.canonicalization_networks.equivariant_networks import 
     VNSmall,
     get_graph_feature_cross,
     knn,
-    mean_pool,
 )
 from equiadapt.pointcloud.canonicalization_networks.vector_neuron_layers import (
     EPS,
@@ -36,6 +35,6 @@ __all__ = [
     "equivariant_networks",
     "get_graph_feature_cross",
     "knn",
-    "mean_pool",
     "vector_neuron_layers",
+    "mean_pool",
 ]
