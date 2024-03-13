@@ -1,21 +1,71 @@
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 
 
 class ContinuousGroupNBody(ContinuousGroupCanonicalization):
+    """
+    A class representing the continuous group for N-body canonicalization.
+
+    Args:
+        canonicalization_network (torch.nn.Module): The canonicalization network.
+        canonicalization_hyperparams (dict): Hyperparameters for the canonicalization.
+
+    Attributes:
+        canonicalization_info_dict (dict): A dictionary containing the group element information.
+
+    """
+
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
         canonicalization_hyperparams: dict,
-    ):
+    ) -> None:
         super().__init__(canonicalization_network)
 
-    def forward(self, nodes, loc, edges, vel, edge_attr, charges):
-        return self.canonicalize(nodes, loc, edges, vel, edge_attr, charges)
+    def forward(
+        self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
+        """
+        Forward pass of the continuous group.
 
-    def get_groupelement(self, nodes, loc, edges, vel, edge_attr, charges):
-        group_element_dict = {}
+        Args:
+            nodes: Node attributes.
+            **kwargs: Additional keyword arguments. Includes locs, edges, vel, edge_attr, and charges.
+
+        Returns:
+            The result of the canonicalization.
+
+        """
+        return self.canonicalize(x, None, **kwargs)
+
+    def get_groupelement(
+        self,
+        nodes: torch.Tensor,
+        loc: torch.Tensor,
+        edges: torch.Tensor,
+        vel: torch.Tensor,
+        edge_attr: torch.Tensor,
+        charges: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Get the group element information.
+
+        Args:
+            nodes: Nodes data.
+            loc: Location data.
+            edges: Edges data.
+            vel: Velocity data.
+            edge_attr: Edge attributes data.
+            charges: Charges data.
+
+        Returns:
+            A dictionary containing the group element information.
+
+        """
+        group_element_dict: Dict[str, torch.Tensor] = {}
         rotation_vectors, translation_vectors = self.canonicalization_network(
             nodes, loc, edges, vel, edge_attr, charges
         )
@@ -35,12 +85,27 @@ class ContinuousGroupNBody(ContinuousGroupCanonicalization):
 
         return group_element_dict
 
-    def canonicalize(self, nodes, loc, edges, vel, edge_attr, charges):
+    def canonicalize(
+        self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
+        """
+        Canonicalize the input data.
 
-        self.device = nodes.device
+        Args:
+            nodes: Input data.
+            targets: Target data.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            The canonicalized location and velocity.
+
+        """
+        self.device = x.device
+
+        loc, edges, vel, edge_attr, charges = kwargs.values()
 
         group_element_dict = self.get_groupelement(
-            nodes, loc, edges, vel, edge_attr, charges
+            x, loc, edges, vel, edge_attr, charges
         )
         translation_vectors = group_element_dict["translation_vectors"]
         rotation_matrix_inverse = group_element_dict["rotation_matrix_inverse"]
@@ -59,17 +124,39 @@ class ContinuousGroupNBody(ContinuousGroupCanonicalization):
 
         return canonical_loc, canonical_vel
 
-    def invert_canonicalization(self, position_prediction: torch.Tensor):
+    def invert_canonicalization(
+        self, x_canonicalized_out: torch.Tensor, **kwargs: Any
+    ) -> torch.Tensor:
+        """
+        Invert the canonicalization process.
+
+        Args:
+            x_canonicalized_out: The predicted position.
+
+        Returns:
+            The inverted location.
+
+        """
         rotation_matrix, translation_vectors, _ = self.canonicalization_info_dict[
             "group_element"
         ].values()
         loc = (
-            torch.bmm(position_prediction[:, None, :], rotation_matrix).squeeze()
+            torch.bmm(x_canonicalized_out[:, None, :], rotation_matrix).squeeze()
             + translation_vectors
         )
         return loc
 
-    def modified_gram_schmidt(self, vectors):
+    def modified_gram_schmidt(self, vectors: torch.Tensor) -> torch.Tensor:
+        """
+        Apply the modified Gram-Schmidt process to the input vectors.
+
+        Args:
+            vectors: Input vectors.
+
+        Returns:
+            The orthonormalized vectors.
+
+        """
         v1 = vectors[:, 0]
         v1 = v1 / torch.norm(v1, dim=1, keepdim=True)
         v2 = vectors[:, 1] - torch.sum(vectors[:, 1] * v1, dim=1, keepdim=True) * v1
