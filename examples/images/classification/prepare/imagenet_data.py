@@ -1,16 +1,14 @@
-
-import os
 import random
-from typing import List
 
 import pytorch_lightning as pl
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from PIL import Image, ImageOps
+from PIL import ImageOps
 from torch import nn
 
-DEFAULT_CROP_RATIO = 224/256
+DEFAULT_CROP_RATIO = 224 / 256
+
 
 class GaussianBlur(nn.Module):
     def __init__(self, p):
@@ -25,6 +23,7 @@ class GaussianBlur(nn.Module):
         else:
             return img
 
+
 class Solarization(nn.Module):
     def __init__(self, p):
         super().__init__()
@@ -36,6 +35,7 @@ class Solarization(nn.Module):
         else:
             return img
 
+
 class CustomRotationTransform:
     """Rotate by one of the given angles."""
 
@@ -46,29 +46,42 @@ class CustomRotationTransform:
         angle = random.choice(self.angles)
         return transforms.functional.rotate(x, angle)
 
+
 class Transform:
-    def __init__(self, mode='train'):
+    def __init__(self, mode="train"):
         # these transformations are essential for reproducing the zero-shot performance
-        if mode == 'train':
-            self.transform = transforms.Compose([
-                transforms.RandomResizedCrop(224, interpolation=transforms.functional.InterpolationMode.BILINEAR),
-                transforms.RandomHorizontalFlip(0.5),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                    std=[0.229, 0.224, 0.225])
-            ])
-        elif mode == 'val':
-            self.transform = transforms.Compose([
-                transforms.Resize(256, interpolation=transforms.functional.InterpolationMode.BILINEAR),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                    std=[0.229, 0.224, 0.225])
-            ])
-        
+        if mode == "train":
+            self.transform = transforms.Compose(
+                [
+                    transforms.RandomResizedCrop(
+                        224,
+                        interpolation=transforms.functional.InterpolationMode.BILINEAR,
+                    ),
+                    transforms.RandomHorizontalFlip(0.5),
+                    transforms.ToTensor(),
+                    transforms.Normalize(
+                        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                    ),
+                ]
+            )
+        elif mode == "val":
+            self.transform = transforms.Compose(
+                [
+                    transforms.Resize(
+                        256,
+                        interpolation=transforms.functional.InterpolationMode.BILINEAR,
+                    ),
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                    transforms.Normalize(
+                        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                    ),
+                ]
+            )
 
     def __call__(self, x):
         return self.transform(x)
+
 
 class ImageNetDataModule(pl.LightningDataModule):
     def __init__(self, hyperparams):
@@ -86,51 +99,58 @@ class ImageNetDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self):
-        return self.loaders['train']
+        return self.loaders["train"]
 
     def val_dataloader(self):
-        return self.loaders['val']
+        return self.loaders["val"]
 
     def test_dataloader(self):
-        return self.loaders['val']
+        return self.loaders["val"]
 
-    
-    def get_imagenet_pytorch_dataloaders(self, data_dir=None, batch_size=None, num_workers=None):
+    def get_imagenet_pytorch_dataloaders(
+        self, data_dir=None, batch_size=None, num_workers=None
+    ):
         paths = {
-            'train': data_dir + '/train',
-            'val': data_dir + '/val',
+            "train": data_dir + "/train",
+            "val": data_dir + "/val",
         }
 
         loaders = {}
 
-        for name in ['train', 'val']:
+        for name in ["train", "val"]:
             dataset = torchvision.datasets.ImageFolder(paths[name], Transform(name))
-            drop_last = True if name == 'train' else False
-            shuffle = True if name == 'train' else False
+            drop_last = True if name == "train" else False
+            shuffle = True if name == "train" else False
             loader = torch.utils.data.DataLoader(
-                dataset, batch_size=batch_size, num_workers=num_workers,
-                pin_memory=True, shuffle=shuffle, drop_last=drop_last
+                dataset,
+                batch_size=batch_size,
+                num_workers=num_workers,
+                pin_memory=True,
+                shuffle=shuffle,
+                drop_last=drop_last,
             )
             loaders[name] = loader
 
         return loaders
 
-    def get_imagenet_pytorch_dataloaders_distributed(self, data_dir=None, batch_size=None, num_workers=None, world_size=None):
-        paths = {
-            'train': data_dir + '/train',
-            'val': data_dir + '/val'
-        }
+    def get_imagenet_pytorch_dataloaders_distributed(
+        self, data_dir=None, batch_size=None, num_workers=None, world_size=None
+    ):
+        paths = {"train": data_dir + "/train", "val": data_dir + "/val"}
 
         loaders = {}
 
-        for name in ['train', 'val']:
+        for name in ["train", "val"]:
             dataset = torchvision.datasets.ImageFolder(paths[name], Transform())
             sampler = torch.utils.data.distributed.DistributedSampler(dataset)
             assert batch_size % world_size == 0
             per_device_batch_size = batch_size // world_size
             loader = torch.utils.data.DataLoader(
-                dataset, batch_size=per_device_batch_size, num_workers=num_workers,
-                pin_memory=True, sampler=sampler
+                dataset,
+                batch_size=per_device_batch_size,
+                num_workers=num_workers,
+                pin_memory=True,
+                sampler=sampler,
             )
             loaders[name] = loader
 

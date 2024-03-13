@@ -10,8 +10,10 @@
 <br>
 
 
-# Understanding Canonicalization
+# Equivariant adaptation with canonicalization
 ![Equivariant adaptation of any prediction network](/utils/equiadapt_cat.jpeg "Equivariant adaptation of any prediction network")
+
+EquiAdapt is a [PyTorch](https://pytorch.org) package that provides a flexible and efficient way to make *any* neural network architecture (including large foundation models) equivariant, instead of redesigning and training from scratch. This is done by learning to canonicalize transformed inputs, before feeding them to the prediction model.
 
 You can play with this concept in the provided [tutorial](tutorials/images/instance_segmentation_group_equivariant_canonicalization.ipynb) for equivariant adaptation of the Segment-Anything Model (SAM, [Kirillov et. al, 2023](https://arxiv.org/abs/2304.02643)) and images from Microsoft COCO ([Lin et. al, 2014](https://arxiv.org/abs/1405.0312)) dataset for instance segmentation.
 
@@ -59,18 +61,18 @@ Equiadapt enables users to obtain equivariant versions of existing neural networ
 # Details on using `equiadapt` library
 
 1. Create a `canonicalization network` (or use our provided networks: for images, in `equiadapt/images/canonicalization_networks/`).
-   
+
 ```
 canonicalization_network = ESCNNEquivariantNetwork(...)
-```  
+```
 2. Wrap it using `equiadapt` wrappers to form a `canonicalizer`.
-    
-  To create your custom canonicalizer, you must inherit `BaseCanonicalization` and define `canonicalize()` and, optionally, `invert_canonicalization()`. Please refer to [this](equiadapt/images/canonicalization) for custom image canonicalizers.   
+
+  To create your custom canonicalizer, you must inherit `BaseCanonicalization` and define `canonicalize()` and, optionally, `invert_canonicalization()`. Please refer to [this](equiadapt/images/canonicalization) for custom image canonicalizers.
 ```
 canonicalizer = GroupEquivariantImageCanonicalization(canonicalization_network, ...)
 ```
 
-3. Use this wrapper with your code to canonicalize the input data.  
+3. Use this wrapper with your code to canonicalize the input data.
 
 ```
 inputs_canonicalized = canonicalizer(inputs)
@@ -95,7 +97,7 @@ loss.backward()
 ```
 
 # Setup instructions
-### Setup Conda environment 
+### Setup Conda environment
 
 To create a conda environment with the necessary packages:
 
@@ -105,7 +107,36 @@ conda activate equiadapt
 pip install -e .
 ```
 
-### Setup Hydra 
+
+# Running equiadapt using example code
+
+We provide example code to run equiadapt in different data domains and tasks to achieve equivariance. You can also find [tutorial](tutorials) on how to use equiadapt with minimalistic changes to your own code.
+
+Before you jump to the instructions for each of them please follow the setup hydra instructions to create a `.env` file with the paths to store all the data, wandb logs and checkpoints.
+
+
+<table style="border:1px solid white; border-collapse: collapse;">
+  <tr>
+    <th style="border:1px solid white;" rowspan="2"><div align="center">Image</div></th>
+    <td style="border:1px solid white;">Classification</td>
+    <td style="border:1px solid white;"><a href="examples/images/classification/README.md">here</a></td>
+  </tr>
+  <tr>
+    <td style="border:1px solid white;">Segmentation</td>
+    <td style="border:1px solid white;"><a href="examples/images/segmentation/README.md">here</a></td>
+  </tr>
+  <tr>
+    <th style="border:1px solid white;" rowspan="2"><div align="center">Point Cloud</div></th>
+    <td style="border:1px solid white;">Classification</td>
+    <td style="border:1px solid white;"><a href="examples/pointcloud/classification/README.md">here</a></td>
+  </tr>
+  <tr>
+    <td style="border:1px solid white;">Part Segmentation</td>
+    <td style="border:1px solid white;"><a href="examples/pointcloud/part_segmentation/README.md">here</a></td>
+  </tr>
+</table>
+
+### Setup Hydra
 - Create a `.env` file in the root of the project with the following content:
   ```
     export HYDRA_JOBS="/path/to/your/hydra/jobs/directory"
@@ -113,19 +144,14 @@ pip install -e .
     export WANDB_CACHE_DIR="/path/to/your/wandb/cache/directory"
     export DATA_PATH="/path/to/your/data/directory"
     export CHECKPOINT_PATH="/path/to/your/checkpoint/directory"
-  ```  
-
-
-# Running Instructions
-For image classification: [here](examples/images/classification/README.md)  
-For (image) instance segmentation: [here](examples/images/segmentation/README.md)
+  ```
 
 
 # Related papers
 
 For more insights on this library refer to our original paper on the idea: [Equivariance with Learned Canonicalization Function (ICML 2023)](https://proceedings.mlr.press/v202/kaba23a.html) and how to extend it to make any existing large pre-trained model equivariant: [Equivariant Adaptation of Large Pretrained Models (NeurIPS 2023)](https://proceedings.neurips.cc/paper_files/paper/2023/hash/9d5856318032ef3630cb580f4e24f823-Abstract-Conference.html).
 
-To learn more about this from a blog, check out: [How to make your foundation model equivariant](https://mila.quebec/en/article/how-to-make-your-foundation-model-equivariant/)  
+To learn more about this from a blog, check out: [How to make your foundation model equivariant](https://mila.quebec/en/article/how-to-make-your-foundation-model-equivariant/)
 
 # Citation
 If you find this library or the associated papers useful, please cite the following papers:
@@ -160,7 +186,22 @@ This repository is a work in progress. We are actively working on improving the 
 
 # Contact
 
-For questions related to this code, please raise an issue, or you can mail us at: 
+For questions related to this code, please raise an issue and you can mail us at:
 ```arnab.mondal@mila.quebec```
 ```siba-smarak.panigrahi@mila.quebec```
 ```kabaseko@mila.quebec```
+
+# Contributing
+
+You can check out the [contributor's guide](CONTRIBUTING.md).
+
+This project uses `pre-commit`_, you can install it before making any
+changes::
+
+    pip install pre-commit
+    cd equiadapt
+    pre-commit install
+
+It is a good idea to update the hooks to the latest version::
+
+    pre-commit autoupdate

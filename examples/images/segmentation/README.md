@@ -1,7 +1,7 @@
 # Commands to run instance segmentation experiments
 
 ### For instance segmentation (with prior regularization)
-``` 
+```
 python train.py canonicalization=group_equivariant canonicalization.network_type=equivariant_wrn \
 dataset.dataset_name=coco dataset.img_size=512 \
 prediction.prediction_network_architecture=maskrcnn prediction.prediction_network_architecture_type=resnet50_fpn_v2
@@ -11,10 +11,10 @@ prediction.prediction_network_architecture=maskrcnn prediction.prediction_networ
 python train.py canonicalization=group_equivariant canonicalization.network_type=equivariant_wrn \
 dataset.dataset_name=coco dataset.img_size=512 \
 prediction.prediction_network_architecture=maskrcnn prediction.prediction_network_architecture_type=resnet50_fpn_v2 \
-experiment.training.loss.prior_weight=0  
+experiment.training.loss.prior_weight=0
 ```
 
-**Note**: You can also run the `train.py` as follows from the root directory of the project: 
+**Note**: You can also run the `train.py` as follows from the root directory of the project:
 ```
 python examples/images/segmentation/train.py canonicalization=group_equivariant
 ```
@@ -44,4 +44,4 @@ We use `hydra` and `OmegaConf` to setup experiments and parse configs. All the c
 - Dataset settings can be found [`here`](configs/dataset) and set with `dataset.dataset_name=coco` (Ensure the annotations are placed in `root-dir/dataset-name/annotations` and images in `root-dir/dataset-name/`)  
 - Experiment settings can be found [`here`](configs/experiment) and set with `experiment.inference.num_rotations=8`
 - Prediction architecture settings can be found [`here`](configs/prediction) and set with `prediction.prediction_network_architecture=maskrcnn`
-- Wandb logging settings can can be found [`here`](configs/wandb) and set with `wandb.use_wandb=1`
+- Wandb logging settings can can be found [`here`](configs/wandb) and set with `wandb.use_wandb=1`. You have to change the entity to your wandb team.

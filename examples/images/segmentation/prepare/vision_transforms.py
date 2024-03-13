@@ -2,7 +2,6 @@ from typing import Dict, Optional, Tuple
 
 import torch
 from torch import Tensor, nn
-from torchvision import ops
 from torchvision.transforms import functional as F
 from torchvision.transforms import transforms as T
 

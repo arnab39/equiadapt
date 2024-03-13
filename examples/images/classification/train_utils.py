@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Optional
 
 import dotenv
 import pytorch_lightning as pl
@@ -14,58 +14,69 @@ from prepare import (
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
 
-def get_model_data_and_callbacks(hyperparams : DictConfig):
-    
-     # get image data
+def get_model_data_and_callbacks(hyperparams: DictConfig):
+
+    # get image data
     image_data = get_image_data(hyperparams.dataset)
     
     # checkpoint callbacks
     callbacks = get_callbacks(hyperparams)
 
-    # get model pipeline 
+    # get model pipeline
     model = get_model_pipeline(hyperparams)
-    
-    return  model, image_data, callbacks
+
+    return model, image_data, callbacks
+
 
 def get_model_pipeline(hyperparams: DictConfig):
 
     if hyperparams.experiment.run_mode == "test":
         model = ImageClassifierPipeline.load_from_checkpoint(
-            checkpoint_path=hyperparams.checkpoint.checkpoint_path + "/" + \
-                hyperparams.checkpoint.checkpoint_name + ".ckpt",
-            hyperparams=hyperparams
+            checkpoint_path=hyperparams.checkpoint.checkpoint_path
+            + "/"
+            + hyperparams.checkpoint.checkpoint_name
+            + ".ckpt",
+            hyperparams=hyperparams,
         )
         model.freeze()
         model.eval()
     else:
         model = ImageClassifierPipeline(hyperparams)
-        
+
     return model
 
+
 def get_trainer(
-    hyperparams: DictConfig,
-    callbacks: list,
-    wandb_logger: pl.loggers.WandbLogger
+    hyperparams: DictConfig, callbacks: list, wandb_logger: pl.loggers.WandbLogger
 ):
     if hyperparams.experiment.run_mode == "dryrun":
         trainer = pl.Trainer(
-            fast_dev_run=5, max_epochs=hyperparams.experiment.training.num_epochs, accelerator="auto", 
-            limit_train_batches=5, limit_val_batches=5, logger=wandb_logger, 
-            callbacks=callbacks, deterministic=hyperparams.experiment.deterministic
+            fast_dev_run=5,
+            max_epochs=hyperparams.experiment.training.num_epochs,
+            accelerator="auto",
+            limit_train_batches=5,
+            limit_val_batches=5,
+            logger=wandb_logger,
+            callbacks=callbacks,
+            deterministic=hyperparams.experiment.deterministic,
         )
     else:
         trainer = pl.Trainer(
-            max_epochs=hyperparams.experiment.training.num_epochs, accelerator="auto", 
-            logger=wandb_logger, callbacks=callbacks, deterministic=hyperparams.experiment.deterministic,
-            num_nodes=hyperparams.experiment.num_nodes, devices=hyperparams.experiment.num_gpus, 
-            strategy='ddp'
+            max_epochs=hyperparams.experiment.training.num_epochs,
+            accelerator="auto",
+            logger=wandb_logger,
+            callbacks=callbacks,
+            deterministic=hyperparams.experiment.deterministic,
+            num_nodes=hyperparams.experiment.num_nodes,
+            devices=hyperparams.experiment.num_gpus,
+            strategy="ddp",
         )
 
     return trainer
-    
-    
+
+
 def get_callbacks(hyperparams: DictConfig):
-    
+
     checkpoint_callback = ModelCheckpoint(
         dirpath=hyperparams.checkpoint.checkpoint_path,
         filename=hyperparams.checkpoint.checkpoint_name,
@@ -73,28 +84,30 @@ def get_callbacks(hyperparams: DictConfig):
         mode="max",
         save_on_train_epoch_end=False,
     )
-    early_stop_metric_callback = EarlyStopping(monitor="val/acc", 
-                    min_delta=hyperparams.experiment.training.min_delta, 
-                    patience=hyperparams.experiment.training.patience, 
-                    verbose=True, 
-                    mode="max")
-    
+    early_stop_metric_callback = EarlyStopping(
+        monitor="val/acc",
+        min_delta=hyperparams.experiment.training.min_delta,
+        patience=hyperparams.experiment.training.patience,
+        verbose=True,
+        mode="max",
+    )
+
     return [checkpoint_callback, early_stop_metric_callback]
                         
 
 def get_image_data(dataset_hyperparams: DictConfig):
-    
+
     dataset_classes = {
         "rotated_mnist": RotatedMNISTDataModule,
         "cifar10": CIFAR10DataModule,
         "cifar100": CIFAR100DataModule,
         "stl10": STL10DataModule,
-        "imagenet": ImageNetDataModule
+        "imagenet": ImageNetDataModule,
     }
-    
+
     if dataset_hyperparams.dataset_name not in dataset_classes:
         raise ValueError(f"{dataset_hyperparams.dataset_name} not implemented")
-    
+
     return dataset_classes[dataset_hyperparams.dataset_name](dataset_hyperparams)
 
 

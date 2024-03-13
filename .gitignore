@@ -110,10 +110,14 @@ dmypy.json
 # Ignore .vscode in all folders
 **/.vscode
 
-# Ignore scripts to run experiments in mila 
+# Ignore scripts to run experiments in mila
 mila_scripts/
 
 *__pycache__/
 *_output/
 wandb/
 *.png
+
+# Docs
+docs/api/
+docs/_build/
