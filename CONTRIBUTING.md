@@ -1,30 +1,3 @@
-```{todo} THIS IS SUPPOSED TO BE AN EXAMPLE. MODIFY IT ACCORDING TO YOUR NEEDS!
-
-   The document assumes you are using a source repository service that promotes a
-   contribution model similar to [GitHub's fork and pull request workflow].
-   While this is true for the majority of services (like GitHub, GitLab,
-   BitBucket), it might not be the case for private repositories (e.g., when
-   using Gerrit).
-
-   Also notice that the code examples might refer to GitHub URLs or the text
-   might use GitHub specific terminology (e.g., *Pull Request* instead of *Merge
-   Request*).
-
-   Please make sure to check the document having these assumptions in mind
-   and update things accordingly.
-```
-
-```{todo} Provide the correct links/replacements at the bottom of the document.
-```
-
-```{todo} You might want to have a look on [PyScaffold's contributor's guide],
-
-   especially if your project is open source. The text should be very similar to
-   this template, but there are a few extra contents that you might decide to
-   also include, like mentioning labels of your issue tracker or automated
-   releases.
-```
-
 # Contributing
 
 Welcome to `equiadapt` contributor's guide.
@@ -47,11 +20,10 @@ If you experience bugs or general issues with `equiadapt`, please have a look
 on the [issue tracker].
 If you don't see anything useful there, please feel free to fire an issue report.
 
-:::{tip}
+> Tip:
 Please don't forget to include the closed issues in your search.
-Sometimes a solution was already reported, and the problem is considered
+Sometimes, a solution was already reported, and the problem is considered
 **solved**.
-:::
 
 New issue reports should include information about your programming environment
 (e.g., operating system, Python version) and steps to reproduce the problem.
@@ -64,23 +36,15 @@ you help us to identify the root cause of the issue.
 You can help improve `equiadapt` docs by making them more readable and coherent, or
 by adding missing information and correcting mistakes.
 
-`equiadapt` documentation uses [Sphinx] as its main documentation compiler.
-This means that the docs are kept in the same repository as the project code, and
-that any documentation update is done in the same way was a code contribution.
+`equiadapt` documentation uses [Sphinx] as its main documentation compiler and [reStructuredText] markup language.
+This means that the docs are kept in the same repository as the project code and
+that any documentation update is done in the same way as a code contribution.
 
-```{todo} Don't forget to mention which markup language you are using.
-
-    e.g.,  [reStructuredText] or [CommonMark] with [MyST] extensions.
-```
-
-```{todo} If your project is hosted on GitHub, you can also mention the following tip:
-
-   :::{tip}
+> Tip:
       Please notice that the [GitHub web interface] provides a quick way of
       propose changes in `equiadapt`'s files. While this mechanism can
       be tricky for normal code contributions, it works perfectly fine for
       contributing to the docs, and can be quite handy.
-
       If you are interested in trying this method out, please navigate to
       the `docs` folder in the source [repository], find which file you
       would like to propose changes and click in the little pencil icon at the
@@ -88,8 +52,7 @@ that any documentation update is done in the same way was a code contribution.
       please write a message in the form at the bottom of the page describing
       which changes have you made and what are the motivations behind them and
       submit your proposal.
-   :::
-```
+
 
 When working on documentation changes in your local machine, you can
 compile them using [tox] :
@@ -107,12 +70,11 @@ python3 -m http.server --directory 'docs/_build/html'
 
 ## Code Contributions
 
-```{todo} Please include a reference or explanation about the internals of the project.
+First, please go through the [README] to understand and get started with the existing examples and tutorials. 
+If you want to contribute to the equiadapt library, you should make changes in [equiadapt], such as adding new or improving existing canonicalization networks or canonicalizers.
+Whereas, if you want to contribute example implementations for other data domains with equiadapt, please do so in [examples].
 
-   An architecture description, design principles or at least a summary of the
-   main concepts will make it easy for potential contributors to get started
-   quickly.
-```
+Please refer to our [Related Papers] section in [README] to understand and gain insights regarding canonicalization.
 
 ### Submit an issue
 
@@ -124,19 +86,7 @@ This often provides additional considerations and avoids unnecessary work.
 
 Before you start coding, we recommend creating an isolated [virtual environment]
 to avoid any problems with your installed Python packages.
-This can easily be done via either [virtualenv]:
-
-```
-virtualenv <PATH TO VENV>
-source <PATH TO VENV>/bin/activate
-```
-
-or [Miniconda]:
-
-```
-conda create -n equiadapt python=3 six virtualenv pytest pytest-cov
-conda activate equiadapt
-```
+This can easily be done via [Anaconda] or [Miniconda] and detailed [here](https://github.com/arnab39/equiadapt/tree/main?tab=readme-ov-file#setup-conda-environment).
 
 ### Clone the repository
 
@@ -160,9 +110,6 @@ conda activate equiadapt
 
    to be able to import the package under development in the Python REPL.
 
-   ```{todo} if you are not using pre-commit, please remove the following item:
-   ```
-
 5. Install [pre-commit]:
 
    ```
@@ -183,12 +130,10 @@ conda activate equiadapt
 
    and start making changes. Never work on the main branch!
 
-2. Start your work on this branch. Don't forget to add [docstrings] to new
-   functions, modules and classes, especially if they are part of public APIs.
+2. Start your work on this branch. Don't forget to add [docstrings] to the new
+   functions, modules and classes, especially if they are part of [equiadapt].
 
-3. Add yourself to the list of contributors in `AUTHORS.rst`.
-
-4. When you’re done editing, do:
+3. When you’re done editing, do:
 
    ```
    git add <MODIFIED FILES>
@@ -197,27 +142,19 @@ conda activate equiadapt
 
    to record your changes in [git].
 
-   ```{todo} if you are not using pre-commit, please remove the following item:
-   ```
-
    Please make sure to see the validation messages from [pre-commit] and fix
    any eventual issues.
    This should automatically use [flake8]/[black] to check/fix the code style
    in a way that is compatible with the project.
 
-   :::{important}
-   Don't forget to add unit tests and documentation in case your
+> **Note**:
+   Please add unit tests and documentation in case your
    contribution adds an additional feature and is not just a bugfix.
-
    Moreover, writing a [descriptive commit message] is highly recommended.
    In case of doubt, you can check the commit history with:
-
-   ```
-   git log --graph --decorate --pretty=oneline --abbrev-commit --all
-   ```
-
+   `git log --graph --decorate --pretty=oneline --abbrev-commit --all`
    to look for recurring communication patterns.
-   :::
+
 
 5. Please check that your changes don't break any unit tests with:
 
@@ -241,13 +178,10 @@ conda activate equiadapt
 2. Go to the web page of your fork and click "Create pull request"
    to send your changes for review.
 
-   ```{todo} if you are using GitHub, you can uncomment the following paragraph
+   Find more detailed information in [creating a PR]. You might also want to open
+   the PR as a draft first and mark it as ready for review after the feedbacks
+   from the continuous integration (CI) system or any required fixes.
 
-      Find more detailed information in [creating a PR]. You might also want to open
-      the PR as a draft first and mark it as ready for review after the feedbacks
-      from the continuous integration (CI) system or any required fixes.
-
-   ```
 
 ### Troubleshooting
 
@@ -306,12 +240,6 @@ package:
 
 ### Releases
 
-```{todo} This section assumes you are using PyPI to publicly release your package.
-
-   If instead you are using a different/private package index, please update
-   the instructions accordingly.
-```
-
 If you are part of the group of maintainers and have correct user permissions
 on [PyPI], the following steps can be used to release a new version for
 `equiadapt`:
@@ -335,13 +263,15 @@ on [PyPI], the following steps can be used to release a new version for
     to collectively create software are general and can be applied to all sorts
     of environments, including private companies and proprietary code bases.
 
-
+[Anaconda]: https://docs.anaconda.com/index.html
 [black]: https://pypi.org/project/black/
 [commonmark]: https://commonmark.org/
 [contribution-guide.org]: http://www.contribution-guide.org/
 [creating a pr]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request
 [descriptive commit message]: https://chris.beams.io/posts/git-commit
 [docstrings]: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
+[equiadapt]: https://github.com/arnab39/equiadapt/tree/main/equiadapt
+[examples]: https://github.com/arnab39/equiadapt/tree/main/examples
 [first-contributions tutorial]: https://github.com/firstcontributions/first-contributions
 [flake8]: https://flake8.pycqa.org/en/stable/
 [git]: https://git-scm.com
@@ -357,6 +287,8 @@ on [PyPI], the following steps can be used to release a new version for
 [pyscaffold's contributor's guide]: https://pyscaffold.org/en/stable/contributing.html
 [pytest can drop you]: https://docs.pytest.org/en/stable/usage.html#dropping-to-pdb-python-debugger-at-the-start-of-a-test
 [python software foundation's code of conduct]: https://www.python.org/psf/conduct/
+[README]: https://github.com/arnab39/equiadapt/blob/main/README.md
+[Related Papers]: https://github.com/arnab39/equiadapt?tab=readme-ov-file#related-papers
 [restructuredtext]: https://www.sphinx-doc.org/en/master/usage/restructuredtext/
 [sphinx]: https://www.sphinx-doc.org/en/master/
 [tox]: https://tox.readthedocs.io/en/stable/
@@ -367,5 +299,5 @@ on [PyPI], the following steps can be used to release a new version for
 ```{todo} Please review and change the following definitions:
 ```
 
-[repository]: https://github.com/<USERNAME>/equiadapt
-[issue tracker]: https://github.com/<USERNAME>/equiadapt/issues
+[repository]: https://github.com/arnab39/equiadapt
+[issue tracker]: https://github.com/arnab39/equiadapt/issues
