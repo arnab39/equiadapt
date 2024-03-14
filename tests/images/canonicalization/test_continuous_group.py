@@ -4,11 +4,9 @@ from unittest.mock import Mock, patch
 import pytest
 import torch
 from omegaconf import DictConfig
+from torch import Tensor
 
-from equiadapt import (  # Update with your actual import path
-    ContinuousGroupImageCanonicalization,
-)
-
+from equiadapt import ContinuousGroupImageCanonicalization
 
 @pytest.fixture
 def sample_input() -> torch.Tensor:
@@ -30,7 +28,6 @@ def grayscale_input() -> torch.Tensor:
         torch.Tensor: A batch with one grayscale image of size 64x64.
     """
     return torch.rand((1, 1, 64, 64))
-
 
 @pytest.fixture
 def init_args() -> dict:
@@ -54,6 +51,7 @@ def init_args() -> dict:
     }
 
 
+
 def test_initialization(init_args: dict) -> None:
     """
     Test the initialization of ContinuousGroupImageCanonicalization.
@@ -65,7 +63,8 @@ def test_initialization(init_args: dict) -> None:
     assert cgic.pad is not None, "Pad should be initialized."
     assert cgic.crop is not None, "Crop should be initialized."
 
-
+    
+    
 def test_transformation_before_canonicalization_network_forward(
     sample_input: torch.Tensor, init_args: dict
 ) -> None:
@@ -83,6 +82,7 @@ def test_transformation_before_canonicalization_network_forward(
         AssertionError: If the transformed image size is not [1, 3, 32, 32].
 
     """
+
     cgic = ContinuousGroupImageCanonicalization(**init_args)
     transformed = cgic.transformations_before_canonicalization_network_forward(
         sample_input
@@ -91,6 +91,7 @@ def test_transformation_before_canonicalization_network_forward(
         [1, 3, 32, 32]
     ), "The transformed image should be resized to (32, 32)."
 
+    
 
 @pytest.fixture
 def canonicalization_instance() -> (
