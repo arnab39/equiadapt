@@ -9,13 +9,13 @@ class PredictionNetwork(nn.Module):
         self.encoder = encoder
         self.predictor = nn.Linear(feature_dim, num_classes)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         reps = self.encoder(x)
         reps = reps.view(x.shape[0], -1)
         return self.predictor(reps)
 
 
-def get_dataset_specific_info(dataset_name):
+def get_dataset_specific_info(dataset_name: str) -> tuple:
     dataset_info = {
         "rotated_mnist": (nn.CrossEntropyLoss(), (1, 28, 28), 10),
         "cifar10": (nn.CrossEntropyLoss(), (3, 224, 224), 10),
@@ -39,7 +39,7 @@ def get_prediction_network(
     freeze_encoder: bool = False,
     input_shape: tuple = (3, 32, 32),
     num_classes: int = 10,
-):
+) -> torch.nn.Module:
     weights = "DEFAULT" if use_pretrained else None
     model_dict = {
         "resnet50": torchvision.models.resnet50,
