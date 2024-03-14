@@ -70,4 +70,4 @@ repos:
   hooks:
   - id: mypy
     args: [--disallow-untyped-defs, --ignore-missing-imports]
-    exclude: examples/
+    exclude: (?x)(examples/|docs/)
