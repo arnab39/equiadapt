@@ -294,10 +294,5 @@ on [PyPI], the following steps can be used to release a new version for
 [tox]: https://tox.readthedocs.io/en/stable/
 [virtual environment]: https://realpython.com/python-virtual-environments-a-primer/
 [virtualenv]: https://virtualenv.pypa.io/en/stable/
-
-
-```{todo} Please review and change the following definitions:
-```
-
 [repository]: https://github.com/arnab39/equiadapt
 [issue tracker]: https://github.com/arnab39/equiadapt/issues
