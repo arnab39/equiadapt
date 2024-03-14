@@ -10,6 +10,8 @@
 import os
 import shutil
 import sys
+from pathlib import Path
+import shutil
 
 # -- Path setup --------------------------------------------------------------
 
@@ -19,6 +21,22 @@ __location__ = os.path.dirname(__file__)
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.join(__location__, "../src"))
+
+# Define the source and destination directories
+utils_dir = Path(__location__).parent / "utils"
+static_dir = Path(__location__) / "_build" / "html" / "_images"
+
+# Ensure the _static/utils directory exists
+static_dir.mkdir(parents=True, exist_ok=True)
+
+# List of common image file extensions
+image_extensions = [".png", ".jpg", ".jpeg", ".gif"]
+
+# Copy all image files from utils to _static/utils
+for src_path in utils_dir.iterdir():
+    if src_path.suffix.lower() in image_extensions:
+        dst_path = static_dir / src_path.name
+        shutil.copy(src_path, dst_path)
 
 # -- Run sphinx-apidoc -------------------------------------------------------
 # This hack is necessary since RTD does not issue `sphinx-apidoc` before running
@@ -88,6 +106,7 @@ myst_enable_extensions = [
     "deflist",
     "dollarmath",
     "html_image",
+    "html_admonition",
     "linkify",
     "replacements",
     "smartquotes",
@@ -171,7 +190,7 @@ todo_emit_warnings = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
