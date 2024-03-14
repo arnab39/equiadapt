@@ -1,11 +1,10 @@
+import argparse  # Import the argparse module
 import re
 from pathlib import Path
 from typing import Match, Union
 
 from bs4 import BeautifulSoup, Tag
 
-# Install from https://github.com/carpedm20/emoji/
-# with pip install emoji
 try:
     from emoji import emojize
 except ImportError:
@@ -35,23 +34,31 @@ def process_html_file(html_file: Union[str, Path]) -> None:
     with open(html_file, "r", encoding="utf-8") as file:
         content = file.read()
 
-    # Convert emojis in the entire HTML content
     content = emojize_all(content)
-
     soup = BeautifulSoup(content, "html.parser")
-
-    # Update all <img> tags with src starting with "utils/"
     update_image_paths(soup)
 
-    # Write the changes back to the HTML file
     with open(html_file, "w", encoding="utf-8") as file:
         file.write(str(soup))
 
 
 if __name__ == "__main__":
-    # Specify the pattern to match the HTML files you want to postprocess
-    __location__: Path = Path(__file__).parent
-    html_files: list[Path] = list((__location__ / "_build" / "html").glob("*.html"))
+    parser = argparse.ArgumentParser(description="Process HTML files.")
+    parser.add_argument(
+        "--path",
+        type=str,
+        help="Path to the directory containing HTML files to process.",
+    )
+
+    args = parser.parse_args()
+
+    if args.path:
+        base_path = Path(args.path)
+    else:
+        __location__: Path = Path(__file__).parent
+        base_path = __location__ / "_build" / "html"
+
+    html_files: list[Path] = list(base_path.glob("*.html"))
 
     for html_file in html_files:
         process_html_file(html_file)
