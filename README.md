@@ -1,6 +1,6 @@
 <p align="center">
     <br>
-    <img src="utils/logo.png" width="200"/>
+    <img src="utils/equiadapt_logo.png" width="400"/>
     <br>
 <p>
 
