@@ -10,22 +10,6 @@ from torchvision import transforms
 from equiadapt.images.utils import flip_boxes, flip_masks, rotate_boxes, rotate_masks
 
 
-def get_inference_method(
-    canonicalizer: torch.nn.Module,
-    prediction_network: torch.nn.Module,
-    inference_hyperparams: DictConfig,
-    in_shape: tuple = (3, 1024, 1024),
-) -> Union[VanillaInference, GroupInference]:
-    if inference_hyperparams.method == "vanilla":
-        return VanillaInference(canonicalizer, prediction_network)
-    elif inference_hyperparams.method == "group":
-        return GroupInference(
-            canonicalizer, prediction_network, inference_hyperparams, in_shape
-        )
-    else:
-        raise ValueError(f"{inference_hyperparams.method} is not implemented for now.")
-
-
 class VanillaInference:
     def __init__(
         self, canonicalizer: torch.nn.Module, prediction_network: torch.nn.Module
@@ -250,3 +234,19 @@ class GroupInference(VanillaInference):
         metrics.update({"test/map": max(map_dict[0]["map"], 0.0)})
 
         return metrics
+
+
+def get_inference_method(
+    canonicalizer: torch.nn.Module,
+    prediction_network: torch.nn.Module,
+    inference_hyperparams: DictConfig,
+    in_shape: tuple = (3, 1024, 1024),
+) -> Union[VanillaInference, GroupInference]:
+    if inference_hyperparams.method == "vanilla":
+        return VanillaInference(canonicalizer, prediction_network)
+    elif inference_hyperparams.method == "group":
+        return GroupInference(
+            canonicalizer, prediction_network, inference_hyperparams, in_shape
+        )
+    else:
+        raise ValueError(f"{inference_hyperparams.method} is not implemented for now.")

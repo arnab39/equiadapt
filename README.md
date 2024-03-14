@@ -107,6 +107,13 @@ conda activate equiadapt
 pip install -e .
 ```
 
+We've noticed that the above command to install the dependencies from `conda_env.yml` may take very long. A faster way to install the required packages is (should take 5-10 mins):
+```
+conda env create -f min_conda_env.yaml
+```
+
+Note that this might not be a complete list of dependencies. If you encounter any issues while running `examples`, please add the required dependencies from `conda_env.yaml` and create a pull request.
+
 
 # Running equiadapt using example code
 
