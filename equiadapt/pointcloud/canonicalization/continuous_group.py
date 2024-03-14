@@ -1,7 +1,7 @@
 # Note that for now we have only implemented canonicalizatin for rotation in the pointcloud setting.
 # This is meant to be a proof of concept and we are happy to receive contribution to extend this to other group actions.
 
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from omegaconf import DictConfig
@@ -104,7 +104,7 @@ class EquivariantPointcloudCanonicalization(ContinuousGroupPointcloudCanonicaliz
     ):
         super().__init__(canonicalization_network, canonicalization_hyperparams)
 
-    def get_groupelement(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
+    def get_groupelement(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
         This method takes the input image and maps it to the group element.
 
@@ -112,7 +112,7 @@ class EquivariantPointcloudCanonicalization(ContinuousGroupPointcloudCanonicaliz
             x (torch.Tensor): The input point cloud.
 
         Returns:
-            dict[str, torch.Tensor]: A dictionary containing the group element.
+            Dict[str, torch.Tensor]: A dictionary containing the group element.
         """
         group_element_dict = {}
 
