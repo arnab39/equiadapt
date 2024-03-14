@@ -16,6 +16,9 @@ class ImageClassifierPipeline(pl.LightningModule):
         self.loss, self.image_shape, self.num_classes = get_dataset_specific_info(
             hyperparams.dataset.dataset_name
         )
+        self.loss, self.image_shape, self.num_classes = get_dataset_specific_info(
+            hyperparams.dataset.dataset_name
+        )
 
         self.prediction_network = get_prediction_network(
             architecture=hyperparams.prediction.prediction_network_architecture,
@@ -23,6 +26,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             use_pretrained=hyperparams.prediction.use_pretrained,
             freeze_encoder=hyperparams.prediction.freeze_pretrained_encoder,
             input_shape=self.image_shape,
+            num_classes=self.num_classes,
             num_classes=self.num_classes,
         )
 
@@ -37,6 +41,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             canonicalization_network,
             hyperparams.canonicalization,
             self.image_shape,
+            self.image_shape,
         )
 
         self.hyperparams = hyperparams
@@ -46,6 +51,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             self.prediction_network,
             self.num_classes,
             hyperparams.experiment.inference,
+            self.image_shape,
             self.image_shape,
         )
 
@@ -77,6 +83,13 @@ class ImageClassifierPipeline(pl.LightningModule):
             training_metrics.update(
                 {"train/optimization_specific_loss": group_contrast_loss}
             )
+            loss += (
+                group_contrast_loss
+                * self.hyperparams.experiment.training.loss.group_contrast_weight
+            )
+            training_metrics.update(
+                {"train/optimization_specific_loss": group_contrast_loss}
+            )
 
         # calculate the task loss which is the cross-entropy loss for classification
         if self.hyperparams.experiment.training.loss.task_weight:
@@ -90,6 +103,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             preds = logits.argmax(dim=-1)
             acc = (preds == y).float().mean()
 
+            training_metrics.update({"train/task_loss": task_loss, "train/acc": acc})
             training_metrics.update({"train/task_loss": task_loss, "train/acc": acc})
 
         # Add prior regularization loss if the prior weight is non-zero
@@ -206,7 +220,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             }
             return {"optimizer": optimizer, "lr_scheduler": scheduler_dict}
         else:
-            print("using AdamW optimizer")
+            print(f"using AdamW optimizer")
             optimizer = torch.optim.AdamW(
                 [
                     {
