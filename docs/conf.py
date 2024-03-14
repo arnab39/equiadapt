@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.join(__location__, "../src"))
 
 # Define the source and destination directories
 utils_dir = Path(__location__).parent / "utils"
-static_dir = Path(__location__) / "_static" / "utils"
+static_dir = Path(__location__) / "_build" / "html" / "_images"
 
 # Ensure the _static/utils directory exists
 static_dir.mkdir(parents=True, exist_ok=True)
