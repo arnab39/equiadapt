@@ -27,7 +27,6 @@ class ImageClassifierPipeline(pl.LightningModule):
             freeze_encoder=hyperparams.prediction.freeze_pretrained_encoder,
             input_shape=self.image_shape,
             num_classes=self.num_classes,
-            num_classes=self.num_classes,
         )
 
         canonicalization_network = get_canonicalization_network(
@@ -41,7 +40,6 @@ class ImageClassifierPipeline(pl.LightningModule):
             canonicalization_network,
             hyperparams.canonicalization,
             self.image_shape,
-            self.image_shape,
         )
 
         self.hyperparams = hyperparams
@@ -51,7 +49,6 @@ class ImageClassifierPipeline(pl.LightningModule):
             self.prediction_network,
             self.num_classes,
             hyperparams.experiment.inference,
-            self.image_shape,
             self.image_shape,
         )
 
@@ -125,7 +122,7 @@ class ImageClassifierPipeline(pl.LightningModule):
         )
 
         # Log the training metrics
-        self.log_dict(training_metrics, prog_bar=True)
+        self.log_dict(training_metrics, prog_bar=True, sync_dist=True)
         assert not torch.isnan(loss), "Loss is NaN"
 
         return {"loss": loss, "acc": acc}
@@ -159,7 +156,7 @@ class ImageClassifierPipeline(pl.LightningModule):
         # Logging to TensorBoard by default
         validation_metrics.update({"val/acc": acc})
 
-        self.log_dict(validation_metrics, prog_bar=True)
+        self.log_dict(validation_metrics, prog_bar=True, sync_dist=True)
 
         return {"acc": acc}
 
@@ -173,7 +170,7 @@ class ImageClassifierPipeline(pl.LightningModule):
         test_metrics = self.inference_method.get_inference_metrics(x, y)
 
         # Log the test metrics
-        self.log_dict(test_metrics, prog_bar=True)
+        self.log_dict(test_metrics, prog_bar=True, sync_dist=True)
 
         return test_metrics
 
