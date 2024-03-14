@@ -48,22 +48,3 @@ def test_transformation_before_canonicalization_network_forward(
     assert transformed.size() == torch.Size(
         [1, 3, 32, 32]
     ), "The transformed image should be resized to (32, 32)."
-
-@pytest.fixture
-def canonicalization_instance() -> ContinuousGroupImageCanonicalization:
-    instance = ContinuousGroupImageCanonicalization(
-        canonicalization_network=Mock(),
-        canonicalization_hyperparams=DictConfig({
-            "input_crop_ratio": 0.9,
-            "resize_shape": (32, 32),
-        }),
-        in_shape=(3, 64, 64),
-    )
-    # Mocking the get_groupelement method to return a fixed group element
-    instance.get_groupelement = Mock(
-        return_value={
-            "rotation": torch.eye(2).unsqueeze(0),
-            "reflection": torch.tensor([[[[0]]]]),
-        }
-    )
-    return instance
