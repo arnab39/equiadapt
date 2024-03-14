@@ -470,11 +470,11 @@ class VNStdFeature(nn.Module):
 
         if self.normalize_frame:
             v1 = z0[:, 0, :]
-            v1_norm = torch.sqrt((v1 * v1).sum(1, keepdims=True))
+            v1_norm = torch.sqrt((v1 * v1).sum(1, keepdims=True))  # ignore type
             u1 = v1 / (v1_norm + EPS)
             v2 = z0[:, 1, :]
-            v2 = v2 - (v2 * u1).sum(1, keepdims=True) * u1
-            v2_norm = torch.sqrt((v2 * v2).sum(1, keepdims=True))
+            v2 = v2 - (v2 * u1).sum(1, keepdims=True) * u1  # ignore type
+            v2_norm = torch.sqrt((v2 * v2).sum(1, keepdims=True))  # ignore type
             u2 = v2 / (v2_norm + EPS)
 
             u3 = torch.cross(u1, u2)
