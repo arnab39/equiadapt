@@ -20,6 +20,10 @@ endif
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
+postprocess:
+	@echo "Running postprocessing script..."
+	python ./postprocess.py
+
 clean:
 	rm -rf $(BUILDDIR)/* $(AUTODOCDIR)
 
@@ -27,3 +31,4 @@ clean:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@$(MAKE) postprocess
