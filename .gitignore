@@ -121,3 +121,6 @@ wandb/
 # Docs
 docs/api/
 docs/_build/
+
+# NBody Data
+examples/nbody/data/n_body_system/dataset/*.npy

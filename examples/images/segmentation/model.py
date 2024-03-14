@@ -176,7 +176,7 @@ class ImageSegmentationPipeline(pl.LightningModule):
         )
 
         # Log the training metrics
-        self.log_dict(training_metrics, prog_bar=True)
+        self.log_dict(training_metrics, prog_bar=True, sync_dist=True)
 
         assert not torch.isnan(loss), "Loss is NaN"
         return {"loss": loss}
@@ -242,7 +242,7 @@ class ImageSegmentationPipeline(pl.LightningModule):
             metric_identity = self.canonicalizer.get_identity_metric()
             validation_metrics.update({"val/identity_metric": metric_identity})
 
-        self.log_dict(validation_metrics, prog_bar=True)
+        self.log_dict(validation_metrics, prog_bar=True, sync_dist=True)
 
         return {"map": _map_dict["map"]}
 
@@ -257,7 +257,7 @@ class ImageSegmentationPipeline(pl.LightningModule):
         test_metrics = self.inference_method.get_inference_metrics(images, targets)
 
         # Log the test metrics
-        self.log_dict(test_metrics, prog_bar=True)
+        self.log_dict(test_metrics, prog_bar=True, sync_dist=True)
 
         return test_metrics
 

@@ -5,7 +5,6 @@ import pytorch_lightning as pl
 from model import PointcloudClassificationPipeline
 from omegaconf import DictConfig
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-from pytorch_lightning.strategies import DDPStrategy
 
 
 def get_model_pipeline(hyperparams: DictConfig) -> pl.LightningModule:
@@ -49,7 +48,7 @@ def get_trainer(
             deterministic=hyperparams.experiment.deterministic,
             num_nodes=hyperparams.experiment.num_nodes,
             devices=hyperparams.experiment.num_gpus,
-            strategy=DDPStrategy(find_unused_parameters=True),
+            strategy="ddp",
         )
 
     return trainer

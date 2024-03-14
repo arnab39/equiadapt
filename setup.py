@@ -1,10 +1,11 @@
 """
-    Setup file for equiadapt.
-    Use setup.cfg to configure your project.
+Setup file for equiadapt.
 
-    This file was generated with PyScaffold 4.5.
-    PyScaffold helps you to put up the scaffold of your new Python project.
-    Learn more under: https://pyscaffold.org/
+Use setup.cfg to configure your project.
+
+This file was generated with PyScaffold 4.5.
+PyScaffold helps you to put up the scaffold of your new Python project.
+Learn more under: https://pyscaffold.org/
 """
 
 from setuptools import setup

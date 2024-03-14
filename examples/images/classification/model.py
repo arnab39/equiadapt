@@ -16,6 +16,9 @@ class ImageClassifierPipeline(pl.LightningModule):
         self.loss, self.image_shape, self.num_classes = get_dataset_specific_info(
             hyperparams.dataset.dataset_name
         )
+        self.loss, self.image_shape, self.num_classes = get_dataset_specific_info(
+            hyperparams.dataset.dataset_name
+        )
 
         self.prediction_network = get_prediction_network(
             architecture=hyperparams.prediction.prediction_network_architecture,
@@ -77,6 +80,13 @@ class ImageClassifierPipeline(pl.LightningModule):
             training_metrics.update(
                 {"train/optimization_specific_loss": group_contrast_loss}
             )
+            loss += (
+                group_contrast_loss
+                * self.hyperparams.experiment.training.loss.group_contrast_weight
+            )
+            training_metrics.update(
+                {"train/optimization_specific_loss": group_contrast_loss}
+            )
 
         # calculate the task loss which is the cross-entropy loss for classification
         if self.hyperparams.experiment.training.loss.task_weight:
@@ -90,6 +100,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             preds = logits.argmax(dim=-1)
             acc = (preds == y).float().mean()
 
+            training_metrics.update({"train/task_loss": task_loss, "train/acc": acc})
             training_metrics.update({"train/task_loss": task_loss, "train/acc": acc})
 
         # Add prior regularization loss if the prior weight is non-zero
@@ -111,7 +122,7 @@ class ImageClassifierPipeline(pl.LightningModule):
         )
 
         # Log the training metrics
-        self.log_dict(training_metrics, prog_bar=True)
+        self.log_dict(training_metrics, prog_bar=True, sync_dist=True)
         assert not torch.isnan(loss), "Loss is NaN"
 
         return {"loss": loss, "acc": acc}
@@ -145,7 +156,7 @@ class ImageClassifierPipeline(pl.LightningModule):
         # Logging to TensorBoard by default
         validation_metrics.update({"val/acc": acc})
 
-        self.log_dict(validation_metrics, prog_bar=True)
+        self.log_dict(validation_metrics, prog_bar=True, sync_dist=True)
 
         return {"acc": acc}
 
@@ -159,7 +170,7 @@ class ImageClassifierPipeline(pl.LightningModule):
         test_metrics = self.inference_method.get_inference_metrics(x, y)
 
         # Log the test metrics
-        self.log_dict(test_metrics, prog_bar=True)
+        self.log_dict(test_metrics, prog_bar=True, sync_dist=True)
 
         return test_metrics
 
@@ -206,7 +217,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             }
             return {"optimizer": optimizer, "lr_scheduler": scheduler_dict}
         else:
-            print("using AdamW optimizer")
+            print(f"using AdamW optimizer")
             optimizer = torch.optim.AdamW(
                 [
                     {

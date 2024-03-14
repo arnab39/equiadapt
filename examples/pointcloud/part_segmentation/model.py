@@ -163,7 +163,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             }
         )
 
-        self.log_dict(training_metrics, on_epoch=True, prog_bar=True)
+        self.log_dict(training_metrics, on_epoch=True, prog_bar=True, sync_dist=True)
 
         return loss
 
@@ -223,7 +223,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             "val/avg_per_class_acc": avg_per_class_acc,
             "val/iou": np.mean(test_ious),
         }
-        self.log_dict(validation_metrics, on_epoch=True, prog_bar=True)
+        self.log_dict(validation_metrics, on_epoch=True, prog_bar=True, sync_dist=True)
 
         return validation_metrics
 
@@ -283,7 +283,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             "test/avg_per_class_acc": avg_per_class_acc,
             "test/iou": np.mean(test_ious),
         }
-        self.log_dict(test_metrics, on_epoch=True, prog_bar=True)
+        self.log_dict(test_metrics, on_epoch=True, prog_bar=True, sync_dist=True)
 
         return test_metrics
 

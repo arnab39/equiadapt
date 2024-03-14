@@ -6,7 +6,7 @@ import sklearn.metrics as metrics
 import torch
 import torch.nn.functional as F
 from model_utils import get_prediction_network
-from OmegaConf import DictConfig
+from omegaconf import DictConfig
 from pytorch3d.transforms import Rotate, RotateAxisAngle, random_rotations
 from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
 
@@ -129,7 +129,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             }
         )
 
-        self.log_dict(training_metrics, on_epoch=True, prog_bar=True)
+        self.log_dict(training_metrics, on_epoch=True, prog_bar=True, sync_dist=True)
 
         return loss
 
@@ -171,6 +171,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
                 "val/avg_per_class_acc": avg_per_class_acc,
             },  # type: ignore
             prog_bar=True,
+            sync_dist=True,
         )
 
         return {"val/acc": test_acc, "val/avg_per_class_acc": avg_per_class_acc}
@@ -213,6 +214,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
                 "test/avg_per_class_acc": avg_per_class_acc,
             },  # type: ignore
             prog_bar=True,
+            sync_dist=True,
         )
 
         return {"test/acc": test_acc, "test/avg_per_class_acc": avg_per_class_acc}
