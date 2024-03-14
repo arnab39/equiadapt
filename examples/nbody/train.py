@@ -2,11 +2,11 @@
 import os
 
 import pytorch_lightning as pl
-import wandb
 from omegaconf import OmegaConf
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
+import wandb
 from examples.nbody.model import NBodyPipeline
 from examples.nbody.prepare.nbody_data import NBodyDataModule
 

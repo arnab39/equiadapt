@@ -21,7 +21,7 @@ python examples/images/segmentation/train.py canonicalization=group_equivariant
 
 ### For testing checkpoints
 ```
-python train.py experiment.run_mode=test dataset.dataset_name=stl10 \
+python train.py experiment.run_mode=test dataset.dataset_name=coco dataset.img_size=512 \
 checkpoint.checkpoint_path=/path/of/checkpoint/dir checkpoint.checkpoint_name=<name-of-checkpoint>
 
 ```
@@ -42,14 +42,15 @@ We use `hydra` and `OmegaConf` to setup experiments and parse configs. All the c
 - Choose canonicalization type from [`here`](configs/canonicalization) and set with `canonicalizaton=group_equivariant`
 - Canonicalization network architecture and relevant hyperparameters are detailed within canonicalization configs
 - Dataset settings can be found [`here`](configs/dataset) and set with `dataset.dataset_name=coco` (Ensure the annotations are placed in `root-dir/dataset-name/annotations` and images in `root-dir/dataset-name/`)
-    - The root directory structure be as follows:
-    ```
-    root-dir
-    ├── coco
-    │   ├── annotations
-    │   ├── train2017 ### training images
-    │   ├── val2017 ### validation images
-    ```
-- Experiment settings can be found [`here`](configs/experiment) and set with `experiment.inference.num_rotations=8`
+    - The correct dataset directory structure is (COCO2017 Dataset can be downloaded from here: [COCO](https://cocodataset.org/#download)):
+        ```
+        root-dir
+        ├── coco
+        │   ├── annotations
+        │   ├── train2017 ### training images
+        │   ├── val2017 ### validation images
+        ```
+
+- Experiment settings can be found [`here`](configs/experiment) and set with `experiment.inference.num_rotations=4`
 - Prediction architecture settings can be found [`here`](configs/prediction) and set with `prediction.prediction_network_architecture=maskrcnn`
 - Wandb logging settings can can be found [`here`](configs/wandb) and set with `wandb.use_wandb=1`. You have to change the entity to your wandb team.

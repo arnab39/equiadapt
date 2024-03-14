@@ -1,5 +1,5 @@
 import math
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import kornia as K
 import torch
@@ -149,7 +149,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             "the DiscreteGroupImageCanonicalization class"
         )
 
-    def get_groupelement(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
+    def get_groupelement(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
         Maps the input image to a group element.
 

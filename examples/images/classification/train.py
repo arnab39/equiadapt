@@ -4,10 +4,11 @@ import hydra
 import omegaconf
 import pytorch_lightning as pl
 import torch
-import wandb
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
 from train_utils import get_model_data_and_callbacks, get_trainer, load_envs
+
+import wandb
 
 
 def train_images(hyperparams: DictConfig) -> None:
@@ -98,7 +99,7 @@ def train_images(hyperparams: DictConfig) -> None:
     # get trainer
     trainer = get_trainer(hyperparams, callbacks, wandb_logger)
 
-    if hyperparams.experiment.run_mode == "train":
+    if hyperparams.experiment.run_mode in ["train", "dryrun"]:
         trainer.fit(model, datamodule=image_data)
 
     elif hyperparams.experiment.run_mode == "auto_tune":

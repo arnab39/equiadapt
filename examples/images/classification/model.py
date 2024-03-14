@@ -122,7 +122,7 @@ class ImageClassifierPipeline(pl.LightningModule):
         )
 
         # Log the training metrics
-        self.log_dict(training_metrics, prog_bar=True, sync_dist=True)
+        self.log_dict(training_metrics, prog_bar=True)
         assert not torch.isnan(loss), "Loss is NaN"
 
         return {"loss": loss, "acc": acc}
@@ -156,7 +156,11 @@ class ImageClassifierPipeline(pl.LightningModule):
         # Logging to TensorBoard by default
         validation_metrics.update({"val/acc": acc})
 
-        self.log_dict(validation_metrics, prog_bar=True, sync_dist=True)
+        self.log_dict(
+            {key: value.to(self.device) for key, value in validation_metrics.items()},
+            prog_bar=True,
+            sync_dist=True,
+        )
 
         return {"acc": acc}
 
@@ -170,7 +174,11 @@ class ImageClassifierPipeline(pl.LightningModule):
         test_metrics = self.inference_method.get_inference_metrics(x, y)
 
         # Log the test metrics
-        self.log_dict(test_metrics, prog_bar=True, sync_dist=True)
+        self.log_dict(
+            {key: value.to(self.device) for key, value in test_metrics.items()},
+            prog_bar=True,
+            sync_dist=True,
+        )
 
         return test_metrics
 
