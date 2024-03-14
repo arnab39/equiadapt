@@ -22,7 +22,7 @@ def grayscale_input():
 
 
 @pytest.fixture
-def init_args():
+def init_args() -> dict:
     # Mock initialization arguments
     canonicalization_hyperparams = DictConfig(
         {
@@ -37,7 +37,7 @@ def init_args():
     }
 
 
-def test_initialization(init_args):
+def test_initialization(init_args) -> None:
     cgic = ContinuousGroupImageCanonicalization(**init_args)
     assert cgic.pad is not None, "Pad should be initialized."
     assert cgic.crop is not None, "Crop should be initialized."
@@ -45,7 +45,7 @@ def test_initialization(init_args):
 
 def test_transformation_before_canonicalization_network_forward(
     sample_input, init_args
-):
+) -> None:
     cgic = ContinuousGroupImageCanonicalization(**init_args)
     transformed = cgic.transformations_before_canonicalization_network_forward(
         sample_input
