@@ -1,0 +1,35 @@
+name: equiadapt
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - kornia
+  - pip
+  - python=3.10.13
+  - pytorch=2.2.0
+  - pytorch-cuda=12.1
+  - sympy
+  - tqdm
+  - wandb=0.16.3
+  - pip:
+    - hydra-core==1.3.2
+    - isort
+    - matplotlib
+    - mypy
+    - numpy==1.25.2
+    - omegaconf==2.3.0
+    - pillow==10.2.0
+    - pycocotools==2.0.7
+    - python-dotenv==1.0.1
+    - pytorch-lightning==2.2.0.post0
+    - pyyaml==6.0.1
+    - scipy
+    - segment-anything==1.0
+    - segmentation-mask-overlay==0.4.4
+    - sphinx
+    - torchmetrics
+    - torchvision
+    - wheel
+prefix: equiadapt
