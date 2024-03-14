@@ -7,6 +7,3 @@ build-backend = "setuptools.build_meta"
 # For smarter version schemes and other configuration options,
 # check out https://github.com/pypa/setuptools_scm
 version_scheme = "no-guess-dev"
-
-[tool.mypy]
-exclude = ['docs', 'examples']
