@@ -15,7 +15,7 @@ class VNDeepSets(nn.Module):
     A class representing the VNDeepSets model.
 
     Args:
-        hyperparams: An object containing hyperparameters for the model.
+        hyperparams: A dictionary containing hyperparameters for the model.
         device (str): The device to run the model on. Defaults to "cuda" if available, otherwise "cpu".
 
     Attributes:
