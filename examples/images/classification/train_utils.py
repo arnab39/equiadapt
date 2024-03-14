@@ -14,7 +14,7 @@ from prepare import (
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
 
-def get_model_data_and_callbacks(hyperparams: DictConfig):
+def get_model_data_and_callbacks(hyperparams: DictConfig) -> tuple:
 
     # get image data
     image_data = get_image_data(hyperparams.dataset)
@@ -28,7 +28,7 @@ def get_model_data_and_callbacks(hyperparams: DictConfig):
     return model, image_data, callbacks
 
 
-def get_model_pipeline(hyperparams: DictConfig):
+def get_model_pipeline(hyperparams: DictConfig) -> pl.LightningModule:
 
     if hyperparams.experiment.run_mode == "test":
         model = ImageClassifierPipeline.load_from_checkpoint(
@@ -48,7 +48,7 @@ def get_model_pipeline(hyperparams: DictConfig):
 
 def get_trainer(
     hyperparams: DictConfig, callbacks: list, wandb_logger: pl.loggers.WandbLogger
-):
+) -> pl.Trainer:
     if hyperparams.experiment.run_mode == "dryrun":
         trainer = pl.Trainer(
             fast_dev_run=5,
@@ -75,7 +75,7 @@ def get_trainer(
     return trainer
 
 
-def get_callbacks(hyperparams: DictConfig):
+def get_callbacks(hyperparams: DictConfig) -> list:
 
     checkpoint_callback = ModelCheckpoint(
         dirpath=hyperparams.checkpoint.checkpoint_path,
@@ -95,7 +95,7 @@ def get_callbacks(hyperparams: DictConfig):
     return [checkpoint_callback, early_stop_metric_callback]
 
 
-def get_image_data(dataset_hyperparams: DictConfig):
+def get_image_data(dataset_hyperparams: DictConfig) -> pl.LightningDataModule:
 
     dataset_classes = {
         "rotated_mnist": RotatedMNISTDataModule,

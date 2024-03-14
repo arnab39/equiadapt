@@ -4,6 +4,7 @@ import hydra
 import omegaconf
 import pytorch_lightning as pl
 import torch
+import wandb
 from omegaconf import DictConfig, OmegaConf
 from prepare import ShapeNetDataModule
 from pytorch_lightning.loggers import WandbLogger
@@ -15,10 +16,8 @@ from train_utils import (
     load_envs,
 )
 
-import wandb
 
-
-def train_pointcloud(hyperparams: DictConfig):
+def train_pointcloud(hyperparams: DictConfig) -> None:
     hyperparams["canonicalization_type"] = hyperparams["canonicalization"][
         "canonicalization_type"
     ]
@@ -95,8 +94,8 @@ def train_pointcloud(hyperparams: DictConfig):
 load_envs()
 
 
-@hydra.main(config_path="./configs/", config_name="default")
-def main(cfg: omegaconf.DictConfig):
+@hydra.main(config_path=str("./configs/"), config_name="default")
+def main(cfg: omegaconf.DictConfig) -> None:
     train_pointcloud(cfg)
 
 

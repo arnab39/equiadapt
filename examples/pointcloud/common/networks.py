@@ -1,3 +1,5 @@
+from typing import Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,7 +7,7 @@ import torch.nn.init as init
 from omegaconf import DictConfig
 
 
-def knn(x, k):
+def knn(x: torch.Tensor, k: int) -> torch.Tensor:
     inner = -2 * torch.matmul(x.transpose(2, 1), x)
     xx = torch.sum(x**2, dim=1, keepdim=True)
     pairwise_distance = -xx - inner - xx.transpose(2, 1)
@@ -14,7 +16,9 @@ def knn(x, k):
     return idx
 
 
-def get_graph_feature(x, k=20, idx=None, dim9=False):
+def get_graph_feature(
+    x: torch.Tensor, k: int = 20, idx: Optional[torch.Tensor] = None, dim9: bool = False
+) -> torch.Tensor:
     batch_size = x.size(0)
     num_points = x.size(2)
     x = x.view(batch_size, -1, num_points)
@@ -62,7 +66,7 @@ class PointNet(nn.Module):
         self.dp1 = nn.Dropout()
         self.linear2 = nn.Linear(512, hyperparams.num_classes)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
@@ -119,7 +123,7 @@ class DGCNN(nn.Module):
         self.dp2 = nn.Dropout(p=hyperparams.dropout)
         self.linear3 = nn.Linear(256, hyperparams.num_classes)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
         x = get_graph_feature(
             x, k=self.k
@@ -223,7 +227,7 @@ class Transform_Net(nn.Module):
         init.constant_(self.transform.weight, 0)
         init.eye_(self.transform.bias.view(3, 3))
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
 
         x = self.conv1(
@@ -328,7 +332,7 @@ class DGCNN_partseg(nn.Module):
         )
         self.conv11 = nn.Conv1d(128, self.seg_num_all, kernel_size=1, bias=False)
 
-    def forward(self, x, l):
+    def forward(self, x: torch.Tensor, l: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
         num_points = x.size(2)
 
@@ -367,7 +371,8 @@ class DGCNN_partseg(nn.Module):
         )  # (batch_size, 64*2, num_points, k) -> (batch_size, 64, num_points, k)
         x = self.conv4(
             x
-        )  # (batch_size, 64, num_points, k) -> (batch_size, 64, num_points, k)
+        )  # (batch_size, 64, num_points, k) -> (batch_size, 64, num_points)
+
         x2 = x.max(dim=-1, keepdim=False)[
             0
         ]  # (batch_size, 64, num_points, k) -> (batch_size, 64, num_points)

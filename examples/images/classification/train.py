@@ -4,14 +4,13 @@ import hydra
 import omegaconf
 import pytorch_lightning as pl
 import torch
+import wandb
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
 from train_utils import get_model_data_and_callbacks, get_trainer, load_envs
 
-import wandb
 
-
-def train_images(hyperparams: DictConfig):
+def train_images(hyperparams: DictConfig) -> None:
 
     if hyperparams["experiment"]["run_mode"] == "test":
         assert (
@@ -112,8 +111,8 @@ def train_images(hyperparams: DictConfig):
 load_envs()
 
 
-@hydra.main(config_path="./configs/", config_name="default")
-def main(cfg: omegaconf.DictConfig):
+@hydra.main(config_path=str("./configs/"), config_name="default")
+def main(cfg: omegaconf.DictConfig) -> None:
     train_images(cfg)
 
 

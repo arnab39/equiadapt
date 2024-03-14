@@ -18,12 +18,35 @@ from equiadapt.images.utils import (
 
 
 class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
+    """
+    This class represents a discrete group image canonicalization model.
+
+    The model is designed to be equivariant under a discrete group of transformations, which can include rotations and reflections.
+    Other discrete group canonicalizers can be derived from this class.
+
+    Methods:
+        __init__: Initializes the DiscreteGroupImageCanonicalization instance.
+        groupactivations_to_groupelement: Takes the activations for each group element as input and returns the group element.
+        get_groupelement: Maps the input image to a group element.
+        transformations_before_canonicalization_network_forward: Applies transformations to the input images before passing it through the canonicalization network.
+        canonicalize: Canonicalizes the input images.
+        invert_canonicalization: Inverts the canonicalization of the output of the canonicalized image.
+    """
+
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
         canonicalization_hyperparams: DictConfig,
         in_shape: tuple,
     ):
+        """
+        Initializes the DiscreteGroupImageCanonicalization instance.
+
+        Args:
+            canonicalization_network (torch.nn.Module): The canonicalization network.
+            canonicalization_hyperparams (DictConfig): The hyperparameters for the canonicalization process.
+            in_shape (tuple): The shape of the input images.
+        """
         super().__init__(canonicalization_network)
 
         self.beta = canonicalization_hyperparams.beta
@@ -70,16 +93,14 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
 
     def groupactivations_to_groupelement(self, group_activations: torch.Tensor) -> dict:
         """
-        This method takes the activations for each group element as input and
-        returns the group element
+        This method takes the activations for each group element as input and returns the group element
 
         Args:
-            group_activations: activations for each group element
+            group_activations (torch.Tensor): activations for each group element.
 
         Returns:
-            group_element: group element
+            dict: group element.
         """
-
         # convert the group activations to one hot encoding of group element
         # this conversion is differentiable and will be used to select the group element
         group_elements_one_hot = self.groupactivations_to_groupelementonehot(
@@ -115,8 +136,13 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
 
     def get_group_activations(self, x: torch.Tensor) -> torch.Tensor:
         """
-        This method takes an image as input and
-        returns the group activations
+        Gets the group activations for the input images.
+
+        Args:
+            x (torch.Tensor): The input images.
+
+        Returns:
+            torch.Tensor: The group activations.
         """
         raise NotImplementedError(
             "get_group_activations is not implemented for"
@@ -125,14 +151,13 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
 
     def get_groupelement(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         """
-        This method takes the input image and
-        maps it to the group element
+        Maps the input image to a group element.
 
         Args:
-            x: input image
+            x (torch.Tensor): The input images.
 
         Returns:
-            group_element: group element
+            dict[str, torch.Tensor]: The corresponding group elements.
         """
         group_activations = self.get_group_activations(x)
         group_element_dict = self.groupactivations_to_groupelement(group_activations)
@@ -150,8 +175,13 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         self, x: torch.Tensor
     ) -> torch.Tensor:
         """
-        This method takes an image as input and
-        returns the pre-canonicalized image
+        Applies transformations to the input images before passing it through the canonicalization network.
+
+        Args:
+            x (torch.Tensor): The input image.
+
+        Returns:
+            torch.Tensor: The pre-canonicalized image.
         """
         x = self.crop_canonization(x)
         x = self.resize_canonization(x)
@@ -161,8 +191,15 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         self, x: torch.Tensor, targets: Optional[List] = None, **kwargs: Any
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List]]:
         """
-        This method takes an image as input and
-        returns the canonicalized image
+        Canonicalizes the input images.
+
+        Args:
+            x (torch.Tensor): The input images.
+            targets (Optional[List], optional): The targets for instance segmentation. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            Union[torch.Tensor, Tuple[torch.Tensor, List]]: The canonicalized image, and optionally the targets.
         """
         self.device = x.device
         group_element_dict = self.get_groupelement(x)
@@ -204,8 +241,14 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         self, x_canonicalized_out: torch.Tensor, **kwargs: Any
     ) -> torch.Tensor:
         """
-        This method takes the output of canonicalized image as input and
-        returns output of the original image
+        Inverts the canonicalization of the output of the canonicalized image.
+
+        Args:
+            x_canonicalized_out (torch.Tensor): The output of the canonicalized image.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            torch.Tensor: The output corresponding to the original image.
         """
         induced_rep_type = kwargs.get("induced_rep_type", "regular")
         return get_action_on_image_features(
@@ -217,12 +260,30 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
 
 
 class GroupEquivariantImageCanonicalization(DiscreteGroupImageCanonicalization):
+    """
+    This class represents a discrete group equivariant image canonicalization model.
+
+    The model is designed to be equivariant under a discrete group of transformations, which can include rotations and reflections.
+
+    Methods:
+        __init__: Initializes the GroupEquivariantImageCanonicalization instance.
+        get_group_activations: Gets the group activations for the input images.
+    """
+
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
         canonicalization_hyperparams: DictConfig,
         in_shape: tuple,
     ):
+        """
+        Initializes the GroupEquivariantImageCanonicalization instance.
+
+        Args:
+            canonicalization_network (torch.nn.Module): The canonicalization network.
+            canonicalization_hyperparams (DictConfig): The hyperparameters for the canonicalization process.
+            in_shape (tuple): The shape of the input images.
+        """
         super().__init__(
             canonicalization_network, canonicalization_hyperparams, in_shape
         )
@@ -240,8 +301,16 @@ class GroupEquivariantImageCanonicalization(DiscreteGroupImageCanonicalization):
 
     def get_group_activations(self, x: torch.Tensor) -> torch.Tensor:
         """
-        This method takes an image as input and
-        returns the group activations
+        Gets the group activations for the input image.
+
+        This method takes an image as input, applies transformations before forwarding it through the canonicalization network,
+        and then returns the group activations.
+
+        Args:
+            x (torch.Tensor): The input image.
+
+        Returns:
+            torch.Tensor: The group activations.
         """
         x = self.transformations_before_canonicalization_network_forward(x)
         group_activations = self.canonicalization_network(x)
@@ -251,12 +320,33 @@ class GroupEquivariantImageCanonicalization(DiscreteGroupImageCanonicalization):
 class OptimizedGroupEquivariantImageCanonicalization(
     DiscreteGroupImageCanonicalization
 ):
+    """
+    This class represents an optimized (discrete) group equivariant image canonicalization model.
+
+    The model is designed to be equivariant under a discrete group of transformations, which can include rotations and reflections.
+
+    Methods:
+        __init__: Initializes the OptimizedGroupEquivariantImageCanonicalization instance.
+        rotate_and_maybe_reflect: Rotate and maybe reflect the input images.
+        group_augment: Augment the input images by applying group transformations (rotations and reflections).
+        get_group_activations: Gets the group activations for the input images.
+        get_optimization_specific_loss: Gets the loss specific to the optimization process.
+    """
+
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
         canonicalization_hyperparams: DictConfig,
         in_shape: tuple,
     ):
+        """
+        Initializes the OptimizedGroupEquivariantImageCanonicalization instance.
+
+        Args:
+            canonicalization_network (torch.nn.Module): The canonicalization network.
+            canonicalization_hyperparams (DictConfig): The hyperparameters for the canonicalization process.
+            in_shape (tuple): The shape of the input images.
+        """
         super().__init__(
             canonicalization_network, canonicalization_hyperparams, in_shape
         )
@@ -297,6 +387,17 @@ class OptimizedGroupEquivariantImageCanonicalization(
     def rotate_and_maybe_reflect(
         self, x: torch.Tensor, degrees: torch.Tensor, reflect: bool = False
     ) -> List[torch.Tensor]:
+        """
+        Rotate and maybe reflect the input images.
+
+        Args:
+            x (torch.Tensor): The input image.
+            degrees (torch.Tensor): The degrees of rotation.
+            reflect (bool, optional): Whether to reflect the image. Defaults to False.
+
+        Returns:
+            List[torch.Tensor]: The list of rotated and maybe reflected images.
+        """
         x_augmented_list = []
         for degree in degrees:
             x_rot = self.pad_group_augment(x)
@@ -308,7 +409,15 @@ class OptimizedGroupEquivariantImageCanonicalization(
         return x_augmented_list
 
     def group_augment(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Augment the input images by applying group transformations (rotations and reflections).
 
+        Args:
+            x (torch.Tensor): The input image.
+
+        Returns:
+            torch.Tensor: The augmented image.
+        """
         degrees = torch.linspace(0, 360, self.num_rotations + 1)[:-1].to(self.device)
         x_augmented_list = self.rotate_and_maybe_reflect(x, degrees)
 
@@ -319,10 +428,14 @@ class OptimizedGroupEquivariantImageCanonicalization(
 
     def get_group_activations(self, x: torch.Tensor) -> torch.Tensor:
         """
-        This method takes an image as input and
-        returns the group activations
-        """
+        Gets the group activations for the input image.
 
+        Args:
+            x (torch.Tensor): The input image.
+
+        Returns:
+            torch.Tensor: The group activations.
+        """
         x = self.transformations_before_canonicalization_network_forward(x)
         x_augmented = self.group_augment(
             x
@@ -368,6 +481,12 @@ class OptimizedGroupEquivariantImageCanonicalization(
         return group_activations
 
     def get_optimization_specific_loss(self) -> torch.Tensor:
+        """
+        Gets the loss specific to the optimization process.
+
+        Returns:
+            torch.Tensor: The loss.
+        """
         vectors = self.canonicalization_info_dict["vector_out"]
 
         # compute error to reduce rotation artifacts
