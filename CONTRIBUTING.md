@@ -70,7 +70,7 @@ python3 -m http.server --directory 'docs/_build/html'
 
 ## Code Contributions
 
-First, please go through the [README] to understand and get started with the existing examples and tutorials. 
+First, please go through the [README] to understand and get started with the existing examples and tutorials.
 If you want to contribute to the equiadapt library, you should make changes in [equiadapt], such as adding new or improving existing canonicalization networks or canonicalizers.
 Whereas, if you want to contribute example implementations for other data domains with equiadapt, please do so in [examples].
 

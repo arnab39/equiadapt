@@ -4,6 +4,7 @@ import hydra
 import omegaconf
 import pytorch_lightning as pl
 import torch
+import wandb
 from omegaconf import DictConfig, OmegaConf
 from prepare import ShapeNetDataModule
 from pytorch_lightning.loggers import WandbLogger
@@ -14,8 +15,6 @@ from train_utils import (
     get_trainer,
     load_envs,
 )
-
-import wandb
 
 
 def train_pointcloud(hyperparams: DictConfig) -> None:
