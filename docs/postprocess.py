@@ -61,6 +61,7 @@ if __name__ == "__main__":
     html_files: list[Path] = list(base_path.glob("*.html"))
 
     for html_file in html_files:
+        print(f"Processing {html_file}...")
         process_html_file(html_file)
 
     print("HTML postprocessing completed.")
