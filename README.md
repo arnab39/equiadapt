@@ -117,7 +117,7 @@ Note that this might not be a complete list of dependencies. If you encounter an
 
 # Running equiadapt using example code
 
-We provide example code to run equiadapt in different data domains and tasks to achieve equivariance. You can also find [tutorial](tutorials) on how to use equiadapt with minimalistic changes to your own code.
+We provide example code to run equiadapt in different data domains and tasks to achieve equivariance. You can also find a [tutorial](tutorials/images/classification_group_equivariant_canonicalization.ipynb) on how to use equiadapt with minimalistic changes to your own code (for image classification).
 
 Before you jump to the instructions for each of them please follow the setup hydra instructions to create a `.env` file with the paths to store all the data, wandb logs and checkpoints.
 
