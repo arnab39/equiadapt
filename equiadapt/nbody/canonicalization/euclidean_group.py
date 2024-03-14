@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-from omegaconf import DictConfig
 
 from equiadapt.common.basecanonicalization import ContinuousGroupCanonicalization
 
@@ -22,7 +21,6 @@ class EuclideanGroupNBody(ContinuousGroupCanonicalization):
     def __init__(
         self,
         canonicalization_network: torch.nn.Module,
-        canonicalization_hyperparams: DictConfig,
     ) -> None:
         super().__init__(canonicalization_network)
 

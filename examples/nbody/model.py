@@ -1,7 +1,8 @@
+from typing import Any
+
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-from omegaconf import DictConfig
 
 from equiadapt.nbody.canonicalization.euclidean_group import EuclideanGroupNBody
 from examples.nbody.model_utils import (
@@ -12,7 +13,7 @@ from examples.nbody.model_utils import (
 
 
 class NBodyPipeline(pl.LightningModule):
-    def __init__(self, hyperparams: DictConfig):
+    def __init__(self, hyperparams: Any):
         super().__init__()
         self.hyperparams = hyperparams
         self.prediction_network = get_prediction_network(hyperparams.pred_hyperparams)
