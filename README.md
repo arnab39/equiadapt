@@ -13,6 +13,8 @@
 # Equivariant adaptation with canonicalization
 ![Equivariant adaptation of any prediction network](/utils/equiadapt_cat.jpeg "Equivariant adaptation of any prediction network")
 
+![Equivariant adaptation of Segment-Anything Network](/utils/equiadapt_sam.gif "Equivariant adaptation of any prediction network")
+
 EquiAdapt is a [PyTorch](https://pytorch.org) package that provides a flexible and efficient way to make *any* neural network architecture (including large foundation models) equivariant, instead of redesigning and training from scratch. This is done by learning to canonicalize transformed inputs, before feeding them to the prediction model.
 
 You can play with this concept in the provided [tutorial](tutorials/images/instance_segmentation_group_equivariant_canonicalization.ipynb) for equivariant adaptation of the Segment-Anything Model (SAM, [Kirillov et. al, 2023](https://arxiv.org/abs/2304.02643)) and images from Microsoft COCO ([Lin et. al, 2014](https://arxiv.org/abs/1405.0312)) dataset for instance segmentation.
