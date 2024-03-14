@@ -1,4 +1,5 @@
 import time
+from typing import List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,13 +8,13 @@ import numpy as np
 class SpringSim:
     def __init__(
         self,
-        n_balls=5,
-        box_size=5.0,
-        loc_std=0.5,
-        vel_norm=0.5,
-        interaction_strength=0.1,
-        noise_var=0.0,
-    ):
+        n_balls: int = 5,
+        box_size: float = 5.0,
+        loc_std: float = 0.5,
+        vel_norm: float = 0.5,
+        interaction_strength: float = 0.1,
+        noise_var: float = 0.0,
+    ) -> None:
         self.n_balls = n_balls
         self.box_size = box_size
         self.loc_std = loc_std
@@ -26,10 +27,9 @@ class SpringSim:
         self._max_F = 0.1 / self._delta_T
         self.dim = 3
 
-    def _energy(self, loc, vel, edges):
+    def _energy(self, loc: np.ndarray, vel: np.ndarray, edges: np.ndarray) -> float:
         # disables division by zero warning, since I fix it with fill_diagonal
         with np.errstate(divide="ignore"):
-
             K = 0.5 * (vel**2).sum()
             U = 0
             for i in range(loc.shape[1]):
@@ -46,11 +46,11 @@ class SpringSim:
                         )
             return U + K
 
-    def _clamp(self, loc, vel):
+    def _clamp(self, loc: np.ndarray, vel: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         :param loc: 2xN location at one time stamp
         :param vel: 2xN velocity at one time stamp
-        :return: location and velocity after hiting walls and returning after
+        :return: location and velocity after hitting walls and returning after
             elastically colliding with walls
         """
         assert np.all(loc < self.box_size * 3)
@@ -71,7 +71,7 @@ class SpringSim:
 
         return loc, vel
 
-    def _l2(self, A, B):
+    def _l2(self, A: np.ndarray, B: np.ndarray) -> np.ndarray:
         """
         Input: A is a Nxd matrix
                B is a Mxd matirx
@@ -85,8 +85,11 @@ class SpringSim:
         return dist
 
     def sample_trajectory(
-        self, T=10000, sample_freq=10, spring_prob=[1.0 / 2, 0, 1.0 / 2]
-    ):
+        self,
+        T: int = 10000,
+        sample_freq: int = 10,
+        spring_prob: List[float] = [1.0 / 2, 0, 1.0 / 2],
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         n = self.n_balls
         assert T % sample_freq == 0
         T_save = int(T / sample_freq - 1)
@@ -176,13 +179,13 @@ class SpringSim:
 class ChargedParticlesSim:
     def __init__(
         self,
-        n_balls=5,
-        box_size=5.0,
-        loc_std=1.0,
-        vel_norm=0.5,
-        interaction_strength=1.0,
-        noise_var=0.0,
-    ):
+        n_balls: int = 5,
+        box_size: float = 5.0,
+        loc_std: float = 1.0,
+        vel_norm: float = 0.5,
+        interaction_strength: float = 1.0,
+        noise_var: float = 0.0,
+    ) -> None:
         self.n_balls = n_balls
         self.box_size = box_size
         self.loc_std = loc_std
@@ -197,7 +200,7 @@ class ChargedParticlesSim:
         self._max_F = 0.1 / self._delta_T
         self.dim = 3
 
-    def _l2(self, A, B):
+    def _l2(self, A: np.ndarray, B: np.ndarray) -> np.ndarray:
         """
         Input: A is a Nxd matrix
                B is a Mxd matirx
@@ -210,26 +213,26 @@ class ChargedParticlesSim:
         dist = A_norm + B_norm - 2 * A.dot(B.transpose())
         return dist
 
-    def _energy(self, loc, vel, edges):
+    def _energy(self, loc: np.ndarray, vel: np.ndarray, edges: np.ndarray) -> float:
 
         # disables division by zero warning, since I fix it with fill_diagonal
         with np.errstate(divide="ignore"):
 
-            K = 0.5 * (vel**2).sum()
-            U = 0
+            K: float = 0.5 * (vel**2).sum()
+            U: float = 0
             for i in range(loc.shape[1]):
                 for j in range(loc.shape[1]):
                     if i != j:
-                        r = loc[:, i] - loc[:, j]
-                        dist = np.sqrt((r**2).sum())
+                        r: np.ndarray = loc[:, i] - loc[:, j]
+                        dist: float = np.sqrt((r**2).sum())
                         U += 0.5 * self.interaction_strength * edges[i, j] / dist
             return U + K
 
-    def _clamp(self, loc, vel):
+    def _clamp(self, loc: np.ndarray, vel: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         :param loc: 2xN location at one time stamp
         :param vel: 2xN velocity at one time stamp
-        :return: location and velocity after hiting walls and returning after
+        :return: location and velocity after hitting walls and returning after
             elastically colliding with walls
         """
         assert np.all(loc < self.box_size * 3)
@@ -251,8 +254,11 @@ class ChargedParticlesSim:
         return loc, vel
 
     def sample_trajectory(
-        self, T=10000, sample_freq=10, charge_prob=[1.0 / 2, 0, 1.0 / 2]
-    ):
+        self,
+        T: int = 10000,
+        sample_freq: int = 10,
+        charge_prob: List[float] = [1.0 / 2, 0, 1.0 / 2],
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         n = self.n_balls
         assert T % sample_freq == 0
         T_save = int(T / sample_freq - 1)
