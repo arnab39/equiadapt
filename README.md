@@ -1,6 +1,6 @@
 <p align="center">
     <br>
-    <img src="utils/equiadapt_logo.png" width="400"/>
+    <img src="https://raw.githubusercontent.com/arnab39/equiadapt/main/utils/logo.png" width="400"/>
     <br>
 <p>
 
@@ -11,9 +11,9 @@
 
 
 # Equivariant adaptation with canonicalization
-![Equivariant adaptation of any prediction network](/utils/equiadapt_cat.jpeg "Equivariant adaptation of any prediction network")
+![Equivariant adaptation of any prediction network](https://raw.githubusercontent.com/arnab39/equiadapt/main/utils/equiadapt_cat.jpeg "Equivariant adaptation of any prediction network")
 
-![Equivariant adaptation of Segment-Anything Network](/utils/equiadapt_sam.gif "Equivariant adaptation of any prediction network")
+![Equivariant adaptation of Segment-Anything Network](https://raw.githubusercontent.com/arnab39/equiadapt/main/utils/equiadapt_sam.gif "Equivariant adaptation of any prediction network")
 
 EquiAdapt is a [PyTorch](https://pytorch.org) package that provides a flexible and efficient way to make *any* neural network architecture (including large foundation models) equivariant, instead of redesigning and training from scratch. This is done by learning to canonicalize transformed inputs, before feeding them to the prediction model.
 
