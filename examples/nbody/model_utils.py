@@ -24,7 +24,7 @@ def get_canonicalization_network(hyperparams: Any) -> nn.Module:
     """
     architecture = hyperparams.architecture
     model_dict = {
-        "vndeepsets": lambda: VNDeepSets(hyperparams),
+        "vndeepsets": lambda: VNDeepSets(hyperparams.network_hyperparams),
     }
 
     return model_dict[architecture]()
@@ -45,9 +45,9 @@ def get_prediction_network(hyperparams: Any) -> nn.Module:
     """
     architecture = hyperparams.architecture
     model_dict = {
-        "GNN": lambda: GNN(hyperparams),
-        "vndeepsets": lambda: VNDeepSets(hyperparams),
-        "Transformer": lambda: Transformer(hyperparams),
+        "GNN": lambda: GNN(hyperparams.network_hyperparams),
+        "vndeepsets": lambda: VNDeepSets(hyperparams.network_hyperparams),
+        "Transformer": lambda: Transformer(hyperparams.network_hyperparams),
     }
     if architecture not in model_dict:
         raise ValueError(
