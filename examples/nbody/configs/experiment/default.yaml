@@ -1,0 +1,9 @@
+run_mode: train
+use_wandb: false
+checkpoint: true
+num_epochs: 1000
+num_workers: 0
+seed: 0
+learning_rate: 1e-3
+weight_decay: 1e-12
+patience: 1000

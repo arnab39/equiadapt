@@ -16,21 +16,29 @@ class NBodyPipeline(pl.LightningModule):
     def __init__(self, hyperparams: Any):
         super().__init__()
         self.hyperparams = hyperparams
-        self.prediction_network = get_prediction_network(hyperparams.pred_hyperparams)
+        self.prediction_network = get_prediction_network(hyperparams.prediction)
         canonicalization_network = get_canonicalization_network(
-            hyperparams.canon_hyperparams
+            hyperparams.canonicalization
         )
 
-        self.canonicalizer = EuclideanGroupNBody(canonicalization_network, hyperparams)
+        self.canonicalizer = EuclideanGroupNBody(canonicalization_network)
+
+        print(hyperparams.experiment)
 
         self.learning_rate = (
-            hyperparams.learning_rate if hasattr(hyperparams, "learning_rate") else None
+            hyperparams.experiment.learning_rate
+            if hasattr(hyperparams.experiment, "learning_rate")
+            else None
         )
         self.weight_decay = (
-            hyperparams.weight_decay if hasattr(hyperparams, "weight_decay") else 0.0
+            hyperparams.experiment.weight_decay
+            if hasattr(hyperparams.experiment, "weight_decay")
+            else 0.0
         )
         self.patience = (
-            hyperparams.patience if hasattr(hyperparams, "patience") else 100
+            hyperparams.experiment.patience
+            if hasattr(hyperparams.experiment, "patience")
+            else 100
         )
 
         self.loss = nn.MSELoss()

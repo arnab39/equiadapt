@@ -1,0 +1,2 @@
+checkpoint_path: ${oc.env:CHECKPOINT_PATH} # Path to save checkpoints
+checkpoint_name: "" # Model checkpoint name, should be left empty for training and dynamically allocated later

@@ -1,0 +1,14 @@
+canonicalization_type: vndeepsets
+architecture: vndeepsets
+network_hyperparams:
+  num_layers: 4
+  hidden_dim: 16
+  layer_pooling: mean
+  final_pooling: mean
+  out_dim: 4
+  batch_size: 100
+  nonlinearity: relu
+  canon_feature: p
+  canon_translation: false
+  angular_feature: pv
+  dropout: 0.5
