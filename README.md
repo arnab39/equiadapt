@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/equiadapt/badge/?version=latest)](https://equiadapt.readthedocs.io/en/latest/?badge=latest)
+
 <p align="center">
     <br>
     <img src="https://raw.githubusercontent.com/arnab39/equiadapt/main/utils/logo.png" width="400"/>
