@@ -1,3 +1,23 @@
+"""
+This module defines a base class for canonicalization and its subclasses for different types of canonicalization methods.
+
+Canonicalization is a process that transforms the input data into a canonical (standard) form.
+This can be cheap alternative to building equivariant models as it can be used to transform the input data into a canonical form and then use a standard model to make predictions.
+Canonicalizarion allows you to use any existing arcitecture (even pre-trained ones) for your task without having to worry about equivariance.
+
+The module contains the following classes:
+
+- `BaseCanonicalization`: This is an abstract base class that defines the interface for all canonicalization methods.
+
+- `IdentityCanonicalization`: This class represents an identity canonicalization method, which is a no-op; it doesn't change the input data.
+
+- `DiscreteGroupCanonicalization`: This class represents a discrete group canonicalization method, which transforms the input data into a canonical form using a discrete group.
+
+- `ContinuousGroupCanonicalization`: This class represents a continuous group canonicalization method, which transforms the input data into a canonical form using a continuous group.
+
+Each class has methods to perform the canonicalization, invert it, and calculate the prior regularization loss and identity metric.
+"""
+
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
