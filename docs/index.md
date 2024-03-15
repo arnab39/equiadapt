@@ -1,6 +1,6 @@
 # equiadapt
 
-Library that provides metrics to asses representation quality
+Library to make any existing neural network architecture equivariant
 
 ## Contents
 

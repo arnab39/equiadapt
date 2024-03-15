@@ -1,4 +1,2 @@
 checkpoint_path: ${oc.env:CHECKPOINT_PATH} # Path to save checkpoints
 checkpoint_name: "" # Model checkpoint name, should be left empty for training and dynamically allocated later
-save_canonized_images: 0 # Whether to save canonized images (1) or not (0)
-strict_loading: 1 # Whether to strictly load the model (1) or not (0)

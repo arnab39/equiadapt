@@ -1,6 +1,8 @@
-import escnn
+from typing import Tuple
+
+import e2cnn
 import torch
-from escnn import gspaces
+from e2cnn import gspaces
 
 
 class ESCNNEquivariantNetwork(torch.nn.Module):
@@ -43,9 +45,9 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
         self.num_rotations = num_rotations
 
         if group_type == "rotation":
-            self.gspace = gspaces.rot2dOnR2(num_rotations)
+            self.gspace = gspaces.Rot2dOnR2(num_rotations)
         elif group_type == "roto-reflection":
-            self.gspace = gspaces.flipRot2dOnR2(num_rotations)
+            self.gspace = gspaces.FlipRot2dOnR2(num_rotations)
         else:
             raise ValueError("group_type must be rotation or roto-reflection for now.")
 
@@ -54,37 +56,39 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
             num_rotations if group_type == "rotation" else 2 * num_rotations
         )
 
-        r1 = escnn.nn.FieldType(
+        r1 = e2cnn.nn.FieldType(
             self.gspace, [self.gspace.trivial_repr] * self.in_channels
         )
-        r2 = escnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * out_channels)
+        r2 = e2cnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * out_channels)
 
         self.in_type = r1
         self.out_type = r2
 
-        self.eqv_network = escnn.nn.SequentialModule(
-            escnn.nn.R2Conv(self.in_type, self.out_type, kernel_size),
-            escnn.nn.InnerBatchNorm(self.out_type, momentum=0.9),
-            escnn.nn.ReLU(self.out_type, inplace=True),
-            escnn.nn.PointwiseDropout(self.out_type, p=0.5),
-        )
+        modules = [
+            e2cnn.nn.R2Conv(self.in_type, self.out_type, kernel_size),
+            e2cnn.nn.InnerBatchNorm(self.out_type, momentum=0.9),
+            e2cnn.nn.ReLU(self.out_type, inplace=True),
+            e2cnn.nn.PointwiseDropout(self.out_type, p=0.5),
+        ]
         for _ in range(num_layers - 2):
-            self.eqv_network.append(
-                escnn.nn.R2Conv(self.out_type, self.out_type, kernel_size),
+            modules.append(
+                e2cnn.nn.R2Conv(self.out_type, self.out_type, kernel_size),
             )
-            self.eqv_network.append(
-                escnn.nn.InnerBatchNorm(self.out_type, momentum=0.9),
+            modules.append(
+                e2cnn.nn.InnerBatchNorm(self.out_type, momentum=0.9),
             )
-            self.eqv_network.append(
-                escnn.nn.ReLU(self.out_type, inplace=True),
+            modules.append(
+                e2cnn.nn.ReLU(self.out_type, inplace=True),
             )
-            self.eqv_network.append(
-                escnn.nn.PointwiseDropout(self.out_type, p=0.5),
+            modules.append(
+                e2cnn.nn.PointwiseDropout(self.out_type, p=0.5),
             )
 
-        self.eqv_network.append(
-            escnn.nn.R2Conv(self.out_type, self.out_type, kernel_size),
+        modules.append(
+            e2cnn.nn.R2Conv(self.out_type, self.out_type, kernel_size),
         )
+
+        self.eqv_network = e2cnn.nn.SequentialModule(*modules)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -96,7 +100,7 @@ class ESCNNEquivariantNetwork(torch.nn.Module):
         Returns:
             torch.Tensor: The output of the network. It has the shape (batch_size, num_group_elements).
         """
-        x = escnn.nn.GeometricTensor(x, self.in_type)
+        x = e2cnn.nn.GeometricTensor(x, self.in_type)
         out = self.eqv_network(x)
 
         feature_map = out.tensor
@@ -149,10 +153,10 @@ class ESCNNSteerableNetwork(torch.nn.Module):
         # TODO: Add support for roto-reflection group
 
         # The model is equivariant under all planar rotations
-        self.gspace = gspaces.rot2dOnR2(N=-1)
+        self.gspace = gspaces.Rot2dOnR2(N=-1)
 
         # The input image is a scalar field, corresponding to the trivial representation
-        in_type = escnn.nn.FieldType(
+        in_type = e2cnn.nn.FieldType(
             self.gspace, in_shape[0] * [self.gspace.trivial_repr]
         )
 
@@ -164,7 +168,7 @@ class ESCNNSteerableNetwork(torch.nn.Module):
 
         # Dynamically add layers based on num_layers
         for _ in range(num_layers):
-            activation = escnn.nn.FourierELU(
+            activation = e2cnn.nn.FourierELU(
                 self.gspace,
                 out_channels,
                 irreps=[(f,) for f in range(0, 5)],
@@ -172,7 +176,7 @@ class ESCNNSteerableNetwork(torch.nn.Module):
                 inplace=True,
             )
             modules.append(
-                escnn.nn.R2Conv(
+                e2cnn.nn.R2Conv(
                     in_type,
                     activation.in_type,
                     kernel_size=kernel_size,
@@ -180,22 +184,22 @@ class ESCNNSteerableNetwork(torch.nn.Module):
                     bias=False,
                 )
             )
-            modules.append(escnn.nn.IIDBatchNorm2d(activation.in_type))
+            modules.append(e2cnn.nn.GNormBatchNorm(activation.in_type))
             modules.append(activation)
             in_type = activation.out_type  # Update in_type for the next layer
 
         # Define the output layer
-        out_type = escnn.nn.FieldType(
+        out_type = e2cnn.nn.FieldType(
             self.gspace, [self.gspace.irrep(1), self.gspace.irrep(1)]
         )
         modules.append(
-            escnn.nn.R2Conv(
+            e2cnn.nn.R2Conv(
                 in_type, out_type, kernel_size=kernel_size, padding=0, bias=False
             )
         )
 
         # Combine all modules into a SequentialModule
-        self.block = escnn.nn.SequentialModule(*modules)
+        self.block = e2cnn.nn.SequentialModule(*modules)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -207,7 +211,7 @@ class ESCNNSteerableNetwork(torch.nn.Module):
         Returns:
             torch.Tensor: The output of the network. It has the shape (batch_size, 2, 2).
         """
-        x = escnn.nn.GeometricTensor(x, self.in_type)
+        x = e2cnn.nn.GeometricTensor(x, self.in_type)
         out = self.block(x)
 
         feature_maps = out.tensor  # Extract tensor from geometric tensor
@@ -221,7 +225,7 @@ class ESCNNSteerableNetwork(torch.nn.Module):
 
 
 # wide resnet equivariant network and utilities
-class ESCNNWideBottleneck(torch.nn.Module):
+class ESCNNWideBottleneck(e2cnn.nn.EquivariantModule):
     """
     This class represents a wide bottleneck layer for an Equivariant Convolutional Neural Network (Equivariant CNN).
 
@@ -234,18 +238,18 @@ class ESCNNWideBottleneck(torch.nn.Module):
 
     def __init__(
         self,
-        in_type: escnn.nn.FieldType,
-        middle_type: escnn.nn.FieldType,
-        out_type: escnn.nn.FieldType,
+        in_type: e2cnn.nn.FieldType,
+        middle_type: e2cnn.nn.FieldType,
+        out_type: e2cnn.nn.FieldType,
         kernel_size: int = 3,
     ):
         """
         Initializes the ESCNNWideBottleneck instance.
 
         Args:
-            in_type (escnn.nn.FieldType): The type of the input field.
-            middle_type (escnn.nn.FieldType): The type of the middle field.
-            out_type (escnn.nn.FieldType): The type of the output field.
+            in_type (e2cnn.nn.FieldType): The type of the input field.
+            middle_type (e2cnn.nn.FieldType): The type of the middle field.
+            out_type (e2cnn.nn.FieldType): The type of the output field.
             kernel_size (int, optional): The size of the kernel of the convolutional layers. Defaults to 3.
         """
         super().__init__()
@@ -254,34 +258,47 @@ class ESCNNWideBottleneck(torch.nn.Module):
         self.out_type = out_type
         self.kernel_size = kernel_size
 
-        self.conv_network = escnn.nn.SequentialModule(
-            escnn.nn.R2Conv(self.in_type, self.middle_type, 1),
-            escnn.nn.InnerBatchNorm(self.middle_type, momentum=0.9),
-            escnn.nn.ReLU(self.middle_type, inplace=True),
-            escnn.nn.R2Conv(
+        self.conv_network = e2cnn.nn.SequentialModule(
+            e2cnn.nn.R2Conv(self.in_type, self.middle_type, 1),
+            e2cnn.nn.InnerBatchNorm(self.middle_type, momentum=0.9),
+            e2cnn.nn.ReLU(self.middle_type, inplace=True),
+            e2cnn.nn.R2Conv(
                 self.middle_type, self.out_type, kernel_size, padding=kernel_size // 2
             ),
-            escnn.nn.InnerBatchNorm(self.out_type, momentum=0.9),
-            escnn.nn.ReLU(self.out_type, inplace=True),
-            escnn.nn.R2Conv(self.out_type, self.in_type, 1),
+            e2cnn.nn.InnerBatchNorm(self.out_type, momentum=0.9),
+            e2cnn.nn.ReLU(self.out_type, inplace=True),
+            e2cnn.nn.R2Conv(self.out_type, self.in_type, 1),
         )
 
-    def forward(self, x: escnn.nn.GeometricTensor) -> escnn.nn.GeometricTensor:
+    def forward(self, x: e2cnn.nn.GeometricTensor) -> e2cnn.nn.GeometricTensor:
         """
         Performs a forward pass through the layer.
 
         Args:
-            x (escnn.nn.GeometricTensor): The input data.
+            x (e2cnn.nn.GeometricTensor): The input data.
 
         Returns:
-            escnn.nn.GeometricTensor: The output of the layer. The input is added to the output (residual connection).
+            e2cnn.nn.GeometricTensor: The output of the layer. The input is added to the output (residual connection).
         """
         out = self.conv_network(x)
         out += x
         return out
 
+    def evaluate_output_shape(self, input_shape: Tuple[int]) -> Tuple[int]:
+        """
+        Compute the shape the output tensor which would be generated by this module when a tensor with shape ``input_shape`` is provided as input.
 
-class ESCNNWideBasic(torch.nn.Module):
+        Args:
+            input_shape (tuple): shape of the input tensor
+
+        Returns:
+            shape of the output tensor
+
+        """
+        return self.forward(input_shape).tensor.shape
+
+
+class ESCNNWideBasic(e2cnn.nn.EquivariantModule):
     """
     This class represents a wide basic layer for an Equivariant Convolutional Neural Network (Equivariant CNN).
 
@@ -294,18 +311,18 @@ class ESCNNWideBasic(torch.nn.Module):
 
     def __init__(
         self,
-        in_type: escnn.nn.FieldType,
-        middle_type: escnn.nn.FieldType,
-        out_type: escnn.nn.FieldType,
+        in_type: e2cnn.nn.FieldType,
+        middle_type: e2cnn.nn.FieldType,
+        out_type: e2cnn.nn.FieldType,
         kernel_size: int = 3,
     ):
         """
         Initializes the ESCNNWideBasic instance.
 
         Args:
-            in_type (escnn.nn.FieldType): The type of the input field.
-            middle_type (escnn.nn.FieldType): The type of the middle field.
-            out_type (escnn.nn.FieldType): The type of the output field.
+            in_type (e2cnn.nn.FieldType): The type of the input field.
+            middle_type (e2cnn.nn.FieldType): The type of the middle field.
+            out_type (e2cnn.nn.FieldType): The type of the output field.
             kernel_size (int, optional): The size of the kernel of the convolutional layers. Defaults to 3.
         """
         super().__init__()
@@ -314,33 +331,46 @@ class ESCNNWideBasic(torch.nn.Module):
         self.out_type = out_type
         self.kernel_size = kernel_size
 
-        self.conv_network = escnn.nn.SequentialModule(
-            escnn.nn.R2Conv(self.in_type, self.middle_type, kernel_size),
-            escnn.nn.InnerBatchNorm(self.middle_type, momentum=0.9),
-            escnn.nn.ReLU(self.middle_type, inplace=True),
-            escnn.nn.R2Conv(self.middle_type, self.out_type, kernel_size),
+        self.conv_network = e2cnn.nn.SequentialModule(
+            e2cnn.nn.R2Conv(self.in_type, self.middle_type, kernel_size),
+            e2cnn.nn.InnerBatchNorm(self.middle_type, momentum=0.9),
+            e2cnn.nn.ReLU(self.middle_type, inplace=True),
+            e2cnn.nn.R2Conv(self.middle_type, self.out_type, kernel_size),
         )
 
         self.shortcut = None
         if self.in_type != self.out_type:
-            self.shortcut = escnn.nn.SequentialModule(
-                escnn.nn.R2Conv(self.in_type, self.out_type, 2 * kernel_size - 1),
+            self.shortcut = e2cnn.nn.SequentialModule(
+                e2cnn.nn.R2Conv(self.in_type, self.out_type, 2 * kernel_size - 1),
             )
 
-    def forward(self, x: escnn.nn.GeometricTensor) -> escnn.nn.GeometricTensor:
+    def forward(self, x: e2cnn.nn.GeometricTensor) -> e2cnn.nn.GeometricTensor:
         """
         Performs a forward pass through the layer.
 
         Args:
-            x (escnn.nn.GeometricTensor): The input data.
+            x (e2cnn.nn.GeometricTensor): The input data.
 
         Returns:
-            escnn.nn.GeometricTensor: The output of the layer. The input is added to the output (residual connection).
+            e2cnn.nn.GeometricTensor: The output of the layer. The input is added to the output (residual connection).
         """
         out = self.conv_network(x)
         shortcut = self.shortcut(x) if self.shortcut is not None else x
         out += shortcut
         return out
+
+    def evaluate_output_shape(self, input_shape: Tuple[int]) -> Tuple[int]:
+        """
+        Compute the shape the output tensor which would be generated by this module when a tensor with shape ``input_shape`` is provided as input.
+
+        Args:
+            input_shape (tuple): shape of the input tensor
+
+        Returns:
+            shape of the output tensor
+
+        """
+        return self.forward(input_shape).tensor.shape
 
 
 class ESCNNWRNEquivariantNetwork(torch.nn.Module):
@@ -380,9 +410,9 @@ class ESCNNWRNEquivariantNetwork(torch.nn.Module):
 
         # The model is equivariant under discrete rotations
         if group_type == "rotation":
-            self.gspace = gspaces.rot2dOnR2(num_rotations)
+            self.gspace = gspaces.Rot2dOnR2(num_rotations)
         elif group_type == "roto-reflection":
-            self.gspace = gspaces.flipRot2dOnR2(num_rotations)
+            self.gspace = gspaces.FlipRot2dOnR2(num_rotations)
         else:
             raise ValueError("group_type must be rotation or roto-reflection for now.")
 
@@ -403,20 +433,20 @@ class ESCNNWRNEquivariantNetwork(torch.nn.Module):
             out_channels // 2 * widen_factor,
             out_channels * widen_factor,
         ]
-        r1 = escnn.nn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[0])
-        r2 = escnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * nstages[0])
-        r3 = escnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * nstages[1])
-        r4 = escnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * nstages[2])
-        r5 = escnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * nstages[3])
+        r1 = e2cnn.nn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[0])
+        r2 = e2cnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * nstages[0])
+        r3 = e2cnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * nstages[1])
+        r4 = e2cnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * nstages[2])
+        r5 = e2cnn.nn.FieldType(self.gspace, [self.gspace.regular_repr] * nstages[3])
 
         self.in_type = r1
         self.out_type = r5
 
-        self.eqv_network = escnn.nn.SequentialModule(
-            escnn.nn.R2Conv(r1, r2, kernel_size),
-            escnn.nn.InnerBatchNorm(r2, momentum=0.9),
-            escnn.nn.ReLU(r2, inplace=True),
-        )
+        modules = [
+            e2cnn.nn.R2Conv(r1, r2, kernel_size),
+            e2cnn.nn.InnerBatchNorm(r2, momentum=0.9),
+            e2cnn.nn.ReLU(r2, inplace=True),
+        ]
 
         rs = (
             [r2] * (num_layers // 3)
@@ -426,31 +456,33 @@ class ESCNNWRNEquivariantNetwork(torch.nn.Module):
         repetitions = num_layers // 3
         for ridx in range(num_layers - 1):
             if ridx % repetitions == repetitions - 1:
-                self.eqv_network.append(
+                modules.append(
                     ESCNNWideBasic(rs[ridx], rs[ridx + 1], rs[ridx + 1], kernel_size),
                 )
-                self.eqv_network.append(
-                    escnn.nn.InnerBatchNorm(rs[ridx + 1], momentum=0.9),
+                modules.append(
+                    e2cnn.nn.InnerBatchNorm(rs[ridx + 1], momentum=0.9),
                 )
-                self.eqv_network.append(
-                    escnn.nn.ReLU(rs[ridx + 1], inplace=True),
+                modules.append(
+                    e2cnn.nn.ReLU(rs[ridx + 1], inplace=True),
                 )
             else:
-                self.eqv_network.append(
+                modules.append(
                     ESCNNWideBottleneck(
                         rs[ridx], rs[ridx + 1], rs[ridx + 1], kernel_size
                     ),
                 )
-                self.eqv_network.append(
-                    escnn.nn.InnerBatchNorm(rs[ridx + 1], momentum=0.9),
+                modules.append(
+                    e2cnn.nn.InnerBatchNorm(rs[ridx + 1], momentum=0.9),
                 )
-                self.eqv_network.append(
-                    escnn.nn.ReLU(rs[ridx + 1], inplace=True),
+                modules.append(
+                    e2cnn.nn.ReLU(rs[ridx + 1], inplace=True),
                 )
 
-        self.eqv_network.append(
-            escnn.nn.R2Conv(r4, r5, kernel_size),
+        modules.append(
+            e2cnn.nn.R2Conv(r4, r5, kernel_size),
         )
+
+        self.eqv_network = e2cnn.nn.SequentialModule(*modules)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -463,7 +495,7 @@ class ESCNNWRNEquivariantNetwork(torch.nn.Module):
             torch.Tensor: The output of the network. It has the shape (batch_size, group_size).
         """
         # x = torch.stack(x)
-        x = escnn.nn.GeometricTensor(x, self.in_type)
+        x = e2cnn.nn.GeometricTensor(x, self.in_type)
         out = self.eqv_network(x)
 
         feature_map = out.tensor

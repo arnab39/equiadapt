@@ -28,7 +28,8 @@ def train_images(hyperparams: DictConfig) -> None:
 
         hyperparams["canonicalization_type"] = conf["canonicalization_type"]
         hyperparams["canonicalization"] = conf["canonicalization"]
-        hyperparams["prediction"] = conf["prediction"]
+        if hyperparams["checkpoint"]["strict_loading"]:
+            hyperparams["prediction"] = conf["prediction"]
 
         hyperparams["dataset"]["root_dir"] = (
             hyperparams["dataset"]["root_dir"]

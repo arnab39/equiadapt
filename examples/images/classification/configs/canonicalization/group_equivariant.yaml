@@ -1,5 +1,5 @@
 canonicalization_type: group_equivariant
-network_type: escnn # Options for canonization method 1) escnn 2) custom 3) none
+network_type: e2cnn # Options for canonization method 1) e2cnn 2) custom 3) none
 network_hyperparams:
   kernel_size: 5 # Kernel size for the canonization network
   out_channels: 32 # Number of output channels for the canonization network

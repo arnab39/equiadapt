@@ -1,143 +1,115 @@
 # type: ignore
 import os
 
+import hydra
+import omegaconf
 import pytorch_lightning as pl
+import torch
 import wandb
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
 from examples.nbody.model import NBodyPipeline
 from examples.nbody.prepare.nbody_data import NBodyDataModule
-
-HYPERPARAMS = {
-    "model": "NBodyPipeline",
-    "canon_model_type": "vndeepsets",
-    "pred_model_type": "Transformer",
-    "batch_size": 100,
-    "dryrun": False,
-    "use_wandb": False,
-    "checkpoint": False,
-    "num_epochs": 1000,
-    "num_workers": 0,
-    "auto_tune": False,
-    "seed": 0,
-    "learning_rate": 1e-3,  # 1e-3
-    "weight_decay": 1e-12,
-    "patience": 1000,
-}
-
-CANON_HYPERPARAMS = {
-    "architecture": "vndeepsets",
-    "num_layers": 4,
-    "hidden_dim": 16,
-    "layer_pooling": "mean",
-    "final_pooling": "mean",
-    "out_dim": 4,
-    "batch_size": 100,
-    "nonlinearity": "relu",
-    "canon_feature": "p",
-    "canon_translation": False,
-    "angular_feature": "pv",
-    "dropout": 0.5,
-}
-
-PRED_HYPERPARAMS = {
-    "architecture": "GNN",
-    "num_layers": 4,
-    "hidden_dim": 32,
-    "input_dim": 6,
-    "in_node_nf": 1,
-    "in_edge_nf": 2,
-    "nheads": 8,
-    "ff_hidden": 32,
-}
-
-HYPERPARAMS["canon_hyperparams"] = CANON_HYPERPARAMS
-HYPERPARAMS["pred_hyperparams"] = PRED_HYPERPARAMS
+from examples.nbody.train_utils import (
+    get_model_data_and_callbacks,
+    get_trainer,
+    load_envs,
+)
 
 
-def train_nbody() -> None:
-    hyperparams = HYPERPARAMS  # type: ignore
+def train_nbody(hyperparams: DictConfig) -> None:
 
-    if not hyperparams["use_wandb"]:
-        print("Wandb disable for logging.")
-        os.environ["WANDB_MODE"] = "disabled"
+    if hyperparams["experiment"]["run_mode"] == "test":
+        assert (
+            len(hyperparams["checkpoint"]["checkpoint_name"]) > 0
+        ), "checkpoint_name must be provided for test mode"
+
+        existing_ckpt_path = (
+            hyperparams["checkpoint"]["checkpoint_path"]
+            + "/"
+            + hyperparams["checkpoint"]["checkpoint_name"]
+            + ".ckpt"
+        )
+        existing_ckpt = torch.load(existing_ckpt_path)
+        conf = OmegaConf.create(existing_ckpt["hyper_parameters"]["hyperparams"])
+
+        hyperparams["canonicalization_type"] = conf["canonicalization_type"]
+        hyperparams["canonicalization"] = conf["canonicalization"]
+        hyperparams["prediction"] = conf["prediction"]
+
     else:
-        print("Using wandb for logging.")
+        hyperparams["canonicalization_type"] = hyperparams["canonicalization"][
+            "canonicalization_type"
+        ]
+        hyperparams["device"] = "cuda" if torch.cuda.is_available() else "cpu"
+
+        hyperparams["checkpoint"]["checkpoint_path"] = (
+            hyperparams["checkpoint"]["checkpoint_path"]
+            + "/"
+            + hyperparams["canonicalization_type"]
+            + "/"
+            + hyperparams["prediction"]["architecture"]
+        )
+
+    # set system environment variables for wandb
+    if hyperparams["wandb"]["use_wandb"]:
+        print("Using wandb for logging...")
         os.environ["WANDB_MODE"] = "online"
-
-    wandb.login()
-    wandb.init(config=hyperparams, entity="symmetry_group", project="equiadapt")
-    wandb_logger = WandbLogger(project="equiadapt")
-
-    hyperparams = wandb.config
-    pl.seed_everything(hyperparams.seed)
-    nbody_data = NBodyDataModule(hyperparams)
-
-    checkpoint_callback = ModelCheckpoint(
-        dirpath=".",
-        filename=hyperparams.model + "_" + wandb.run.name + "_{epoch}_{valid/loss:.3f}",
-        monitor="valid/loss",
-        mode="min",
-    )
-    early_stop_metric_callback = EarlyStopping(
-        monitor="valid/loss", min_delta=0.0, patience=600, verbose=True, mode="min"
-    )
-    # early_stop_lr_callback = EarlyStopping(monitor="lr", min_delta=0.0, patience=10000, verbose=True, mode="min", stopping_threshold=1.1e-6)
-    callbacks = (
-        [checkpoint_callback, early_stop_metric_callback]
-        if hyperparams.checkpoint
-        else [early_stop_metric_callback]
-    )
-
-    model = NBodyPipeline(OmegaConf.create(dict(hyperparams)))
-
-    if hyperparams.auto_tune:
-        trainer = pl.Trainer(
-            fast_dev_run=hyperparams.dryrun,
-            max_epochs=hyperparams.num_epochs,
-            accelerator="auto",
-            auto_scale_batch_size=True,
-            auto_lr_find=True,
-            logger=wandb_logger,
-            callbacks=callbacks,
-            deterministic=False,
-        )
-        trainer.tune(
-            model, datamodule=nbody_data, enable_checkpointing=hyperparams.checkpoint
-        )
-    elif hyperparams.dryrun:
-        trainer = pl.Trainer(
-            fast_dev_run=False,
-            max_epochs=2,
-            accelerator="auto",
-            limit_train_batches=10,
-            limit_val_batches=10,
-            logger=wandb_logger,
-            callbacks=callbacks,
-            deterministic=False,
-            enable_checkpointing=hyperparams.checkpoint,
-            log_every_n_steps=30,
-        )
     else:
-        trainer = pl.Trainer(
-            fast_dev_run=hyperparams.dryrun,
-            max_epochs=hyperparams.num_epochs,
-            accelerator="auto",
-            logger=wandb_logger,
-            callbacks=callbacks,
-            deterministic=False,
-            enable_checkpointing=hyperparams.checkpoint,
-            log_every_n_steps=30,
+        print("Wandb disabled for logging...")
+        os.environ["WANDB_MODE"] = "disabled"
+        os.environ["WANDB_DIR"] = hyperparams["wandb"]["wandb_dir"]
+    os.environ["WANDB_CACHE_DIR"] = hyperparams["wandb"]["wandb_cache_dir"]
+
+    # initialize wandb
+    wandb_run = wandb.init(
+        config=OmegaConf.to_container(hyperparams, resolve=True),
+        entity=hyperparams["wandb"]["wandb_entity"],
+        project=hyperparams["wandb"]["wandb_project"],
+        dir=hyperparams["wandb"]["wandb_dir"],
+    )
+    wandb_logger = WandbLogger(
+        project=hyperparams["wandb"]["wandb_project"], log_model="all"
+    )
+
+    if not hyperparams["experiment"]["run_mode"] == "test":
+        hyperparams["checkpoint"]["checkpoint_name"] = (
+            wandb_run.id
+            + "_"
+            + wandb_run.name
+            + "_"
+            + wandb_run.sweep_id
+            + "_"
+            + wandb_run.group
         )
+    # set seed
+    pl.seed_everything(hyperparams.experiment.seed)
 
-    trainer.fit(model, datamodule=nbody_data)
+    # get model, callbacks, and image data
+    model, nbody_data, callbacks = get_model_data_and_callbacks(hyperparams)
+
+    # get trainer
+    trainer = get_trainer(hyperparams, callbacks, wandb_logger)
+
+    if hyperparams.experiment.run_mode in ["train", "dryrun"]:
+        trainer.fit(model, datamodule=nbody_data)
+
+    elif hyperparams.experiment.run_mode == "auto_tune":
+        trainer.tune(model, datamodule=nbody_data)
+
+    trainer.test(model, datamodule=image_data)
 
 
-def main() -> None:
-    train_nbody()
+# load the variables from .env file
+load_envs()
+
+
+@hydra.main(config_path=str("./configs/"), config_name="default")
+def main(cfg: omegaconf.DictConfig) -> None:
+    train_nbody(cfg)
 
 
 if __name__ == "__main__":
-    train_nbody()
+    main()

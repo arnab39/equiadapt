@@ -37,12 +37,12 @@ def get_canonicalization_network(
 
     canonicalization_network_dict = {
         "group_equivariant": {
-            "escnn": ESCNNEquivariantNetwork,
+            "e2cnn": ESCNNEquivariantNetwork,
             "equivariant_wrn": ESCNNWRNEquivariantNetwork,
             "custom": CustomEquivariantNetwork,
         },
         "steerable": {
-            "escnn": ESCNNSteerableNetwork,
+            "e2cnn": ESCNNSteerableNetwork,
         },
         "opt_group_equivariant": {
             "cnn": ConvNetwork,
