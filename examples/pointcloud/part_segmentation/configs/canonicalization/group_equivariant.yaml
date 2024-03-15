@@ -1,5 +1,5 @@
 canonicalization_type: group_equivariant
-network_type: "vector_neuron_small" # Options for canonization method 1) vector_nejson_small
+network_type: "vector_neuron_small" # Options for canonization method 1) vector_neuron_small
 network_hyperparams:
   n_knn: 20 # Number of nearest neighbors to use for the canonization network
   pooling: "mean" # Pooling type for the canonization network 1)mean 2)max

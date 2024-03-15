@@ -31,6 +31,7 @@ def get_model_pipeline(hyperparams: DictConfig) -> pl.LightningModule:
             + hyperparams.checkpoint.checkpoint_name
             + ".ckpt",
             hyperparams=hyperparams,
+            strict=hyperparams.checkpoint.strict_loading,
         )
         model.freeze()
         model.eval()

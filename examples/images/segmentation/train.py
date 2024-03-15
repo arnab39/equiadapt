@@ -4,10 +4,11 @@ import hydra
 import omegaconf
 import pytorch_lightning as pl
 import torch
-import wandb
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
 from train_utils import get_model_data_and_callbacks, get_trainer, load_envs
+
+import wandb
 
 
 def train_images(hyperparams: DictConfig) -> None:
@@ -28,7 +29,8 @@ def train_images(hyperparams: DictConfig) -> None:
 
         hyperparams["canonicalization_type"] = conf["canonicalization_type"]
         hyperparams["canonicalization"] = conf["canonicalization"]
-        hyperparams["prediction"] = conf["prediction"]
+        if hyperparams["checkpoint"]["strict_loading"]:
+            hyperparams["prediction"] = conf["prediction"]
 
         hyperparams["dataset"]["root_dir"] = (
             hyperparams["dataset"]["root_dir"]
