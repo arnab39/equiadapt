@@ -1,4 +1,4 @@
-[![Documentation Status](https://readthedocs.org/projects/equiadapt/badge/?version=latest)](https://equiadapt.readthedocs.io/en/latest/?badge=latest) ![PyPI](https://img.shields.io/pypi/v/PACKAGE?label=pypi%20package)
+[![Documentation Status](https://readthedocs.org/projects/equiadapt/badge/?version=latest)](https://equiadapt.readthedocs.io/en/latest/?badge=latest) [![PyPI](https://img.shields.io/pypi/v/PACKAGE?label=pypi%20package)](https://pypi.org/project/equiadapt/)
 
 <p align="center">
     <br>
