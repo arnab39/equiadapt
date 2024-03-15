@@ -266,7 +266,6 @@ class ImageSegmentationPipeline(pl.LightningModule):
             prog_bar=True,
             sync_dist=True,
         )
-        print(test_metrics)
 
         return test_metrics
 
