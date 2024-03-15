@@ -62,6 +62,7 @@ jobs:
         python:
         - "3.7"  # oldest Python supported by PSF
         - "3.10"  # newest Python that is stable
+        - "3.11"
         platform:
         - ubuntu-latest
         - macos-latest
