@@ -12,7 +12,7 @@
 <br>
 
 # About
-EquiAdapt is a [PyTorch](https://pytorch.org) package that provides a flexible and efficient way to make *any* neural network architecture (including large foundation models) equivariant, instead of redesigning and training from scratch. This is done by learning to canonicalize transformed inputs, before feeding them to the prediction model. You can play with this concept in the provided [tutorial](tutorials/images/instance_segmentation_group_equivariant_canonicalization.ipynb) for equivariant adaptation of the Segment-Anything Model (SAM, [Kirillov et. al, 2023](https://arxiv.org/abs/2304.02643)) and images from Microsoft COCO ([Lin et. al, 2014](https://arxiv.org/abs/1405.0312)) dataset for instance segmentation.
+EquiAdapt is a [PyTorch](https://pytorch.org) package that provides a flexible and efficient way to make *any* neural network architecture (including large foundation models) equivariant, instead of redesigning and training from scratch. This is done by learning to canonicalize transformed inputs, before feeding them to the prediction model. You can play with this concept in the provided [tutorial](https://github.com/arnab39/equiadapt/blob/main/tutorials/images/instance_segmentation_group_equivariant_canonicalization.ipynb) for equivariant adaptation of the Segment-Anything Model (SAM, [Kirillov et. al, 2023](https://arxiv.org/abs/2304.02643)) and images from Microsoft COCO ([Lin et. al, 2014](https://arxiv.org/abs/1405.0312)) dataset for instance segmentation.
 
 To learn more about this from a blog, check out: [How to make your foundation model equivariant](https://mila.quebec/en/article/how-to-make-your-foundation-model-equivariant/)
 
@@ -77,7 +77,7 @@ canonicalization_network = ESCNNEquivariantNetwork(...)
 ```
 2. Wrap it using `equiadapt` wrappers to form a `canonicalizer`.
 
-  To create your custom canonicalizer, you must inherit `BaseCanonicalization` and define `canonicalize()` and, optionally, `invert_canonicalization()`. Please refer to [this](equiadapt/images/canonicalization) for custom image canonicalizers.
+  To create your custom canonicalizer, you must inherit `BaseCanonicalization` and define `canonicalize()` and, optionally, `invert_canonicalization()`. Please refer to [this](https://github.com/arnab39/equiadapt/tree/main/equiadapt/images/canonicalization) for custom image canonicalizers.
 ```
 canonicalizer = GroupEquivariantImageCanonicalization(canonicalization_network, ...)
 ```
@@ -139,15 +139,15 @@ Note that this might not be a complete list of dependencies. If you encounter an
 
 # Running equiadapt using example code
 
-We provide [examples](examples) to run equiadapt in different data domains and tasks to achieve equivariance.
+We provide [examples](https://github.com/arnab39/equiadapt/tree/main/examples) to run equiadapt in different data domains and tasks to achieve equivariance.
 
 - Image:
-  - Classification: [Link](examples/images/classification/README.md)
-  - Segmentation: [Link](examples/images/segmentation/README.md)
+  - Classification: [Link](https://github.com/arnab39/equiadapt/tree/main/examples/images/classification/README.md)
+  - Segmentation: [Link](https://github.com/arnab39/equiadapt/tree/main/examples/images/segmentation/README.md)
 - Point Cloud:
-  - Classification: [Link](examples/pointcloud/classification/README.md)
-  - Part Segmentation: [Link](examples/pointcloud/part_segmentation/README.md)
-- Nbody Dynamics: [Link](examples/nbody/README.md)
+  - Classification: [Link](https://github.com/arnab39/equiadapt/tree/main/examples/pointcloud/classification/README.md)
+  - Part Segmentation: [Link](https://github.com/arnab39/equiadapt/tree/main/examples/pointcloud/part_segmentation/README.md)
+- Nbody Dynamics: [Link](https://github.com/arnab39/equiadapt/tree/main/examples/nbody/README.md)
 
 Our examples use `hydra` to configure hyperparameters. Follow the hydra setup instructions to create a .env file with the paths to store all the data, wandb logs and checkpoints.
 
@@ -160,7 +160,7 @@ Create a `.env` file in the root of the project with the following content:
     export CHECKPOINT_PATH="/path/to/your/checkpoint/directory"
   ```
 
-You can also find [tutorials](tutorials) on how to use equiadapt with minimalistic changes to your own code.
+You can also find [tutorials](https://github.com/arnab39/equiadapt/blob/main/tutorials/) on how to use equiadapt with minimalistic changes to your own code.
 
 
 
@@ -206,7 +206,7 @@ For questions related to this code, please raise an issue and you can mail us at
 
 # Contributing
 
-You can check out the [contributor's guide](CONTRIBUTING.md).
+You can check out the [contributor's guide](https://github.com/arnab39/equiadapt/blob/main/CHANGELOG.md).
 
 This project uses `pre-commit`, you can install it before making any
 changes::
