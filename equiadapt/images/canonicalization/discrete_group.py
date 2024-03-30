@@ -254,7 +254,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         return get_action_on_image_features(
             feature_map=x_canonicalized_out,
             group_info_dict=self.group_info_dict,
-            group_element_dict=self.canonicalization_info_dict["group_element"],  # type: ignore
+            group_element_dict=self.canonicalization_info_dict,  # type: ignore
             induced_rep_type=induced_rep_type,
         )
 
