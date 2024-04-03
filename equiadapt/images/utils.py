@@ -78,7 +78,7 @@ def get_action_on_image_features(
         x_out = x_out.reshape(batch_size, -1, H, W)
         return x_out
     elif induced_rep_type == "scalar":
-        angles = group_element_dict["group_element"][0]
+        angles = group_element_dict["group_element"]["rotation"]
         x_out = K.geometry.rotate(feature_map, angles)
         if "reflection" in group_element_dict["group_element"]:
             reflect_indicator = group_element_dict["group_element"]["reflection"]
