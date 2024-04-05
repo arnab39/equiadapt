@@ -55,7 +55,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             len(in_shape) == 3
         ), "Input shape should be in the format (channels, height, width)"
 
-        # DEfine all the image transformations here which are used during canonicalization
+        # Define all the image transformations here which are used during canonicalization
         # pad and crop the input image if it is not rotated MNIST
         is_grayscale = in_shape[0] == 1
 
@@ -254,7 +254,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         return get_action_on_image_features(
             feature_map=x_canonicalized_out,
             group_info_dict=self.group_info_dict,
-            group_element_dict=self.canonicalization_info_dict,  # type: ignore
+            group_element_dict=self.canonicalization_info_dict["group_element"],  # type: ignore
             induced_rep_type=induced_rep_type,
         )
 
