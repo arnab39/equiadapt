@@ -87,13 +87,13 @@ def train_images(hyperparams: DictConfig) -> None:
 
     if not hyperparams["experiment"]["run_mode"] == "test":
         hyperparams["checkpoint"]["checkpoint_name"] = (
-            wandb_run.id
+            str(wandb_run.id)
             + "_"
-            + wandb_run.name
+            + str(wandb_run.name)
             + "_"
-            + wandb_run.sweep_id
+            + str(wandb_run.sweep_id)
             + "_"
-            + wandb_run.group
+            + str(wandb_run.group)
         )
 
     # set seed

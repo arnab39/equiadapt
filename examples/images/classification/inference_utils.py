@@ -61,7 +61,9 @@ class VanillaInference:
         ]
 
         # check if the accuracy per class is nan
-        acc_per_class = [0.0 if math.isnan(acc) else acc for acc in acc_per_class]
+        acc_per_class = [
+            torch.tensor(0.0) if math.isnan(acc) else acc for acc in acc_per_class
+        ]
 
         # Update metrics with accuracy per class
         metrics.update(
@@ -151,7 +153,9 @@ class GroupInference(VanillaInference):
         ]
 
         # check if the accuracy per class is nan
-        acc_per_class = [0.0 if math.isnan(acc) else acc for acc in acc_per_class]
+        acc_per_class = [
+            torch.tensor(0.0) if math.isnan(acc) else acc for acc in acc_per_class
+        ]
 
         # Update metrics with accuracy per class
         metrics.update(

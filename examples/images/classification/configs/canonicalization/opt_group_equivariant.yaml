@@ -1,5 +1,5 @@
 canonicalization_type: opt_group_equivariant
-network_type: cnn # Options for canonization method 1) cnn 2) wideresnet
+network_type: cnn # Options for canonization method 1) cnn 2) non_equivariant_wrn_50 3) non_equivariant_wrn_101 4) non_equivariant_resnet18
 network_hyperparams:
   kernel_size: 7 # Kernel size for the canonization network
   out_channels: 16 # Number of output channels for the canonization network

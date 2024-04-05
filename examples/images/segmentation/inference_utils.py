@@ -76,6 +76,46 @@ class GroupInference(VanillaInference):
         self.pad = transforms.Pad(math.ceil(in_shape[-2] * 0.4), padding_mode="edge")
         self.crop = transforms.CenterCrop((in_shape[-2], in_shape[-1]))
 
+    def forward(
+        self, x: torch.Tensor, targets: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        # canonicalize the input data
+        # For the vanilla model, the canonicalization is the identity transformation
+        _, _, _, outputs = super().forward(x, targets)
+
+        if self.canonicalizer.canonicalization_info_dict:
+            # if non-identity canonicalization is used, then the outputs will be transformed
+            rotation_angles = self.canonicalizer.canonicalization_info_dict[
+                "group_element"
+            ]["rotation"]
+            reflections = (
+                self.canonicalizer.canonicalization_info_dict["group_element"][
+                    "reflection"
+                ]
+                if "reflection"
+                in self.canonicalizer.canonicalization_info_dict["group_element"]
+                else [None] * len(rotation_angles)
+            )
+
+            image_width = x[0].shape[1]
+            outputs = [
+                dict(
+                    boxes=(
+                        flip_boxes(rotate_boxes(output["boxes"], degree, image_width))
+                        if reflection
+                        else rotate_boxes(output["boxes"], degree, image_width)
+                    ),
+                    labels=output["labels"],
+                    scores=output["scores"],
+                    masks=output["masks"],
+                )
+                for degree, reflection, output in zip(
+                    rotation_angles, reflections, outputs
+                )
+            ]
+
+        return None, None, None, outputs
+
     def get_group_element_wise_maps(
         self, images: torch.Tensor, targets: torch.Tensor
     ) -> dict:
@@ -105,13 +145,13 @@ class GroupInference(VanillaInference):
             _, _, _, outputs = self.forward(images_rot, targets_transformed)
 
             Map = MeanAveragePrecision(iou_type="segm")
-            targets = [
+            _targets = [
                 dict(
                     boxes=target["boxes"],
                     labels=target["labels"],
                     masks=target["masks"],
                 )
-                for target in targets
+                for target in targets_transformed
             ]
             outputs = [
                 dict(
@@ -122,7 +162,7 @@ class GroupInference(VanillaInference):
                 )
                 for output in outputs
             ]
-            Map.update(outputs, targets)
+            Map.update(outputs, _targets)
 
             map_dict[rot] = Map.compute()
 
@@ -191,30 +231,18 @@ class GroupInference(VanillaInference):
         for i in range(self.num_group_elements):
             metrics.update(
                 {
-                    f"test/map_group_element_{i}": max(map_dict[i]["map"], 0.0),
-                    f"test/map_small_group_element_{i}": max(
-                        map_dict[i]["map_small"], 0.0
-                    ),
-                    f"test/map_medium_group_element_{i}": max(
-                        map_dict[i]["map_medium"], 0.0
-                    ),
-                    f"test/map_large_group_element_{i}": max(
-                        map_dict[i]["map_large"], 0.0
-                    ),
-                    f"test/map_50_group_element_{i}": max(map_dict[i]["map_50"], 0.0),
-                    f"test/map_75_group_element_{i}": max(map_dict[i]["map_75"], 0.0),
-                    f"test/mar_1_group_element_{i}": max(map_dict[i]["mar_1"], 0.0),
-                    f"test/mar_10_group_element_{i}": max(map_dict[i]["mar_10"], 0.0),
-                    f"test/mar_100_group_element_{i}": max(map_dict[i]["mar_100"], 0.0),
-                    f"test/mar_small_group_element_{i}": max(
-                        map_dict[i]["mar_small"], 0.0
-                    ),
-                    f"test/mar_medium_group_element_{i}": max(
-                        map_dict[i]["mar_medium"], 0.0
-                    ),
-                    f"test/mar_large_group_element_{i}": max(
-                        map_dict[i]["mar_large"], 0.0
-                    ),
+                    f"test/map_group_element_{i}": map_dict[i]["map"],
+                    f"test/map_small_group_element_{i}": map_dict[i]["map_small"],
+                    f"test/map_medium_group_element_{i}": map_dict[i]["map_medium"],
+                    f"test/map_large_group_element_{i}": map_dict[i]["map_large"],
+                    f"test/map_50_group_element_{i}": map_dict[i]["map_50"],
+                    f"test/map_75_group_element_{i}": map_dict[i]["map_75"],
+                    f"test/mar_1_group_element_{i}": map_dict[i]["mar_1"],
+                    f"test/mar_10_group_element_{i}": map_dict[i]["mar_10"],
+                    f"test/mar_100_group_element_{i}": map_dict[i]["mar_100"],
+                    f"test/mar_small_group_element_{i}": map_dict[i]["mar_small"],
+                    f"test/mar_medium_group_element_{i}": map_dict[i]["mar_medium"],
+                    f"test/mar_large_group_element_{i}": map_dict[i]["mar_large"],
                 }
             )
 
