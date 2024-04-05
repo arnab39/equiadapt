@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/equiadapt/badge/?version=latest)](https://equiadapt.readthedocs.io/en/latest/?badge=latest) [![PyPI](https://img.shields.io/pypi/v/PACKAGE?label=pypi%20package)](https://pypi.org/project/equiadapt/)
+
 <p align="center">
     <br>
     <img src="https://raw.githubusercontent.com/arnab39/equiadapt/main/utils/logo.png" width="400"/>
@@ -9,17 +11,23 @@
 </h3>
 <br>
 
+# About
+EquiAdapt is a [PyTorch](https://pytorch.org) package that provides a flexible and efficient way to make *any* neural network architecture (including large foundation models) equivariant, instead of redesigning and training from scratch. This is done by learning to canonicalize transformed inputs, before feeding them to the prediction model. You can play with this concept in the provided [tutorial](https://github.com/arnab39/equiadapt/blob/main/tutorials/images/instance_segmentation_group_equivariant_canonicalization.ipynb) for equivariant adaptation of the Segment-Anything Model (SAM, [Kirillov et. al, 2023](https://arxiv.org/abs/2304.02643)) and images from Microsoft COCO ([Lin et. al, 2014](https://arxiv.org/abs/1405.0312)) dataset for instance segmentation.
 
-# Equivariant adaptation with canonicalization
-![Equivariant adaptation of any prediction network](https://raw.githubusercontent.com/arnab39/equiadapt/dev/utils/equiadapt_cat.jpeg "Equivariant adaptation of any prediction network")
+To learn more about this from a blog, check out: [How to make your foundation model equivariant](https://mila.quebec/en/article/how-to-make-your-foundation-model-equivariant/)
 
-![Equivariant adaptation of Segment-Anything Model](https://raw.githubusercontent.com/arnab39/equiadapt/dev/utils/equiadapt_sam.gif "Equivariant adaptation of Segment-Anything Model")
+## Equivariant adaptation with canonicalization
+![Equivariant adaptation of any prediction network](https://raw.githubusercontent.com/arnab39/equiadapt/main/utils/equiadapt_cat.jpeg "Equivariant adaptation of any prediction network")
 
-EquiAdapt is a [PyTorch](https://pytorch.org) package that provides a flexible and efficient way to make *any* neural network architecture (including large foundation models) equivariant, instead of redesigning and training from scratch. This is done by learning to canonicalize transformed inputs, before feeding them to the prediction model.
+Read more about this [here](https://proceedings.mlr.press/v202/kaba23a.html)
 
-You can play with this concept in the provided [tutorial](tutorials/images/instance_segmentation_group_equivariant_canonicalization.ipynb) for equivariant adaptation of the Segment-Anything Model (SAM, [Kirillov et. al, 2023](https://arxiv.org/abs/2304.02643)) and images from Microsoft COCO ([Lin et. al, 2014](https://arxiv.org/abs/1405.0312)) dataset for instance segmentation.
+## Prior regularized canonicalization
+![Equivariant adaptation of Segment-Anything Model](https://raw.githubusercontent.com/arnab39/equiadapt/main/utils/equiadapt_sam.gif "Equivariant adaptation of Segment-Anything Model")
 
-# Easy to integrate :rocket:
+Read more about this [here](https://proceedings.neurips.cc/paper_files/paper/2023/hash/9d5856318032ef3630cb580f4e24f823-Abstract-Conference.html)
+
+# How to use?
+## Easy to integrate :rocket:
 
 Equiadapt enables users to obtain equivariant versions of existing neural networks with a few lines of code changes:
 ```diff
@@ -60,7 +68,7 @@ Equiadapt enables users to obtain equivariant versions of existing neural networ
           optimizer.step()
 ```
 
-# Details on using `equiadapt` library
+## Details on using `equiadapt` library
 
 1. Create a `canonicalization network` (or use our provided networks: for images, in `equiadapt/images/canonicalization_networks/`).
 
@@ -69,7 +77,7 @@ canonicalization_network = ESCNNEquivariantNetwork(...)
 ```
 2. Wrap it using `equiadapt` wrappers to form a `canonicalizer`.
 
-  To create your custom canonicalizer, you must inherit `BaseCanonicalization` and define `canonicalize()` and, optionally, `invert_canonicalization()`. Please refer to [this](equiadapt/images/canonicalization) for custom image canonicalizers.
+  To create your custom canonicalizer, you must inherit `BaseCanonicalization` and define `canonicalize()` and, optionally, `invert_canonicalization()`. Please refer to [this](https://github.com/arnab39/equiadapt/tree/main/equiadapt/images/canonicalization) for custom image canonicalizers.
 ```
 canonicalizer = GroupEquivariantImageCanonicalization(canonicalization_network, ...)
 ```
@@ -98,8 +106,20 @@ loss = canonicalizer.add_prior_regularizer(loss)
 loss.backward()
 ```
 
-# Setup instructions
-### Setup Conda environment
+# Installation
+
+## Using pypi
+You can install the latest [release](https://github.com/arnab39/equiadapt/releases) using:
+
+```pip install equiadapt```
+
+## Manual installation
+
+You can clone this repository and manually install it with:
+
+```pip install git+https://github.com/arnab39/equiadapt```
+
+## Setup Conda environment for examples
 
 To create a conda environment with the necessary packages:
 
@@ -119,34 +139,19 @@ Note that this might not be a complete list of dependencies. If you encounter an
 
 # Running equiadapt using example code
 
-We provide example code to run equiadapt in different data domains and tasks to achieve equivariance. You can also find a [tutorial](tutorials/images/classification_group_equivariant_canonicalization.ipynb) on how to use equiadapt with minimalistic changes to your own code (for image classification).
+We provide [examples](https://github.com/arnab39/equiadapt/tree/main/examples) to run equiadapt in different data domains and tasks to achieve equivariance.
 
-Before you jump to the instructions for each of them please follow the setup hydra instructions to create a `.env` file with the paths to store all the data, wandb logs and checkpoints.
+- Image:
+  - Classification: [Link](https://github.com/arnab39/equiadapt/tree/main/examples/images/classification/README.md)
+  - Segmentation: [Link](https://github.com/arnab39/equiadapt/tree/main/examples/images/segmentation/README.md)
+- Point Cloud:
+  - Classification: [Link](https://github.com/arnab39/equiadapt/tree/main/examples/pointcloud/classification/README.md)
+  - Part Segmentation: [Link](https://github.com/arnab39/equiadapt/tree/main/examples/pointcloud/part_segmentation/README.md)
+- Nbody Dynamics: [Link](https://github.com/arnab39/equiadapt/tree/main/examples/nbody/README.md)
 
+Our examples use `hydra` to configure hyperparameters. Follow the hydra setup instructions to create a .env file with the paths to store all the data, wandb logs and checkpoints.
 
-<table style="border:1px solid white; border-collapse: collapse;">
-  <tr>
-    <th style="border:1px solid white;" rowspan="2"><div align="center">Image</div></th>
-    <td style="border:1px solid white;">Classification</td>
-    <td style="border:1px solid white;"><a href="examples/images/classification/README.md">here</a></td>
-  </tr>
-  <tr>
-    <td style="border:1px solid white;">Segmentation</td>
-    <td style="border:1px solid white;"><a href="examples/images/segmentation/README.md">here</a></td>
-  </tr>
-  <tr>
-    <th style="border:1px solid white;" rowspan="2"><div align="center">Point Cloud</div></th>
-    <td style="border:1px solid white;">Classification</td>
-    <td style="border:1px solid white;"><a href="examples/pointcloud/classification/README.md">here</a></td>
-  </tr>
-  <tr>
-    <td style="border:1px solid white;">Part Segmentation</td>
-    <td style="border:1px solid white;"><a href="examples/pointcloud/part_segmentation/README.md">here</a></td>
-  </tr>
-</table>
-
-### Setup Hydra
-- Create a `.env` file in the root of the project with the following content:
+Create a `.env` file in the root of the project with the following content:
   ```
     export HYDRA_JOBS="/path/to/your/hydra/jobs/directory"
     export WANDB_DIR="/path/to/your/wandb/jobs/directory"
@@ -155,14 +160,17 @@ Before you jump to the instructions for each of them please follow the setup hyd
     export CHECKPOINT_PATH="/path/to/your/checkpoint/directory"
   ```
 
+You can also find [tutorials](https://github.com/arnab39/equiadapt/blob/main/tutorials/) on how to use equiadapt with minimalistic changes to your own code.
 
-# Related papers
+
+
+
+
+# Related papers and Citations
 
 For more insights on this library refer to our original paper on the idea: [Equivariance with Learned Canonicalization Function (ICML 2023)](https://proceedings.mlr.press/v202/kaba23a.html) and how to extend it to make any existing large pre-trained model equivariant: [Equivariant Adaptation of Large Pretrained Models (NeurIPS 2023)](https://proceedings.neurips.cc/paper_files/paper/2023/hash/9d5856318032ef3630cb580f4e24f823-Abstract-Conference.html).
 
-To learn more about this from a blog, check out: [How to make your foundation model equivariant](https://mila.quebec/en/article/how-to-make-your-foundation-model-equivariant/)
 
-# Citation
 If you find this library or the associated papers useful, please cite the following papers:
 ```
 @inproceedings{kaba2023equivariance,
@@ -198,7 +206,7 @@ For questions related to this code, please raise an issue and you can mail us at
 
 # Contributing
 
-You can check out the [contributor's guide](CONTRIBUTING.md).
+You can check out the [contributor's guide](https://github.com/arnab39/equiadapt/blob/main/CHANGELOG.md).
 
 This project uses `pre-commit`, you can install it before making any
 changes::

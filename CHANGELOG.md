@@ -15,10 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-## [0.1.1] - 2024-03-14
+## [0.1.1] - 2024-03-15
 
 ### Changed
 - Operating system classifier in `setup.cfg`.
+- Replaced `escnn` dependency with `e2cnn`.
 
 ## [0.1.0] - 2024-03-14
 

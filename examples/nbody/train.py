@@ -5,11 +5,11 @@ import hydra
 import omegaconf
 import pytorch_lightning as pl
 import torch
+import wandb
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
-import wandb
 from examples.nbody.model import NBodyPipeline
 from examples.nbody.prepare.nbody_data import NBodyDataModule
 from examples.nbody.train_utils import (
