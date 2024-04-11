@@ -55,7 +55,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             len(in_shape) == 3
         ), "Input shape should be in the format (channels, height, width)"
 
-        # DEfine all the image transformations here which are used during canonicalization
+        # Define all the image transformations here which are used during canonicalization
         # pad and crop the input image if it is not rotated MNIST
         is_grayscale = in_shape[0] == 1
 

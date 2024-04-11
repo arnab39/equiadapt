@@ -53,11 +53,11 @@ def get_action_on_image_features(
     batch_size, C, H, W = feature_map.shape
     if induced_rep_type == "regular":
         assert feature_map.shape[1] % num_group == 0
-        angles = group_element_dict["group"]["rotation"]
+        angles = group_element_dict["rotation"]
         x_out = K.geometry.rotate(feature_map, angles)
 
-        if "reflection" in group_element_dict["group"]:
-            reflect_indicator = group_element_dict["group"]["reflection"]
+        if "reflection" in group_element_dict:
+            reflect_indicator = group_element_dict["reflection"]
             x_out_reflected = K.geometry.hflip(x_out)
             x_out = x_out * reflect_indicator[:, None, None, None] + x_out_reflected * (
                 1 - reflect_indicator[:, None, None, None]
@@ -65,7 +65,7 @@ def get_action_on_image_features(
 
         x_out = x_out.reshape(batch_size, C // num_group, num_group, H, W)
         shift = angles / 360.0 * num_rotations
-        if "reflection" in group_element_dict["group"]:
+        if "reflection" in group_element_dict:
             x_out = torch.cat(
                 [
                     roll_by_gather(x_out[:, :, :num_rotations], shift),
@@ -78,10 +78,10 @@ def get_action_on_image_features(
         x_out = x_out.reshape(batch_size, -1, H, W)
         return x_out
     elif induced_rep_type == "scalar":
-        angles = group_element_dict["group"][0]
+        angles = group_element_dict["rotation"]
         x_out = K.geometry.rotate(feature_map, angles)
-        if "reflection" in group_element_dict["group"]:
-            reflect_indicator = group_element_dict["group"]["reflection"]
+        if "reflection" in group_element_dict:
+            reflect_indicator = group_element_dict["reflection"]
             x_out_reflected = K.geometry.hflip(x_out)
             x_out = x_out * reflect_indicator[:, None, None, None] + x_out_reflected * (
                 1 - reflect_indicator[:, None, None, None]
