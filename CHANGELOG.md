@@ -8,10 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added pull request template.
 
 ### Fixed
 
 ### Changed
+- Updated `CONTRIBUTING.md` with more information on how to run the code checks.
 
 ### Removed
 
