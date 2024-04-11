@@ -9,8 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added pull request template.
+- Added test for discrete invert canonicalization, fixing minor bugs.
 
 ### Fixed
+- Fixed inverse canonicalization key issue group -> group_element.
+- Fixed scalar group element key: 0 -> rotation.
 
 ### Changed
 - Updated `CONTRIBUTING.md` with more information on how to run the code checks.
