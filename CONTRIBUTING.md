@@ -155,17 +155,29 @@ This can easily be done via [Anaconda] or [Miniconda] and detailed [here](https:
    `git log --graph --decorate --pretty=oneline --abbrev-commit --all`
    to look for recurring communication patterns.
 
+#### Run code checks
 
-5. Please check that your changes don't break any unit tests with:
+Please make sure to see the validation messages from pre-commit and fix any
+eventual issues. This should automatically use [flake8]/[black] to check/fix
+the code style in a way that is compatible with the project.
 
-   ```
-   tox
-   ```
+To run pre-commit manually, you can use:
 
-   (after having installed [tox] with `pip install tox` or `pipx`).
+```
+pre-commit run --all-files
+```
 
-   You can also use [tox] to run several other pre-configured tasks in the
-   repository. Try `tox -av` to see a list of the available checks.
+Please also check that your changes don't break any unit tests with:
+
+```
+tox
+```
+
+(after having installed [tox] with `pip install tox` or `pipx`).
+
+You can also use [tox] to run several other pre-configured tasks in the
+repository. Try `tox -av` to see a list of the available checks.
+
 
 ### Submit your contribution
 
