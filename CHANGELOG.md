@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Updated `CONTRIBUTING.md` with more information on how to run the code checks.
+- Changed the OS used to test Python 3.7 on GitHub actions (macos-latest -> macos-13).
 
 ### Removed
 
