@@ -110,7 +110,7 @@ class ResNet18Network(nn.Module):
             out_vector_size (int, optional): The size of the output vector of the network. Defaults to 128.
         """
         super().__init__()
-        self.resnet18 = torchvision.models.resnet18(weights=None)
+        self.resnet18 = torchvision.models.resnet18(weights="DEFAULT")
         self.resnet18.fc = nn.Sequential(
             nn.Linear(512, out_vector_size),
         )
@@ -128,3 +128,103 @@ class ResNet18Network(nn.Module):
             torch.Tensor: The output of the network. It has the shape (batch_size, 1).
         """
         return self.resnet18(x)
+
+
+class WideResNet101Network(nn.Module):
+    """
+    This class represents a neural network based on the WideResNetNetwork architecture.
+
+    The network uses a pre-trained WideResNet model. The final fully connected layer of the WideResNet101 model is replaced with a new fully connected layer.
+
+    Attributes:
+        resnet18 (torchvision.models.ResNet): The ResNet-18 model.
+        out_vector_size (int): The size of the output vector of the network.
+    """
+
+    def __init__(
+        self,
+        in_shape: tuple,
+        out_channels: int,
+        kernel_size: int,
+        num_layers: int = 2,
+        out_vector_size: int = 128,
+    ):
+        """
+        Initializes the ResNet18Network instance.
+
+        Args:
+            in_shape (tuple): The shape of the input data. It should be a tuple of the form (in_channels, height, width).
+            out_channels (int): The number of output channels of the first convolutional layer.
+            kernel_size (int): The size of the kernel of the convolutional layers.
+            num_layers (int, optional): The number of convolutional layers. Defaults to 2.
+            out_vector_size (int, optional): The size of the output vector of the network. Defaults to 128.
+        """
+        super().__init__()
+        self.wideresnet = torchvision.models.wide_resnet101_2(weights="DEFAULT")
+        self.wideresnet.fc = nn.Sequential(
+            nn.Linear(2048, out_vector_size),
+        )
+
+        self.out_vector_size = out_vector_size
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Performs a forward pass through the network.
+
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the network. It has the shape (batch_size, 1).
+        """
+        return self.wideresnet(x)
+
+
+class WideResNet50Network(nn.Module):
+    """
+    This class represents a neural network based on the WideResNetNetwork architecture.
+
+    The network uses a pre-trained WideResNet model. The final fully connected layer of the WideResNet50 model is replaced with a new fully connected layer.
+
+    Attributes:
+        resnet18 (torchvision.models.ResNet): The ResNet-18 model.
+        out_vector_size (int): The size of the output vector of the network.
+    """
+
+    def __init__(
+        self,
+        in_shape: tuple,
+        out_channels: int,
+        kernel_size: int,
+        num_layers: int = 2,
+        out_vector_size: int = 128,
+    ):
+        """
+        Initializes the ResNet18Network instance.
+
+        Args:
+            in_shape (tuple): The shape of the input data. It should be a tuple of the form (in_channels, height, width).
+            out_channels (int): The number of output channels of the first convolutional layer.
+            kernel_size (int): The size of the kernel of the convolutional layers.
+            num_layers (int, optional): The number of convolutional layers. Defaults to 2.
+            out_vector_size (int, optional): The size of the output vector of the network. Defaults to 128.
+        """
+        super().__init__()
+        self.wideresnet = torchvision.models.wide_resnet50_2(weights="DEFAULT")
+        self.wideresnet.fc = nn.Sequential(
+            nn.Linear(2048, out_vector_size),
+        )
+
+        self.out_vector_size = out_vector_size
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Performs a forward pass through the network.
+
+        Args:
+            x (torch.Tensor): The input data. It should have the shape (batch_size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the network. It has the shape (batch_size, 1).
+        """
+        return self.wideresnet(x)

@@ -16,6 +16,8 @@ from equiadapt.images.canonicalization_networks.custom_group_equivariant_layers 
 from equiadapt.images.canonicalization_networks.custom_nonequivariant_networks import (
     ConvNetwork,
     ResNet18Network,
+    WideResNet50Network,
+    WideResNet101Network,
 )
 from equiadapt.images.canonicalization_networks.escnn_networks import (
     ESCNNEquivariantNetwork,
@@ -34,6 +36,8 @@ __all__ = [
     "ESCNNWideBasic",
     "ESCNNWideBottleneck",
     "ResNet18Network",
+    "WideResNet101Network",
+    "WideResNet50Network",
     "RotationEquivariantConv",
     "RotationEquivariantConvLift",
     "RotoReflectionEquivariantConv",

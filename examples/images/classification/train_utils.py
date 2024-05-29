@@ -2,6 +2,7 @@ from typing import Optional
 
 import dotenv
 import pytorch_lightning as pl
+import torch
 from model import ImageClassifierPipeline
 from omegaconf import DictConfig
 from prepare import (
@@ -39,6 +40,23 @@ def get_model_pipeline(hyperparams: DictConfig) -> pl.LightningModule:
             hyperparams=hyperparams,
             strict=hyperparams.checkpoint.strict_loading,
         )
+
+        # load a different (finetuned) prediction network
+        # to test the transfer learning capabilities of the canonicalizer
+        if hyperparams.checkpoint.prediction_network_checkpoint_path:
+            model.load_state_dict(
+                torch.load(
+                    open(
+                        hyperparams.checkpoint.prediction_network_checkpoint_path
+                        + "/"
+                        + hyperparams.checkpoint.prediction_network_checkpoint_name
+                        + ".ckpt",
+                        mode="rb",
+                    )
+                )["state_dict"],
+                strict=False,
+            )
+
         model.freeze()
         model.eval()
     else:

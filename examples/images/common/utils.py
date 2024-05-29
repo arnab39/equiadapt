@@ -17,6 +17,8 @@ from equiadapt.images.canonicalization_networks import (
     ESCNNSteerableNetwork,
     ESCNNWRNEquivariantNetwork,
     ResNet18Network,
+    WideResNet50Network,
+    WideResNet101Network,
 )
 
 
@@ -46,7 +48,9 @@ def get_canonicalization_network(
         },
         "opt_group_equivariant": {
             "cnn": ConvNetwork,
-            "resnet18": ResNet18Network,
+            "non_equivariant_resnet18": ResNet18Network,
+            "non_equivariant_wrn_101": WideResNet101Network,
+            "non_equivariant_wrn_50": WideResNet50Network,
         },
         "opt_steerable": {
             "cnn": ConvNetwork,

@@ -64,7 +64,7 @@ class ImageClassifierPipeline(pl.LightningModule):
         assert (num_channels, height, width) == self.image_shape
 
         training_metrics = {}
-        loss = 0.0
+        loss, acc = 0.0, 0.0
 
         # canonicalize the input data
         # For the vanilla model, the canonicalization is the identity transformation
@@ -100,7 +100,6 @@ class ImageClassifierPipeline(pl.LightningModule):
             preds = logits.argmax(dim=-1)
             acc = (preds == y).float().mean()
 
-            training_metrics.update({"train/task_loss": task_loss, "train/acc": acc})
             training_metrics.update({"train/task_loss": task_loss, "train/acc": acc})
 
         # Add prior regularization loss if the prior weight is non-zero

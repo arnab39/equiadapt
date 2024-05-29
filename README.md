@@ -121,6 +121,8 @@ You can clone this repository and manually install it with:
 
 ## Setup Conda environment for examples
 
+The recommended way is to manually create an environment and install the dependencies from the `min_conda_env.yaml` file.
+
 To create a conda environment with the necessary packages:
 
 ```
@@ -168,7 +170,7 @@ You can also find [tutorials](https://github.com/arnab39/equiadapt/blob/main/tut
 
 # Related papers and Citations
 
-For more insights on this library refer to our original paper on the idea: [Equivariance with Learned Canonicalization Function (ICML 2023)](https://proceedings.mlr.press/v202/kaba23a.html) and how to extend it to make any existing large pre-trained model equivariant: [Equivariant Adaptation of Large Pretrained Models (NeurIPS 2023)](https://proceedings.neurips.cc/paper_files/paper/2023/hash/9d5856318032ef3630cb580f4e24f823-Abstract-Conference.html).
+For more insights on this library refer to our original paper on the idea: [Equivariance with Learned Canonicalization Function (ICML 2023)](https://proceedings.mlr.press/v202/kaba23a.html) and how to extend it to make any existing large pre-trained model equivariant: [Equivariant Adaptation of Large Pretrained Models (NeurIPS 2023)](https://proceedings.neurips.cc/paper_files/paper/2023/hash/9d5856318032ef3630cb580f4e24f823-Abstract-Conference.html). An improved approach for designing canonicalization network, which allows non-equivariant and expressive models as equivariant networks is presented in [Improved Canonicalization for Model Agnostic Equivariance (CVPR 2024: EquiVision Workshop)](https://arxiv.org/abs/2405.14089).
 
 
 If you find this library or the associated papers useful, please cite the following papers:
@@ -197,6 +199,17 @@ If you find this library or the associated papers useful, please cite the follow
 }
 ```
 
+```
+@inproceedings{
+  panigrahi2024improved,
+  title={Improved Canonicalization for Model Agnostic Equivariance},
+  author={Siba Smarak Panigrahi and Arnab Kumar Mondal},
+  booktitle={CVPR 2024 Workshop on Equivariant Vision: From Theory to Practice},
+  year={2024},
+  url={https://arxiv.org/abs/2405.14089}
+}
+```
+
 # Contact
 
 For questions related to this code, please raise an issue and you can mail us at:
@@ -206,7 +219,7 @@ For questions related to this code, please raise an issue and you can mail us at
 
 # Contributing
 
-You can check out the [contributor's guide](https://github.com/arnab39/equiadapt/blob/main/CHANGELOG.md).
+You can check out the [contributor's guide](https://github.com/arnab39/equiadapt/blob/main/CONTRIBUTING.md).
 
 This project uses `pre-commit`, you can install it before making any
 changes::
