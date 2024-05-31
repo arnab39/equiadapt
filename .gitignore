@@ -115,7 +115,6 @@ mila_scripts/
 
 *__pycache__/
 *_output/
-wandb/
 *.png
 
 # Docs
