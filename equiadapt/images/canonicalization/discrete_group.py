@@ -90,6 +90,64 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             if is_grayscale
             else transforms.Resize(size=canonicalization_hyperparams.resize_shape)
         )
+        
+        # group augment specific cropping and padding (required for group_augment())
+        group_augment_in_shape = canonicalization_hyperparams.resize_shape
+        self.crop_group_augment = (
+            torch.nn.Identity()
+            if in_shape[0] == 1
+            else transforms.CenterCrop(group_augment_in_shape)
+        )
+        self.pad_group_augment = (
+            torch.nn.Identity()
+            if in_shape[0] == 1
+            else transforms.Pad(
+                math.ceil(group_augment_in_shape * 0.5), padding_mode="edge"
+            )
+        )
+        
+    def rotate_and_maybe_reflect(
+        self, x: torch.Tensor, degrees: torch.Tensor, reflect: bool = False
+    ) -> List[torch.Tensor]:
+        """
+        Rotate and maybe reflect the input images.
+
+        Args:
+            x (torch.Tensor): The input image.
+            degrees (torch.Tensor): The degrees of rotation.
+            reflect (bool, optional): Whether to reflect the image. Defaults to False.
+
+        Returns:
+            List[torch.Tensor]: The list of rotated and maybe reflected images.
+        """
+        x_augmented_list = []
+        for degree in degrees:
+            x_rot = self.pad_group_augment(x)
+            x_rot = K.geometry.rotate(x_rot, -degree)
+            if reflect:
+                x_rot = K.geometry.hflip(x_rot)
+            x_rot = self.crop_group_augment(x_rot)
+            x_augmented_list.append(x_rot)
+        return x_augmented_list
+
+    def group_augment(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Augment the input images by applying group transformations (rotations and reflections).
+        This function is used both for the energy based optimization method for the discrete rotation
+
+        Args:
+            x (torch.Tensor): The input image.
+
+        Returns:
+            torch.Tensor: The augmented image.
+        """
+        degrees = torch.linspace(0, 360, self.num_rotations + 1)[:-1].to(self.device)
+        x_augmented_list = self.rotate_and_maybe_reflect(x, degrees)
+
+        if self.group_type == "roto-reflection":
+            x_augmented_list += self.rotate_and_maybe_reflect(x, degrees, reflect=True)
+
+        return torch.cat(x_augmented_list, dim=0)
 
     def groupactivations_to_groupelement(self, group_activations: torch.Tensor) -> dict:
         """
@@ -257,6 +315,54 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             group_element_dict=self.canonicalization_info_dict["group_element"],  # type: ignore
             induced_rep_type=induced_rep_type,
         )
+        
+    def get_prior(
+        self, 
+        x: torch.Tensor, 
+        model: torch.nn.Module,
+        targets: torch.Tensor,
+        metric_function: torch.nn.Module,
+        tau: float = 1.0,
+        ) -> torch.Tensor:
+        """
+        Get the prior for the input images.
+
+        Args:
+            x (torch.Tensor): The input images. shape = (batch_size, in_channels, height, width)
+            model (torch.nn.Module): The prediction model which decides the prior.
+            targets (torch.Tensor): The targets for the task. shape = eg. (batch_size, num_classes)
+            metric_function (torch.nn.Module): The function to calculate the unnormalized probability masses for each group element.
+            tau (float, optional): The temperature parameter. Defaults to 1.0. Decides the sharpness of the prior distribution.
+
+        Returns:
+            torch.Tensor: output prior of the model and x. shape = (batch_size, group_size)
+        """
+        with torch.no_grad():
+            batch_size = x.shape[0]
+            x_augmented = self.group_augment(x)  # size (group_size * batch_size, in_channels, height, width)
+            # If a self.group_augment_target is defined, apply the same transformation to the targets
+            # Or else just repeat the targets for each group element in the first dimension
+            if hasattr(self, "group_augment_target"):
+                targets_augmented = self.group_augment_target(targets)
+            else:
+                targets_augmented = targets.repeat(self.num_group, 1).flatten() # size (group_size * batch_size)
+            
+            # Get the output of the model for the augmented images
+            model_output = model(x_augmented) # size eg (group_size * batch_size, num_classes)
+            
+            # Get the unnormalized probability masses for each group element
+            unnormalized_prob_masses = metric_function(
+                model_output, targets_augmented
+            ).reshape(self.num_group, batch_size).transpose(0, 1) # size (batch_size, group_size)
+            
+            # Get the prior for the input images
+            prior = F.softmax(unnormalized_prob_masses / tau, dim=-1) # size (batch_size, group_size)
+        
+        return prior
+                
+        
+        
+        
 
 
 class GroupEquivariantImageCanonicalization(DiscreteGroupImageCanonicalization):
@@ -360,21 +466,6 @@ class OptimizedGroupEquivariantImageCanonicalization(
         )
         self.out_vector_size = canonicalization_network.out_vector_size
 
-        # group optimization specific cropping and padding (required for group_augment())
-        group_augment_in_shape = canonicalization_hyperparams.resize_shape
-        self.crop_group_augment = (
-            torch.nn.Identity()
-            if in_shape[0] == 1
-            else transforms.CenterCrop(group_augment_in_shape)
-        )
-        self.pad_group_augment = (
-            torch.nn.Identity()
-            if in_shape[0] == 1
-            else transforms.Pad(
-                math.ceil(group_augment_in_shape * 0.5), padding_mode="edge"
-            )
-        )
-
         self.reference_vector = torch.nn.Parameter(
             torch.randn(1, self.out_vector_size),
             requires_grad=canonicalization_hyperparams.learn_ref_vec,
@@ -383,48 +474,6 @@ class OptimizedGroupEquivariantImageCanonicalization(
             "num_rotations": self.num_rotations,
             "num_group": self.num_group,
         }
-
-    def rotate_and_maybe_reflect(
-        self, x: torch.Tensor, degrees: torch.Tensor, reflect: bool = False
-    ) -> List[torch.Tensor]:
-        """
-        Rotate and maybe reflect the input images.
-
-        Args:
-            x (torch.Tensor): The input image.
-            degrees (torch.Tensor): The degrees of rotation.
-            reflect (bool, optional): Whether to reflect the image. Defaults to False.
-
-        Returns:
-            List[torch.Tensor]: The list of rotated and maybe reflected images.
-        """
-        x_augmented_list = []
-        for degree in degrees:
-            x_rot = self.pad_group_augment(x)
-            x_rot = K.geometry.rotate(x_rot, -degree)
-            if reflect:
-                x_rot = K.geometry.hflip(x_rot)
-            x_rot = self.crop_group_augment(x_rot)
-            x_augmented_list.append(x_rot)
-        return x_augmented_list
-
-    def group_augment(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Augment the input images by applying group transformations (rotations and reflections).
-
-        Args:
-            x (torch.Tensor): The input image.
-
-        Returns:
-            torch.Tensor: The augmented image.
-        """
-        degrees = torch.linspace(0, 360, self.num_rotations + 1)[:-1].to(self.device)
-        x_augmented_list = self.rotate_and_maybe_reflect(x, degrees)
-
-        if self.group_type == "roto-reflection":
-            x_augmented_list += self.rotate_and_maybe_reflect(x, degrees, reflect=True)
-
-        return torch.cat(x_augmented_list, dim=0)
 
     def get_group_activations(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -437,12 +486,8 @@ class OptimizedGroupEquivariantImageCanonicalization(
             torch.Tensor: The group activations.
         """
         x = self.transformations_before_canonicalization_network_forward(x)
-        x_augmented = self.group_augment(
-            x
-        )  # size (batch_size * group_size, in_channels, height, width)
-        vector_out = self.canonicalization_network(
-            x_augmented
-        )  # size (batch_size * group_size, reference_vector_size)
+        x_augmented = self.group_augment(x)  # size (batch_size * group_size, in_channels, height, width)
+        vector_out = self.canonicalization_network(x_augmented)  # size (batch_size * group_size, reference_vector_size)
         self.canonicalization_info_dict = {"vector_out": vector_out}
 
         if self.artifact_err_wt:

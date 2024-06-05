@@ -1,9 +1,11 @@
+from math import tau
 import pytorch_lightning as pl
 import torch
 from inference_utils import get_inference_method
 from model_utils import get_dataset_specific_info, get_prediction_network
 from omegaconf import DictConfig
 from torch.optim.lr_scheduler import MultiStepLR
+from torch.nn import functional as F
 
 from examples.images.common.utils import get_canonicalization_network, get_canonicalizer
 
@@ -13,9 +15,6 @@ class ImageClassifierPipeline(pl.LightningModule):
     def __init__(self, hyperparams: DictConfig):
         super().__init__()
 
-        self.loss, self.image_shape, self.num_classes = get_dataset_specific_info(
-            hyperparams.dataset.dataset_name
-        )
         self.loss, self.image_shape, self.num_classes = get_dataset_specific_info(
             hyperparams.dataset.dataset_name
         )
@@ -104,7 +103,14 @@ class ImageClassifierPipeline(pl.LightningModule):
 
         # Add prior regularization loss if the prior weight is non-zero
         if self.hyperparams.experiment.training.loss.prior_weight:
-            prior_loss = self.canonicalizer.get_prior_regularization_loss()
+            if self.hyperparams.experiment.training.loss.automated_prior:
+                def metric_function(model_predictions, targets):
+                    return -F.cross_entropy(model_predictions, targets, reduction='none')
+                prior = self.canonicalizer.get_prior(x, self.prediction_network, y, metric_function, tau=0.1)
+                prior_loss = self.canonicalizer.get_prior_regularization_loss(prior) # type: ignore
+            else:
+                prior_loss = self.canonicalizer.get_prior_regularization_loss()
+            
             loss += prior_loss * self.hyperparams.experiment.training.loss.prior_weight
             metric_identity = self.canonicalizer.get_identity_metric()
             training_metrics.update(

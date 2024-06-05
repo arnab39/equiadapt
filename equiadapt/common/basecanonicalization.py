@@ -21,6 +21,7 @@ Each class has methods to perform the canonicalization, invert it, and calculate
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
+import torch.nn.functional as F
 
 # Base skeleton for the canonicalization class
 # DiscreteGroupCanonicalization and ContinuousGroupCanonicalization will inherit from this class
@@ -287,18 +288,41 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
         """
         raise NotImplementedError()
 
-    def get_prior_regularization_loss(self) -> torch.Tensor:
+    # def get_prior_regularization_loss(self) -> torch.Tensor:
+    #     """
+    #     Gets the prior regularization loss.
+
+    #     Returns:
+    #         torch.Tensor: The prior regularization loss.
+    #     """
+    #     group_activations = self.canonicalization_info_dict["group_activations"]
+    #     dataset_prior = torch.zeros((group_activations.shape[0],), dtype=torch.long).to(
+    #         self.device
+    #     )
+    #     return torch.nn.CrossEntropyLoss()(group_activations, dataset_prior)
+    
+    def get_prior_regularization_loss(self, dataset_prior: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Gets the prior regularization loss.
+
+        Args:
+            dataset_prior (torch.Tensor, optional): The prior distribution. Defaults to identity prior.
 
         Returns:
             torch.Tensor: The prior regularization loss.
         """
         group_activations = self.canonicalization_info_dict["group_activations"]
-        dataset_prior = torch.zeros((group_activations.shape[0],), dtype=torch.long).to(
-            self.device
-        )
-        return torch.nn.CrossEntropyLoss()(group_activations, dataset_prior)
+
+        # If dataset_prior is not provided, create an identity prior
+        if dataset_prior is None:
+            dataset_prior = torch.zeros_like(group_activations).to(self.device)
+            dataset_prior[:, 0] = 1.0  # Set the first column to 1, rest to 0
+
+        # Ensure group_activations are in log space
+        log_group_activations = F.log_softmax(group_activations, dim=1)
+
+        # KL Divergence
+        return F.kl_div(log_group_activations, dataset_prior, reduction='batchmean')
 
     def get_identity_metric(self) -> torch.Tensor:
         """
@@ -406,6 +430,7 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
             .to(self.device)
         )
         return torch.nn.MSELoss()(group_elements_rep, dataset_prior)
+    
 
     def get_identity_metric(self) -> torch.Tensor:
         """
