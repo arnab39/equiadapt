@@ -22,6 +22,7 @@ class ConvNetwork(nn.Module):
         out_channels: int,
         kernel_size: int,
         num_layers: int = 2,
+        train_backbone: bool = False,
         out_vector_size: int = 128,
     ):
         """
@@ -97,6 +98,7 @@ class ResNet18Network(nn.Module):
         out_channels: int,
         kernel_size: int,
         num_layers: int = 2,
+        train_backbone: bool = False,
         out_vector_size: int = 128,
     ):
         """
@@ -111,6 +113,10 @@ class ResNet18Network(nn.Module):
         """
         super().__init__()
         self.resnet18 = torchvision.models.resnet18(weights="DEFAULT")
+        self.train_backbone = train_backbone
+        if not self.train_backbone:
+            for param in self.resnet18.parameters():
+                param.requires_grad = False
         self.resnet18.fc = nn.Sequential(
             nn.Linear(512, out_vector_size),
         )
@@ -147,6 +153,7 @@ class WideResNet101Network(nn.Module):
         out_channels: int,
         kernel_size: int,
         num_layers: int = 2,
+        train_backbone: bool = False,
         out_vector_size: int = 128,
     ):
         """
@@ -161,6 +168,10 @@ class WideResNet101Network(nn.Module):
         """
         super().__init__()
         self.wideresnet = torchvision.models.wide_resnet101_2(weights="DEFAULT")
+        self.train_backbone = train_backbone
+        if not self.train_backbone:
+            for param in self.wideresnet.parameters():
+                param.requires_grad = False
         self.wideresnet.fc = nn.Sequential(
             nn.Linear(2048, out_vector_size),
         )
@@ -197,6 +208,7 @@ class WideResNet50Network(nn.Module):
         out_channels: int,
         kernel_size: int,
         num_layers: int = 2,
+        train_backbone: bool = False,
         out_vector_size: int = 128,
     ):
         """
@@ -211,6 +223,10 @@ class WideResNet50Network(nn.Module):
         """
         super().__init__()
         self.wideresnet = torchvision.models.wide_resnet50_2(weights="DEFAULT")
+        self.train_backbone = train_backbone
+        if not self.train_backbone:
+            for param in self.wideresnet.parameters():
+                param.requires_grad = False
         self.wideresnet.fc = nn.Sequential(
             nn.Linear(2048, out_vector_size),
         )

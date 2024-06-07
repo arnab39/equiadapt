@@ -4,6 +4,7 @@ network_hyperparams:
   kernel_size: 7 # Kernel size for the canonization network
   out_channels: 16 # Number of output channels for the canonization network
   num_layers: 3 # Number of layers in the canonization network
+  train_backbone: True # Whether to train the pretrained backbone
   out_vector_size: 128 # Dimension of the output vector
 group_type: rotation # Type of group for the canonization network
 num_rotations: 4 # Number of rotations for the canonization network

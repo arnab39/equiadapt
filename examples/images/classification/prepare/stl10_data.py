@@ -42,7 +42,7 @@ class STL10DataModule(pl.LightningDataModule):
                     transforms.Pad(4),
                     transforms.RandomCrop(96),
                     transforms.Resize(224),
-                    CustomRotationTransform([0, 45, 90, 135, 180, 225, 270, 315]),
+                    CustomRotationTransform([0, 90, 180, 270]),
                     # transforms.RandomRotation(180),
                     transforms.RandomHorizontalFlip(),
                     transforms.ToTensor(),

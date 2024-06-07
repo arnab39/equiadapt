@@ -43,7 +43,7 @@ class CIFAR10DataModule(pl.LightningDataModule):
                     transforms.RandomCrop(32, padding=4),
                     transforms.Resize(224),
                     transforms.RandomHorizontalFlip(),
-                    CustomRotationTransform([0, 45, 90, 135, 180, 225, 270, 315]),
+                    CustomRotationTransform([0, 90, 180, 270]),
                     # transforms.RandomRotation(180),
                     transforms.ToTensor(),
                     transforms.Normalize(
