@@ -80,13 +80,15 @@ class ImageClassifierPipeline(pl.LightningModule):
             training_metrics.update(
                 {"train/optimization_specific_loss": group_contrast_loss}
             )
-            loss += (
-                group_contrast_loss
-                * self.hyperparams.experiment.training.loss.group_contrast_weight
-            )
-            training_metrics.update(
-                {"train/optimization_specific_loss": group_contrast_loss}
-            )
+
+            # add artifact loss while using optmization based canonicalization method to reduce effect of rotation artifacts
+            if self.hyperparams.canonicalization.artifact_weight:
+                artifact_loss = self.canonicalizer.get_artifact_loss()
+                loss += (
+                    artifact_loss * self.hyperparams.canonicalization.artifact_weight
+                )
+
+                training_metrics.update({"train/artifact_loss": artifact_loss})
 
         # calculate the task loss which is the cross-entropy loss for classification
         if self.hyperparams.experiment.training.loss.task_weight:

@@ -24,7 +24,7 @@ parameters:
     value: 1
   canonicalization.learn_ref_vec:
     values: [True, False]
-  canonicalization.artifact_err_wt:
+  canonicalization.artifact_weight:
     values: [100, 1000, 10000]
   canonicalization.resize_shape:
     value: 96

@@ -352,7 +352,7 @@ class OptimizedGroupEquivariantImageCanonicalization(
         )
         self.group_type = canonicalization_hyperparams.group_type
         self.num_rotations = canonicalization_hyperparams.num_rotations
-        self.artifact_err_wt = canonicalization_hyperparams.artifact_err_wt
+        self.artifact_weight = canonicalization_hyperparams.artifact_weight
         self.num_group = (
             self.num_rotations
             if self.group_type == "rotation"
@@ -371,7 +371,7 @@ class OptimizedGroupEquivariantImageCanonicalization(
             torch.nn.Identity()
             if in_shape[0] == 1
             else transforms.Pad(
-                math.ceil(group_augment_in_shape * 0.5), padding_mode="edge"
+                math.ceil(group_augment_in_shape * 0.5), padding_mode="constant"
             )
         )
 
@@ -445,7 +445,7 @@ class OptimizedGroupEquivariantImageCanonicalization(
         )  # size (batch_size * group_size, reference_vector_size)
         self.canonicalization_info_dict = {"vector_out": vector_out}
 
-        if self.artifact_err_wt:
+        if self.artifact_weight:
             # select a random rotation for each image in the batch
             rotation_indices = torch.randint(
                 0, self.num_rotations, (x_augmented.shape[0],)
@@ -491,7 +491,7 @@ class OptimizedGroupEquivariantImageCanonicalization(
 
         # compute error to reduce rotation artifacts
         rotation_artifact_error = 0
-        if self.artifact_err_wt:
+        if self.artifact_weight:
             vectors_dummy = self.canonicalization_info_dict["vector_out_dummy"]
             rotation_artifact_error = torch.nn.functional.mse_loss(
                 vectors_dummy, vectors
@@ -508,5 +508,24 @@ class OptimizedGroupEquivariantImageCanonicalization(
 
         return (
             torch.abs(distances * mask).mean()
-            + self.artifact_err_wt * rotation_artifact_error
+            + self.artifact_weight * rotation_artifact_error
         )
+
+    def get_artifact_loss(self) -> torch.Tensor:
+        """
+        Gets the loss specific to the rotation artifact.
+
+        Returns:
+            torch.Tensor: The loss.
+        """
+        vectors = self.canonicalization_info_dict["vector_out"]
+
+        # compute error to reduce rotation artifacts
+        rotation_artifact_error = 0
+
+        vectors_dummy = self.canonicalization_info_dict["vector_out_dummy"]
+        rotation_artifact_error = torch.nn.functional.mse_loss(
+            vectors_dummy, vectors
+        )  # type: ignore
+
+        return rotation_artifact_error

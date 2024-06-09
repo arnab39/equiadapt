@@ -12,4 +12,4 @@ beta: 1.0 # Beta parameter for the canonization network
 input_crop_ratio: 0.8 # Ratio at which we crop the input to the canonicalization
 resize_shape: 128 # Resize shape for the input
 learn_ref_vec: False # Whether to learn the reference vector
-artifact_err_wt: 0 # Weight for rotation artifact error (specific to image data, for non C4 rotation, for non-equivariant canonicalization networks)
+artifact_weight: 0 # Weight for rotation artifact error (specific to image data, for non C4 rotation, for non-equivariant canonicalization networks)
