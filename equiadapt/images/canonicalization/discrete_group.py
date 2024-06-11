@@ -62,7 +62,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         self.pad = (
             torch.nn.Identity()
             if is_grayscale
-            else transforms.Pad(math.ceil(in_shape[-1] * 0.5), padding_mode="edge")
+            else transforms.Pad(math.ceil(in_shape[-1] * 0.5), padding_mode="constant")
         )
         self.crop = (
             torch.nn.Identity()

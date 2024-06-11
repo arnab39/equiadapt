@@ -73,7 +73,9 @@ class GroupInference(VanillaInference):
             if self.group_type == "rotation"
             else 2 * self.num_rotations
         )
-        self.pad = transforms.Pad(math.ceil(in_shape[-2] * 0.4), padding_mode="edge")
+        self.pad = transforms.Pad(
+            math.ceil(in_shape[-2] * 0.4), padding_mode="constant"
+        )
         self.crop = transforms.CenterCrop((in_shape[-2], in_shape[-1]))
 
     def forward(
