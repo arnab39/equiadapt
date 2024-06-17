@@ -62,7 +62,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         self.pad = (
             torch.nn.Identity()
             if is_grayscale
-            else transforms.Pad(math.ceil(in_shape[-1] * 0.5), padding_mode="edge")
+            else transforms.Pad(math.ceil(in_shape[-1] * 0.5), padding_mode="constant")
         )
         self.crop = (
             torch.nn.Identity()
@@ -107,7 +107,12 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         )
 
     def rotate_and_maybe_reflect(
-        self, x: torch.Tensor, degrees: torch.Tensor, reflect: bool = False
+        self,
+        x: torch.Tensor,
+        degrees: torch.Tensor,
+        reflect: bool = False,
+        padding_function: Optional[torch.nn.Module] = None,
+        cropping_function: Optional[torch.nn.Module] = None,
     ) -> List[torch.Tensor]:
         """
         Rotate and maybe reflect the input images.
@@ -122,15 +127,28 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         """
         x_augmented_list = []
         for degree in degrees:
-            x_rot = self.pad_group_augment(x)
+            x_rot = (
+                self.pad_group_augment(x)
+                if padding_function is None
+                else padding_function(x)
+            )
             x_rot = K.geometry.rotate(x_rot, -degree)
             if reflect:
                 x_rot = K.geometry.hflip(x_rot)
-            x_rot = self.crop_group_augment(x_rot)
+            x_rot = (
+                self.crop_group_augment(x_rot)
+                if cropping_function is None
+                else cropping_function(x_rot)
+            )
             x_augmented_list.append(x_rot)
         return x_augmented_list
 
-    def group_augment(self, x: torch.Tensor) -> torch.Tensor:
+    def group_augment(
+        self,
+        x: torch.Tensor,
+        padding_function: Optional[torch.nn.Module] = None,
+        cropping_function: Optional[torch.nn.Module] = None,
+    ) -> torch.Tensor:
         """Augment the input images by applying group transformations (rotations and reflections).
 
         This function is used both for the energy based optimization method for the discrete rotation
@@ -142,10 +160,21 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             torch.Tensor: The augmented image.
         """
         degrees = torch.linspace(0, 360, self.num_rotations + 1)[:-1].to(self.device)
-        x_augmented_list = self.rotate_and_maybe_reflect(x, degrees)
+        x_augmented_list = self.rotate_and_maybe_reflect(
+            x,
+            degrees,
+            padding_function=padding_function,
+            cropping_function=cropping_function,
+        )
 
         if self.group_type == "roto-reflection":
-            x_augmented_list += self.rotate_and_maybe_reflect(x, degrees, reflect=True)
+            x_augmented_list += self.rotate_and_maybe_reflect(
+                x,
+                degrees,
+                reflect=True,
+                padding_function=padding_function,
+                cropping_function=cropping_function,
+            )
 
         return torch.cat(x_augmented_list, dim=0)
 
@@ -340,7 +369,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         with torch.no_grad():
             batch_size = x.shape[0]
             x_augmented = self.group_augment(
-                x
+                x, padding_function=self.pad, cropping_function=self.crop
             )  # size (group_size * batch_size, in_channels, height, width)
             # If a self.group_augment_target is defined, apply the same transformation to the targets
             # Or else just repeat the targets for each group element in the first dimension

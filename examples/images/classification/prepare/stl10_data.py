@@ -18,6 +18,12 @@ class CustomRotationTransform:
         return transforms.functional.rotate(x, angle)
 
 
+class IndexedSTL10(STL10):
+    def __getitem__(self, index):
+        img, target = super(IndexedSTL10, self).__getitem__(index)
+        return img, target, index
+
+
 class STL10DataModule(pl.LightningDataModule):
     def __init__(self, hyperparams, download=False):
         super().__init__()
@@ -71,7 +77,7 @@ class STL10DataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
-            self.train_dataset = STL10(
+            self.train_dataset = IndexedSTL10(
                 self.data_path,
                 split="train",
                 transform=self.train_transform,

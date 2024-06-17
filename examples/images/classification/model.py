@@ -56,8 +56,18 @@ class ImageClassifierPipeline(pl.LightningModule):
 
         self.save_hyperparameters()
 
+        if hyperparams.experiment.training.loss.automated_prior:
+            self.prior = dict()
+
+        # freeze the prediction networks parameters when task weight is set to 0
+        # to avoid unused trainiable parameters
+        if not hyperparams.experiment.training.loss.task_weight:
+            for param in self.prediction_network.parameters():
+                param.requires_grad = False
+
     def training_step(self, batch: torch.Tensor):
-        x, y = batch
+
+        x, y, indices = batch
         batch_size, num_channels, height, width = x.shape
 
         # assert that the input is in the right shape
@@ -108,14 +118,19 @@ class ImageClassifierPipeline(pl.LightningModule):
         if self.hyperparams.experiment.training.loss.prior_weight:
             if self.hyperparams.experiment.training.loss.automated_prior:
 
-                def metric_function(model_predictions, targets):
-                    return -F.cross_entropy(
-                        model_predictions, targets, reduction="none"
-                    )
+                if self.current_epoch == 0:
+                    # one time effort to get prior and add to self.prior
+                    def metric_function(model_predictions, targets):
+                        return -F.cross_entropy(
+                            model_predictions, targets, reduction="none"
+                        )
 
-                prior = self.canonicalizer.get_prior(
-                    x, self.prediction_network, y, metric_function, tau=0.1
-                )
+                    prior = self.canonicalizer.get_prior(
+                        x, self.prediction_network, y, metric_function, tau=0.1
+                    )
+                    self.prior[indices] = prior
+                else:
+                    prior = self.prior[indices]
                 prior_loss = self.canonicalizer.get_prior_regularization_loss(prior)  # type: ignore
             else:
                 prior_loss = self.canonicalizer.get_prior_regularization_loss()
