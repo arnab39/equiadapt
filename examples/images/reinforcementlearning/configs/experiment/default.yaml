@@ -1,0 +1,12 @@
+learning_rate: 0.001
+batch_size: 128
+gamma: 0.999
+eps_start: 0.9
+eps_end: 0.01
+eps_decay: 3000
+target_update: 10
+replay_memory_size: 100000
+end_score: 200
+training_stop: 142
+num_episodes: 50000
+last_episodes_num: 20

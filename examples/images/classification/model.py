@@ -106,7 +106,7 @@ class ImageClassifierPipeline(pl.LightningModule):
             if self.hyperparams.experiment.training.loss.automated_prior:
                 def metric_function(model_predictions, targets):
                     return -F.cross_entropy(model_predictions, targets, reduction='none')
-                prior = self.canonicalizer.get_prior(x, self.prediction_network, y, metric_function, tau=0.1)
+                prior = self.canonicalizer.get_prior(x, self.prediction_network, y, metric_function, tau=0.01)
                 prior_loss = self.canonicalizer.get_prior_regularization_loss(prior) # type: ignore
             else:
                 prior_loss = self.canonicalizer.get_prior_regularization_loss()
