@@ -104,9 +104,7 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             loss += task_loss * self.hyperparams.experiment.training.loss.task_weight
 
             training_metrics.update(
-                {
-                    "train/task_loss": task_loss,
-                }
+                {"train/task_loss": task_loss}
             )
 
         if (
