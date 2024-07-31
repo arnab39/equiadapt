@@ -1,3 +1,4 @@
+import os
 from math import tau
 
 import pytorch_lightning as pl
@@ -55,9 +56,6 @@ class ImageClassifierPipeline(pl.LightningModule):
         self.max_epochs = hyperparams.experiment.training.num_epochs
 
         self.save_hyperparameters()
-
-        if hyperparams.experiment.training.loss.automated_prior:
-            self.prior = dict()
 
         # freeze the prediction networks parameters when task weight is set to 0
         # to avoid unused trainiable parameters
@@ -118,7 +116,9 @@ class ImageClassifierPipeline(pl.LightningModule):
         if self.hyperparams.experiment.training.loss.prior_weight:
             if self.hyperparams.experiment.training.loss.automated_prior:
 
-                if self.current_epoch == 0:
+                if self.current_epoch == 0 and not os.path.exists(
+                    self.hyperparams.experiment.training.loss.automated_prior_path
+                ):
                     # one time effort to get prior and add to self.prior
                     def metric_function(model_predictions, targets):
                         return -F.cross_entropy(
@@ -126,9 +126,16 @@ class ImageClassifierPipeline(pl.LightningModule):
                         )
 
                     prior = self.canonicalizer.get_prior(
-                        x, self.prediction_network, y, metric_function, tau=0.1
+                        x,
+                        self.prediction_network,
+                        y,
+                        metric_function,
+                        tau=self.hyperparams.experiment.training.loss.tau_automated_prior,
                     )
-                    self.prior[indices] = prior
+
+                    indices_list = indices.tolist()
+                    for i, indices in enumerate(indices_list):
+                        self.prior[indices] = prior[i]
                 else:
                     prior = self.prior[indices]
                 prior_loss = self.canonicalizer.get_prior_regularization_loss(prior)  # type: ignore
@@ -155,6 +162,46 @@ class ImageClassifierPipeline(pl.LightningModule):
         assert not torch.isnan(loss), "Loss is NaN"
 
         return {"loss": loss, "acc": acc}
+
+    def on_train_epoch_start(self) -> None:
+        if (
+            self.current_epoch == 0
+            and self.hyperparams.experiment.training.loss.automated_prior
+        ):
+            if os.path.exists(
+                self.hyperparams.experiment.training.loss.automated_prior_path
+            ):
+                self.prior = torch.load(
+                    self.hyperparams.experiment.training.loss.automated_prior_path
+                ).to(self.device)
+            else:
+                os.makedirs(
+                    str.join(
+                        "/",
+                        self.hyperparams.experiment.training.loss.automated_prior_path.split(
+                            "/"
+                        )[
+                            :-1
+                        ],
+                    ),
+                    exist_ok=True,
+                )
+                self.prior = dict()
+
+    def on_train_epoch_end(self) -> None:
+        if (
+            self.current_epoch == 0
+            and self.hyperparams.experiment.training.loss.automated_prior
+            and not os.path.exists(
+                self.hyperparams.experiment.training.loss.automated_prior_path
+            )
+        ):
+            # convert self.prior dictionary into a tensor and save it
+            self.prior = torch.stack(list(self.prior.values()))
+            torch.save(
+                self.prior,
+                self.hyperparams.experiment.training.loss.automated_prior_path,
+            )
 
     def validation_step(self, batch: torch.Tensor):
         x, y = batch

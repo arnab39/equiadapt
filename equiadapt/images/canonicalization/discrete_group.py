@@ -198,7 +198,9 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             : self.num_rotations
         ].to(self.device)
         group_elements_rot_comp = (
-            torch.cat([angles, angles], dim=0)
+            torch.cat(
+                [angles, torch.cat([angles[:1], angles[1:].flip(dims=[0])])], dim=0
+            )
             if self.group_type == "roto-reflection"
             else angles
         )
@@ -585,7 +587,8 @@ class OptimizedGroupEquivariantImageCanonicalization(
         vectors = vectors.reshape(self.num_group, -1, self.out_vector_size).permute(
             (1, 0, 2)
         )  # (batch_size, group_size, vector_out_size)
-        distances = vectors @ vectors.permute((0, 2, 1))
+        normalized_vectors = F.normalize(vectors, p=2, dim=-1)
+        distances = normalized_vectors @ normalized_vectors.permute((0, 2, 1))
         mask = 1.0 - torch.eye(self.num_group).to(
             self.device
         )  # (group_size, group_size)
