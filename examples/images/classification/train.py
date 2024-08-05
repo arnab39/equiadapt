@@ -52,6 +52,59 @@ def train_images(hyperparams: DictConfig) -> None:
             + hyperparams["prediction"]["prediction_network_architecture"]
         )
 
+        # define and create the path to save automated prior
+        if hyperparams["experiment"]["training"]["loss"]["automated_prior"]:
+            # add name of dataset and prediction network architecture to the path
+            # create the directory to store the automated prior if it does not exist
+            hyperparams["experiment"]["training"]["loss"]["automated_prior_path"] = (
+                os.path.join(
+                    str(
+                        hyperparams["experiment"]["training"]["loss"][
+                            "automated_prior_path"
+                        ]
+                    ),
+                    str(hyperparams["dataset"]["dataset_name"]),  # stl10
+                    str(
+                        hyperparams["prediction"]["prediction_network_architecture"]
+                    ),  # vit
+                )
+            )
+
+            if not os.path.exists(
+                hyperparams["experiment"]["training"]["loss"]["automated_prior_path"]
+            ):
+                os.makedirs(
+                    hyperparams["experiment"]["training"]["loss"][
+                        "automated_prior_path"
+                    ],
+                    exist_ok=True,
+                )
+
+            # the name of the automated prior file contains
+            # 1) the group type and 2) number of rotations
+            group_type = (
+                str(
+                    hyperparams["canonicalization"]["network_hyperparams"]["group_type"]
+                )
+                if hyperparams["canonicalization_type"] == "group_equivariant"
+                else str(hyperparams["canonicalization"]["group_type"])
+            )
+            num_rotations = (
+                str(
+                    hyperparams["canonicalization"]["network_hyperparams"][
+                        "num_rotations"
+                    ]
+                )
+                if hyperparams["canonicalization_type"] == "group_equivariant"
+                else str(hyperparams["canonicalization"]["num_rotations"])
+            )
+
+            # obtain the final path to store the automated prior
+            # will be used to load or save the automated prior after 1 epoch
+            hyperparams["experiment"]["training"]["loss"][
+                "automated_prior_path"
+            ] += f"/{group_type}_{num_rotations}_automated_prior.pt"
+
     # set system environment variables for wandb
     if hyperparams["wandb"]["use_wandb"]:
         print("Using wandb for logging...")
