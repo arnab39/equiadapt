@@ -1,8 +1,12 @@
+import copy
+import os
+
 import pytorch_lightning as pl
 import torch
 from inference_utils import get_inference_method
 from model_utils import calc_iou, get_dataset_specific_info, get_prediction_network
 from omegaconf import DictConfig
+from torch.nn import functional as F
 from torch.optim.lr_scheduler import MultiStepLR
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
@@ -55,6 +59,12 @@ class ImageSegmentationPipeline(pl.LightningModule):
 
         self.save_hyperparameters()
 
+        # freeze the prediction networks parameters when task weight is set to 0
+        # to avoid unused trainiable parameters
+        if not hyperparams.experiment.training.loss.task_weight:
+            for param in self.prediction_network.parameters():
+                param.requires_grad = False
+
     def apply_loss(
         self,
         loss_dict: dict,
@@ -106,7 +116,7 @@ class ImageSegmentationPipeline(pl.LightningModule):
         return 20.0 * loss_focal + loss_dice + loss_iou
 
     def training_step(self, batch: torch.Tensor):
-        x, targets = batch
+        x, targets, indices = batch
         x = torch.stack(x)
         batch_size, num_channels, height, width = x.shape
 
@@ -118,6 +128,7 @@ class ImageSegmentationPipeline(pl.LightningModule):
 
         # canonicalize the input data
         # For the vanilla model, the canonicalization is the identity transformation
+        targets_og = copy.deepcopy(targets)
         x_canonicalized, targets_canonicalized = self.canonicalizer(x, targets)
 
         # add group contrast loss while using optmization based canonicalization method
@@ -159,7 +170,34 @@ class ImageSegmentationPipeline(pl.LightningModule):
 
         # Add prior regularization loss if the prior weight is non-zero
         if self.hyperparams.experiment.training.loss.prior_weight:
-            prior_loss = self.canonicalizer.get_prior_regularization_loss()
+            if self.hyperparams.experiment.training.loss.automated_prior:
+
+                if self.current_epoch == 0 and not self.automated_prior_exists:
+                    # one time effort to get prior and add to self.prior
+                    def metric_function(model_predictions, targets):
+                        return -F.cross_entropy(
+                            model_predictions, targets, reduction="none"
+                        )
+
+                    self.canonicalizer.group_augment_target = True
+                    prior = self.canonicalizer.get_prior(
+                        x,
+                        self.prediction_network,
+                        targets_og,
+                        metric_function=None,
+                        tau=self.hyperparams.experiment.training.loss.tau_automated_prior,
+                        group_augment_target=True,  # need to augment the targets with group transformations
+                    )
+
+                    indices_list = indices.tolist()
+                    for i, indices in enumerate(indices_list):
+                        self.prior[indices] = prior[i]
+                else:
+                    prior = self.prior[indices]
+                prior_loss = self.canonicalizer.get_prior_regularization_loss(prior)  # type: ignore
+            else:
+                prior_loss = self.canonicalizer.get_prior_regularization_loss()
+
             loss += prior_loss * self.hyperparams.experiment.training.loss.prior_weight
             metric_identity = self.canonicalizer.get_identity_metric()
             training_metrics.update(
@@ -180,6 +218,37 @@ class ImageSegmentationPipeline(pl.LightningModule):
 
         assert not torch.isnan(loss), "Loss is NaN"
         return {"loss": loss}
+
+    def on_train_epoch_start(self) -> None:
+        if (
+            self.current_epoch == 0
+            and self.hyperparams.experiment.training.loss.automated_prior
+        ):
+            if os.path.exists(
+                self.hyperparams.experiment.training.loss.automated_prior_path
+            ):
+                self.automated_prior_exists = True
+                self.prior = torch.load(
+                    self.hyperparams.experiment.training.loss.automated_prior_path
+                ).to(self.device)
+            else:
+                self.automated_prior_exists = False
+                self.prior = dict()
+
+    def on_train_epoch_end(self) -> None:
+        if (
+            self.current_epoch == 0
+            and self.hyperparams.experiment.training.loss.automated_prior
+            and not os.path.exists(
+                self.hyperparams.experiment.training.loss.automated_prior_path
+            )
+        ):
+            # convert self.prior dictionary into a tensor and save it
+            self.prior = torch.stack(list(self.prior.values()))
+            torch.save(
+                self.prior,
+                self.hyperparams.experiment.training.loss.automated_prior_path,
+            )
 
     def validation_step(self, batch: torch.Tensor):
         x, targets = batch

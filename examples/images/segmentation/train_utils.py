@@ -82,9 +82,13 @@ def get_trainer(
             num_nodes=hyperparams.experiment.num_nodes,
             devices=hyperparams.experiment.num_gpus,
             strategy=(
-                "ddp"
-                if not hyperparams.experiment.training.loss.task_weight
-                else "ddp_find_unused_parameters_true"
+                (
+                    "ddp"
+                    if hyperparams.experiment.training.loss.task_weight
+                    else "ddp_find_unused_parameters_true"
+                )
+                if hyperparams.experiment.num_gpus > 1
+                else "auto"
             ),
             # since when you do a forward pass through the (large) prediction network (such as Segment-Anything Model)
             # there might be some unused parameters in the prediction network, so we need to set the strategy to
