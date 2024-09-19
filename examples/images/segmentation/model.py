@@ -124,7 +124,7 @@ class ImageSegmentationPipeline(pl.LightningModule):
         assert (num_channels, height, width) == self.image_shape
 
         training_metrics = {}
-        loss = torch.tensor(0.0)
+        loss = torch.tensor(0.0, device=x.device)
 
         if self.current_epoch == 0 and not self.automated_prior_exists:
             # one time effort to get prior and add to self.prior
@@ -141,6 +141,8 @@ class ImageSegmentationPipeline(pl.LightningModule):
             indices_list = indices.tolist()
             for i, indices in enumerate(indices_list):
                 self.prior[indices] = prior[i]
+
+            return None
 
         else:
 
@@ -208,17 +210,17 @@ class ImageSegmentationPipeline(pl.LightningModule):
                     }
                 )
 
-        training_metrics.update(
-            {
-                "train/loss": loss,
-            }
-        )
+            training_metrics.update(
+                {
+                    "train/loss": loss,
+                }
+            )
 
-        # Log the training metrics
-        self.log_dict(training_metrics, prog_bar=True)
+            # Log the training metrics
+            self.log_dict(training_metrics, prog_bar=True)
 
-        assert not torch.isnan(loss), "Loss is NaN"
-        return {"loss": loss}
+            assert not torch.isnan(loss), "Loss is NaN"
+            return {"loss": loss}
 
     def on_train_epoch_start(self) -> None:
         self.automated_prior_exists = True  # default behavior
