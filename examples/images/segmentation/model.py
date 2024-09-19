@@ -124,88 +124,89 @@ class ImageSegmentationPipeline(pl.LightningModule):
         assert (num_channels, height, width) == self.image_shape
 
         training_metrics = {}
-        loss = 0.0
+        loss = torch.tensor(0.0)
 
-        # canonicalize the input data
-        # For the vanilla model, the canonicalization is the identity transformation
-        targets_og = copy.deepcopy(targets)
-        x_canonicalized, targets_canonicalized = self.canonicalizer(x, targets)
-
-        # add group contrast loss while using optmization based canonicalization method
-        if "opt" in self.hyperparams.canonicalization_type:
-            group_contrast_loss = self.canonicalizer.get_optimization_specific_loss()
-            loss += (
-                group_contrast_loss
-                * self.hyperparams.experiment.training.loss.group_contrast_weight
-            )
-            training_metrics.update(
-                {"train/optimization_specific_loss": group_contrast_loss}
+        if self.current_epoch == 0 and not self.automated_prior_exists:
+            # one time effort to get prior and add to self.prior
+            self.canonicalizer.group_augment_target = True
+            prior = self.canonicalizer.get_prior(
+                x,
+                self.prediction_network,
+                targets,
+                metric_function=None,
+                tau=self.hyperparams.experiment.training.loss.tau_automated_prior,
+                group_augment_target=True,  # need to augment the targets with group transformations
             )
 
-        # calculate the task loss
-        # if finetuning is not required, set the weight for task loss to 0
-        # it will avoid unnecessary forward pass through the prediction network
-        if self.hyperparams.experiment.training.loss.task_weight:
+            indices_list = indices.tolist()
+            for i, indices in enumerate(indices_list):
+                self.prior[indices] = prior[i]
 
-            # Forward pass through the prediction network as you'll normally do
-            # Finetuning maskrcnn model will return the losses which can be used to fine tune the model
-            # Meanwhile, Segment-Anything (SAM) can return boxes, ious, masks predictions
-            # For uniformity, we will ensure the prediction network returns both losses and predictions irrespective of the model
-            loss_dict, pred_masks, iou_predictions, _ = self.prediction_network(
-                x_canonicalized, targets_canonicalized
-            )
+        else:
 
-            # no requirement to invert canonicalization for the loss calculation
-            # since we will compute the loss w.r.t canonicalized targets (to align with the loss computation in maskrcnn)
-            task_loss = self.apply_loss(
-                loss_dict, pred_masks, targets_canonicalized, iou_predictions
-            )
-            loss += self.hyperparams.experiment.training.loss.task_weight * task_loss
+            # canonicalize the input data
+            # For the vanilla model, the canonicalization is the identity transformation
+            x_canonicalized, targets_canonicalized = self.canonicalizer(x, targets)
 
-            training_metrics.update(
-                {
-                    "train/task_loss": task_loss,
-                }
-            )
+            # add group contrast loss while using optmization based canonicalization method
+            if "opt" in self.hyperparams.canonicalization_type:
+                group_contrast_loss = (
+                    self.canonicalizer.get_optimization_specific_loss()
+                )
+                loss += (
+                    group_contrast_loss
+                    * self.hyperparams.experiment.training.loss.group_contrast_weight
+                )
+                training_metrics.update(
+                    {"train/optimization_specific_loss": group_contrast_loss}
+                )
 
-        # Add prior regularization loss if the prior weight is non-zero
-        if self.hyperparams.experiment.training.loss.prior_weight:
-            if self.hyperparams.experiment.training.loss.automated_prior:
+            # calculate the task loss
+            # if finetuning is not required, set the weight for task loss to 0
+            # it will avoid unnecessary forward pass through the prediction network
+            if self.hyperparams.experiment.training.loss.task_weight:
 
-                if self.current_epoch == 0 and not self.automated_prior_exists:
-                    # one time effort to get prior and add to self.prior
-                    def metric_function(model_predictions, targets):
-                        return -F.cross_entropy(
-                            model_predictions, targets, reduction="none"
-                        )
+                # Forward pass through the prediction network as you'll normally do
+                # Finetuning maskrcnn model will return the losses which can be used to fine tune the model
+                # Meanwhile, Segment-Anything (SAM) can return boxes, ious, masks predictions
+                # For uniformity, we will ensure the prediction network returns both losses and predictions irrespective of the model
+                loss_dict, pred_masks, iou_predictions, _ = self.prediction_network(
+                    x_canonicalized, targets_canonicalized
+                )
 
-                    self.canonicalizer.group_augment_target = True
-                    prior = self.canonicalizer.get_prior(
-                        x,
-                        self.prediction_network,
-                        targets_og,
-                        metric_function=None,
-                        tau=self.hyperparams.experiment.training.loss.tau_automated_prior,
-                        group_augment_target=True,  # need to augment the targets with group transformations
-                    )
+                # no requirement to invert canonicalization for the loss calculation
+                # since we will compute the loss w.r.t canonicalized targets (to align with the loss computation in maskrcnn)
+                task_loss = self.apply_loss(
+                    loss_dict, pred_masks, targets_canonicalized, iou_predictions
+                )
+                loss += (
+                    self.hyperparams.experiment.training.loss.task_weight * task_loss
+                )
 
-                    indices_list = indices.tolist()
-                    for i, indices in enumerate(indices_list):
-                        self.prior[indices] = prior[i]
-                else:
+                training_metrics.update(
+                    {
+                        "train/task_loss": task_loss,
+                    }
+                )
+
+            # Add prior regularization loss if the prior weight is non-zero
+            if self.hyperparams.experiment.training.loss.prior_weight:
+                if self.hyperparams.experiment.training.loss.automated_prior:
                     prior = self.prior[indices]
-                prior_loss = self.canonicalizer.get_prior_regularization_loss(prior)  # type: ignore
-            else:
-                prior_loss = self.canonicalizer.get_prior_regularization_loss()
+                    prior_loss = self.canonicalizer.get_prior_regularization_loss(prior)  # type: ignore
+                else:
+                    prior_loss = self.canonicalizer.get_prior_regularization_loss()
 
-            loss += prior_loss * self.hyperparams.experiment.training.loss.prior_weight
-            metric_identity = self.canonicalizer.get_identity_metric()
-            training_metrics.update(
-                {
-                    "train/prior_loss": prior_loss,
-                    "train/identity_metric": metric_identity,
-                }
-            )
+                loss += (
+                    prior_loss * self.hyperparams.experiment.training.loss.prior_weight
+                )
+                metric_identity = self.canonicalizer.get_identity_metric()
+                training_metrics.update(
+                    {
+                        "train/prior_loss": prior_loss,
+                        "train/identity_metric": metric_identity,
+                    }
+                )
 
         training_metrics.update(
             {
@@ -220,6 +221,8 @@ class ImageSegmentationPipeline(pl.LightningModule):
         return {"loss": loss}
 
     def on_train_epoch_start(self) -> None:
+        self.automated_prior_exists = True  # default behavior
+
         if (
             self.current_epoch == 0
             and self.hyperparams.experiment.training.loss.automated_prior
@@ -235,6 +238,11 @@ class ImageSegmentationPipeline(pl.LightningModule):
                 self.automated_prior_exists = False
                 self.prior = dict()
 
+            for param in self.canonicalizer.parameters():
+                param.requires_grad = False
+
+            self.prediction_network.eval()
+
     def on_train_epoch_end(self) -> None:
         if (
             self.current_epoch == 0
@@ -249,6 +257,11 @@ class ImageSegmentationPipeline(pl.LightningModule):
                 self.prior,
                 self.hyperparams.experiment.training.loss.automated_prior_path,
             )
+
+            for param in self.canonicalizer.parameters():
+                param.requires_grad = True
+
+            self.prediction_network.train()
 
     def validation_step(self, batch: torch.Tensor):
         x, targets = batch

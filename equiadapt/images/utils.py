@@ -185,3 +185,32 @@ def rotate_boxes(boxes: torch.Tensor, angle: torch.Tensor, width: int) -> torch.
     rotated_boxes = torch.stack([x_min_rot, y_min_rot, x_max_rot, y_max_rot], dim=-1)
 
     return rotated_boxes
+
+
+# utility function to plot boxes and masks on images
+def plot_boxes_masks_on_images(
+    image: torch.Tensor, boxes: torch.Tensor, masks: torch.Tensor
+) -> None:
+    """Plots bounding boxes and masks on images."""
+    from segmentation_mask_overlay import overlay_masks
+    from torchvision.utils import draw_bounding_boxes, save_image
+
+    image_boxes = draw_bounding_boxes(
+        image.mul(255).add_(0.5).clamp_(0, 255).to(torch.uint8), boxes
+    )
+    save_image(
+        image,
+        "images_visualize/image.png",
+    )
+    save_image(
+        image_boxes / 255.0,
+        "images_visualize/image_bbox.png",
+    )
+    sample_numpy_image = image.permute(1, 2, 0).cpu().numpy()
+    fig = overlay_masks(
+        sample_numpy_image,
+        masks.permute(1, 2, 0).cpu().numpy(),
+        beta=0.5,
+        return_type="pil",
+    )
+    fig.save("images_visualize/image_masks.png")

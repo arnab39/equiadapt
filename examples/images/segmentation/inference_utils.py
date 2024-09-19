@@ -103,7 +103,10 @@ class GroupInference(VanillaInference):
             outputs = [
                 dict(
                     boxes=(
-                        flip_boxes(rotate_boxes(output["boxes"], degree, image_width))
+                        flip_boxes(
+                            rotate_boxes(output["boxes"], degree, image_width),
+                            image_width,
+                        )
                         if reflection
                         else rotate_boxes(output["boxes"], degree, image_width)
                     ),

@@ -1,3 +1,4 @@
+import copy
 import math
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -5,6 +6,7 @@ import kornia as K
 import torch
 from omegaconf import DictConfig
 from torch.nn import functional as F
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from torchvision import transforms
 
 from equiadapt.common.basecanonicalization import DiscreteGroupCanonicalization
@@ -109,74 +111,156 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
     def rotate_and_maybe_reflect(
         self,
         x: torch.Tensor,
+        targets: Union[torch.Tensor, List[Dict[str, Any]]],
         degrees: torch.Tensor,
         reflect: bool = False,
         padding_function: Optional[torch.nn.Module] = None,
         cropping_function: Optional[torch.nn.Module] = None,
-    ) -> List[torch.Tensor]:
+        group_augment_target: Optional[bool] = False,
+    ) -> Union[List[torch.Tensor], Tuple[List[torch.Tensor], List[Dict[str, Any]]]]:
         """
         Rotate and maybe reflect the input images.
 
         Args:
             x (torch.Tensor): The input image.
+            targets (Union[torch.Tensor, List[Dict[str, Any]]]): The targets associated with the input image.
             degrees (torch.Tensor): The degrees of rotation.
             reflect (bool, optional): Whether to reflect the image. Defaults to False.
+            padding_function (Optional[torch.nn.Module], optional): Function to apply padding. Defaults to None.
+            cropping_function (Optional[torch.nn.Module], optional): Function to apply cropping. Defaults to None.
+            group_augment_target (Optional[bool], optional): Whether to augment the target. Defaults to False.
 
         Returns:
-            List[torch.Tensor]: The list of rotated and maybe reflected images.
+            Union[List[torch.Tensor], Tuple[List[torch.Tensor], List[dict]]]:
+            If group_augment_target is False, returns a list of augmented images.
+            If group_augment_target is True, returns a tuple containing the list of augmented images and the list of augmented targets.
         """
-        x_augmented_list = []
+        x_augmented_list: List[torch.Tensor] = []
+        if group_augment_target:
+            targets_augmented_list: List[Dict[str, Any]] = []
+
+        # iterate over (discrete) degrees of rotation
         for degree in degrees:
+
+            # image padding with group augment specific padding
             x_rot = (
                 self.pad_group_augment(x)
                 if padding_function is None
                 else padding_function(x)
             )
+
+            # rotate the image with the given degree
             x_rot = K.geometry.rotate(x_rot, -degree)
+
+            # rotate the target if group_augment_target set to True
+            # currently this assumes the target is a list of dictionaries
+            # with bounding boxes and masks, i.e., instance segmentation tasks
+            # user can add more such items that can be considered as targets and can be rotated
+            if group_augment_target:
+                targets_transformed = copy.deepcopy(targets)
+                for t in range(len(targets_transformed)):
+                    targets_transformed[t]["boxes"] = rotate_boxes(
+                        targets_transformed[t]["boxes"], degree, width=x.shape[-1]
+                    )
+                    targets_transformed[t]["masks"] = rotate_masks(
+                        targets_transformed[t]["masks"], -degree.item()
+                    )
+
             if reflect:
+                # reflect the image if reflect is set to True
                 x_rot = K.geometry.hflip(x_rot)
+
+                # reflect the target if group_augment_target set to True
+                # again, this assumes the target is a list of dictionaries
+                # with bounding boxes and masks, i.e., instance segmentation tasks
+                # user can add more such items that can be considered as targets and can be reflected
+                if group_augment_target:
+                    for t in range(len(targets_transformed)):
+                        targets_transformed[t]["boxes"] = flip_boxes(
+                            targets_transformed[t]["boxes"], width=x.shape[-1]
+                        )
+                        targets_transformed[t]["masks"] = flip_masks(
+                            targets_transformed[t]["masks"]
+                        )
+
+            # crop the transformed image with group augment specific cropping
+            # append the final transformed image to the augmented list
             x_rot = (
                 self.crop_group_augment(x_rot)
                 if cropping_function is None
                 else cropping_function(x_rot)
             )
             x_augmented_list.append(x_rot)
+
+            # append the transformed target to the augmented list
+            if group_augment_target:
+                targets_augmented_list.extend(targets_transformed)
+
+        if group_augment_target:
+            return x_augmented_list, targets_augmented_list
+
         return x_augmented_list
 
     def group_augment(
         self,
         x: torch.Tensor,
+        targets: Optional[torch.Tensor] = None,
         padding_function: Optional[torch.nn.Module] = None,
         cropping_function: Optional[torch.nn.Module] = None,
-    ) -> torch.Tensor:
+        group_augment_target: Optional[bool] = False,
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, List[Any]]]:
         """Augment the input images by applying group transformations (rotations and reflections).
-
-        This function is used both for the energy based optimization method for the discrete rotation
 
         Args:
             x (torch.Tensor): The input image.
+            targets (Optional[torch.Tensor]): The target labels.
+            padding_function (Optional[torch.nn.Module]): Padding function.
+            cropping_function (Optional[torch.nn.Module]): Cropping function.
+            group_augment_target (Optional[bool]): Whether to augment the targets as well.
 
         Returns:
-            torch.Tensor: The augmented image.
+            Union[torch.Tensor, Tuple[torch.Tensor, List[Any]]]: The augmented images and optionally the augmented targets.
         """
-        degrees = torch.linspace(0, 360, self.num_rotations + 1)[:-1].to(self.device)
-        x_augmented_list = self.rotate_and_maybe_reflect(
+        degrees = torch.linspace(0, 360, self.num_rotations + 1)[:-1].to(x.device)
+
+        x_augmented_results = self.rotate_and_maybe_reflect(
             x,
+            targets,
             degrees,
             padding_function=padding_function,
             cropping_function=cropping_function,
+            group_augment_target=group_augment_target,
         )
+        if group_augment_target:
+            x_augmented_images = x_augmented_results[0]
+            x_augmented_targets = x_augmented_results[1]
+        else:
+            x_augmented_images = x_augmented_results
 
         if self.group_type == "roto-reflection":
-            x_augmented_list += self.rotate_and_maybe_reflect(
+            x_reflect_results = self.rotate_and_maybe_reflect(
                 x,
+                targets,
                 degrees,
                 reflect=True,
                 padding_function=padding_function,
                 cropping_function=cropping_function,
+                group_augment_target=group_augment_target,
             )
+            if group_augment_target:
+                x_reflect_images = x_reflect_results[0]
+                x_reflect_targets = x_reflect_results[1]
+            else:
+                x_reflect_images = x_reflect_results
 
-        return torch.cat(x_augmented_list, dim=0)
+            x_augmented_images.extend(x_reflect_images)
+            if group_augment_target:
+                x_augmented_targets.extend(x_reflect_targets)
+
+        if group_augment_target:
+            return torch.cat(x_augmented_images, dim=0), x_augmented_targets
+        else:
+            return torch.cat(x_augmented_images, dim=0)
 
     def groupactivations_to_groupelement(self, group_activations: torch.Tensor) -> dict:
         """
@@ -196,7 +280,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
 
         angles = torch.linspace(0.0, 360.0, self.num_rotations + 1)[
             : self.num_rotations
-        ].to(self.device)
+        ].to(group_activations.device)
         group_elements_rot_comp = (
             torch.cat(
                 [angles, torch.cat([angles[:1], angles[1:].flip(dims=[0])])], dim=0
@@ -215,7 +299,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         if self.group_type == "roto-reflection":
             reflect_identifier_vector = torch.cat(
                 [torch.zeros(self.num_rotations), torch.ones(self.num_rotations)], dim=0
-            ).to(self.device)
+            ).to(group_activations.device)
             group_element_reflect_comp = torch.sum(
                 group_elements_one_hot * reflect_identifier_vector, dim=-1
             )
@@ -354,6 +438,7 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         targets: torch.Tensor,
         metric_function: torch.nn.Module,
         tau: float = 1.0,
+        group_augment_target: Optional[bool] = False,
     ) -> torch.Tensor:
         """
         Get the prior for the input images.
@@ -371,28 +456,66 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
         with torch.no_grad():
             batch_size = x.shape[0]
             x_augmented = self.group_augment(
-                x, padding_function=self.pad, cropping_function=self.crop
+                x,
+                targets,
+                padding_function=self.pad,
+                cropping_function=self.crop,
+                group_augment_target=group_augment_target,
             )  # size (group_size * batch_size, in_channels, height, width)
-            # If a self.group_augment_target is defined, apply the same transformation to the targets
-            # Or else just repeat the targets for each group element in the first dimension
-            if hasattr(self, "group_augment_target"):
-                targets_augmented = self.group_augment_target(targets)
+
+            # If group_augment_target is set to True, apply the same group transformation to the targets
+            # In this case, the forward pass of model (prediction network) requires the augmented targets
+            # Else just repeat the targets for each group element in the first dimension
+            if group_augment_target:
+                x_augmented, targets_augmented = x_augmented
+                _, _, _, model_output = model(x_augmented, targets_augmented)
+
+                map_metrics = []
+                for i in range(len(targets_augmented)):
+                    Map = MeanAveragePrecision(iou_type="segm")
+                    _targets = [
+                        dict(
+                            boxes=targets_augmented[i]["boxes"],
+                            labels=targets_augmented[i]["labels"],
+                            masks=targets_augmented[i]["masks"],
+                        )
+                    ]
+                    _outputs = [
+                        dict(
+                            boxes=model_output[i]["boxes"],
+                            labels=model_output[i]["labels"],
+                            scores=model_output[i]["scores"],
+                            masks=model_output[i]["masks"],
+                        )
+                    ]
+                    Map.update(_outputs, _targets)
+                    map_metric = Map.compute()["map"]
+
+                    map_metrics.append(map_metric)
+
+                unnormalized_prob_masses = (
+                    torch.stack(map_metrics)
+                    .reshape(self.num_group, batch_size)
+                    .transpose(0, 1)
+                    .to(x.device)
+                )
+
             else:
                 targets_augmented = targets.repeat(
                     self.num_group, 1
                 ).flatten()  # size (group_size * batch_size)
 
-            # Get the output of the model for the augmented images
-            model_output = model(
-                x_augmented
-            )  # size eg (group_size * batch_size, num_classes)
+                # Get the output of the model for the augmented images
+                model_output = model(
+                    x_augmented
+                )  # size (group_size * batch_size, num_classes)
 
-            # Get the unnormalized probability masses for each group element
-            unnormalized_prob_masses = (
-                metric_function(model_output, targets_augmented)
-                .reshape(self.num_group, batch_size)
-                .transpose(0, 1)
-            )  # size (batch_size, group_size)
+                # Get the unnormalized probability masses for each group element
+                unnormalized_prob_masses = (
+                    metric_function(model_output, targets_augmented)
+                    .reshape(self.num_group, batch_size)
+                    .transpose(0, 1)
+                )  # size (batch_size, group_size)
 
             # Get the prior for the input images
             prior = F.softmax(
@@ -534,8 +657,8 @@ class OptimizedGroupEquivariantImageCanonicalization(
         if self.artifact_weight:
             # select a random rotation for each image in the batch
             rotation_indices = torch.randint(
-                0, self.num_rotations, (x_augmented.shape[0],)
-            ).to(self.device)
+                0, self.num_rotations, (x_augmented.shape[0],)  # type: ignore
+            ).to(x.device)
 
             # apply the rotation degree to the images
             x_dummy = self.pad_group_augment(x_augmented)
@@ -590,7 +713,7 @@ class OptimizedGroupEquivariantImageCanonicalization(
         normalized_vectors = F.normalize(vectors, p=2, dim=-1)
         distances = normalized_vectors @ normalized_vectors.permute((0, 2, 1))
         mask = 1.0 - torch.eye(self.num_group).to(
-            self.device
+            vectors.device
         )  # (group_size, group_size)
 
         return (
