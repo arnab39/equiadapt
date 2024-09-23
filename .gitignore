@@ -123,3 +123,7 @@ docs/_build/
 
 # NBody Data
 examples/nbody/data/n_body_system/dataset/*.npy
+
+# log and wandb related files
+outputs/
+wandb/

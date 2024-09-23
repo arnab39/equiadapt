@@ -64,13 +64,21 @@ class COCODataModule(pl.LightningDataModule):
         return T.Compose(tr)
 
     def collate_fn(self, batch):
+
+        # typical collate_fn for images and targets in the batch
         images = [x[0] for x in batch]
         targets = [x[1] for x in batch]
+
+        # indices are required to store the automated-prior distribution
+        if len(batch[0]) == 3:
+            indices = torch.tensor([x[2] for x in batch])
+            return images, targets, indices
+
         return images, targets
 
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
-            self.train_dataset = COCODataset(
+            self.train_dataset = IndexedCOCODataset(
                 root_dir=os.path.join(self.hyperparams.root_dir, "train2017"),
                 annotation_file=os.path.join(
                     self.hyperparams.ann_dir, "instances_train2017.json"
@@ -184,3 +192,9 @@ class COCODataset(Dataset):
             image, target = self.transform(image, target)
 
         return image, target
+
+
+class IndexedCOCODataset(COCODataset):
+    def __getitem__(self, index):
+        image, target = super(IndexedCOCODataset, self).__getitem__(index)
+        return image, target, index

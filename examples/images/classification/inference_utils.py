@@ -128,7 +128,7 @@ class GroupInference(VanillaInference):
         elif self.num_rotations == -1:
             # continuous groups
             # sample 10 random rotations (or roto-reflections) and get the logits
-            n_matrices = 4
+            n_matrices = 10
             logits_dict = {}
             reflect = True if self.group_type == "roto-reflection" else False
 
@@ -153,7 +153,7 @@ class GroupInference(VanillaInference):
                     affine_matrices,
                     x_pad.shape,
                 )
-                x_rot = torch.nn.functional.grid_sample(x, x_affine)
+                x_rot = torch.nn.functional.grid_sample(x_pad, x_affine)
                 x_rot = self.crop(x_rot)
 
                 logits_dict[rot] = self.forward(x_rot)

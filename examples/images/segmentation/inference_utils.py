@@ -103,7 +103,10 @@ class GroupInference(VanillaInference):
             outputs = [
                 dict(
                     boxes=(
-                        flip_boxes(rotate_boxes(output["boxes"], degree, image_width))
+                        flip_boxes(
+                            rotate_boxes(output["boxes"], degree, image_width),
+                            image_width,
+                        )
                         if reflection
                         else rotate_boxes(output["boxes"], degree, image_width)
                     ),
@@ -117,6 +120,32 @@ class GroupInference(VanillaInference):
             ]
 
         return None, None, None, outputs
+
+    def plot_boxes_masks_on_images(self, image, boxes, masks):
+        from segmentation_mask_overlay import overlay_masks
+        from torchvision.utils import draw_bounding_boxes, save_image
+
+        image_boxes = draw_bounding_boxes(
+            image.mul(255).add_(0.5).clamp_(0, 255).to(torch.uint8), boxes
+        )
+        save_image(
+            image,
+            "/home/mila/s/siba-smarak.panigrahi/EquivariantAdaptation/images_visualize/image.png",
+        )
+        save_image(
+            image_boxes / 255.0,
+            "/home/mila/s/siba-smarak.panigrahi/EquivariantAdaptation/images_visualize/image_bbox.png",
+        )
+        sample_numpy_image = image.permute(1, 2, 0).cpu().numpy()
+        fig = overlay_masks(
+            sample_numpy_image,
+            masks.permute(1, 2, 0).cpu().numpy(),
+            beta=0.5,
+            return_type="pil",
+        )
+        fig.save(
+            "/home/mila/s/siba-smarak.panigrahi/EquivariantAdaptation/images_visualize/image_masks.png"
+        )
 
     def get_group_element_wise_maps(
         self, images: torch.Tensor, targets: torch.Tensor
@@ -172,11 +201,11 @@ class GroupInference(VanillaInference):
             # Rotate the reflected images and get the logits
             for rot, degree in enumerate(degrees):
 
+                targets_transformed = copy.deepcopy(targets)
+
                 images_pad = self.pad(images)
-                images_reflect = transforms.functional.hflip(images_pad)
-                images_rotoreflect = transforms.functional.rotate(
-                    images_reflect, degree.item()
-                )
+                images_rotated = transforms.functional.rotate(images_pad, degree.item())
+                images_rotoreflect = transforms.functional.hflip(images_rotated)
                 images_rotoreflect = self.crop(images_rotoreflect)
 
                 # apply group element on bounding boxes and masks
@@ -185,27 +214,28 @@ class GroupInference(VanillaInference):
                         targets_transformed[t]["boxes"], -degree, image_width
                     )
                     targets_transformed[t]["boxes"] = flip_boxes(
-                        targets_transformed[t]["boxes"], image_width
+                        targets_transformed[t]["boxes"],
+                        image_width,
                     )
 
                     targets_transformed[t]["masks"] = rotate_masks(
-                        targets_transformed[t]["masks"], degree
+                        targets_transformed[t]["masks"], degree.item()
                     )
                     targets_transformed[t]["masks"] = flip_masks(
-                        targets_transformed[t]["masks"]
+                        targets_transformed[t]["masks"],
                     )
 
                 # get predictions for the transformed images
                 _, _, _, outputs = self.forward(images_rotoreflect, targets_transformed)
 
                 Map = MeanAveragePrecision(iou_type="segm")
-                targets = [
+                _targets = [
                     dict(
                         boxes=target["boxes"],
                         labels=target["labels"],
                         masks=target["masks"],
                     )
-                    for target in targets
+                    for target in targets_transformed
                 ]
                 outputs = [
                     dict(
@@ -216,7 +246,7 @@ class GroupInference(VanillaInference):
                     )
                     for output in outputs
                 ]
-                Map.update(outputs, targets)
+                Map.update(outputs, _targets)
 
                 map_dict[rot + len(degrees)] = Map.compute()
 

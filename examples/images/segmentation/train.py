@@ -4,10 +4,11 @@ import hydra
 import omegaconf
 import pytorch_lightning as pl
 import torch
-import wandb
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
 from train_utils import get_model_data_and_callbacks, get_trainer, load_envs
+
+import wandb
 
 
 def train_images(hyperparams: DictConfig) -> None:
@@ -63,6 +64,53 @@ def train_images(hyperparams: DictConfig) -> None:
             + hyperparams["prediction"]["prediction_network_architecture"]
         )
 
+        # defining the path to save automated prior
+        if hyperparams["experiment"]["training"]["loss"]["automated_prior"]:
+            hyperparams["experiment"]["training"]["loss"]["automated_prior_path"] = (
+                os.path.join(
+                    str(
+                        hyperparams["experiment"]["training"]["loss"][
+                            "automated_prior_path"
+                        ]
+                    ),
+                    str(hyperparams["dataset"]["dataset_name"]),  # coco
+                    str(
+                        hyperparams["prediction"]["prediction_network_architecture"]
+                    ),  # sam
+                )
+            )
+
+            if not os.path.exists(
+                hyperparams["experiment"]["training"]["loss"]["automated_prior_path"]
+            ):
+                os.makedirs(
+                    hyperparams["experiment"]["training"]["loss"][
+                        "automated_prior_path"
+                    ],
+                    exist_ok=True,
+                )
+
+            group_type = (
+                str(
+                    hyperparams["canonicalization"]["network_hyperparams"]["group_type"]
+                )
+                if hyperparams["canonicalization_type"] == "group_equivariant"
+                else str(hyperparams["canonicalization"]["group_type"])
+            )
+            num_rotations = (
+                str(
+                    hyperparams["canonicalization"]["network_hyperparams"][
+                        "num_rotations"
+                    ]
+                )
+                if hyperparams["canonicalization_type"] == "group_equivariant"
+                else str(hyperparams["canonicalization"]["num_rotations"])
+            )
+
+            hyperparams["experiment"]["training"]["loss"][
+                "automated_prior_path"
+            ] += f"/{group_type}_{num_rotations}_automated_prior.pt"
+
     # set system environment variables for wandb
     if hyperparams["wandb"]["use_wandb"]:
         print("Using wandb for logging...")
@@ -70,7 +118,7 @@ def train_images(hyperparams: DictConfig) -> None:
     else:
         print("Wandb disabled for logging...")
         os.environ["WANDB_MODE"] = "disabled"
-        os.environ["WANDB_DIR"] = hyperparams["wandb"]["wandb_dir"]
+    os.environ["WANDB_DIR"] = hyperparams["wandb"]["wandb_dir"]
     os.environ["WANDB_CACHE_DIR"] = hyperparams["wandb"]["wandb_cache_dir"]
 
     # initialize wandb
@@ -81,7 +129,7 @@ def train_images(hyperparams: DictConfig) -> None:
         dir=hyperparams["wandb"]["wandb_dir"],
     )
     wandb_logger = WandbLogger(
-        project=hyperparams["wandb"]["wandb_project"], log_model="all"
+        project=hyperparams["wandb"]["wandb_project"]  # , log_model="all"
     )
 
     if not hyperparams["experiment"]["run_mode"] == "test":
@@ -93,6 +141,11 @@ def train_images(hyperparams: DictConfig) -> None:
             + str(wandb_run.sweep_id)
             + "_"
             + str(wandb_run.group)
+        )
+
+        # update the wandb config with the checkpoint name
+        wandb_run.config.update(
+            OmegaConf.to_container(hyperparams, resolve=True), allow_val_change=True
         )
 
     # set seed

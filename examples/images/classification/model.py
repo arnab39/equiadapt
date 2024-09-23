@@ -116,9 +116,7 @@ class ImageClassifierPipeline(pl.LightningModule):
         if self.hyperparams.experiment.training.loss.prior_weight:
             if self.hyperparams.experiment.training.loss.automated_prior:
 
-                if self.current_epoch == 0 and not os.path.exists(
-                    self.hyperparams.experiment.training.loss.automated_prior_path
-                ):
+                if self.current_epoch == 0 and not self.automated_prior_exists:
                     # one time effort to get prior and add to self.prior
                     def metric_function(model_predictions, targets):
                         return -F.cross_entropy(
@@ -171,21 +169,12 @@ class ImageClassifierPipeline(pl.LightningModule):
             if os.path.exists(
                 self.hyperparams.experiment.training.loss.automated_prior_path
             ):
+                self.automated_prior_exists = True
                 self.prior = torch.load(
                     self.hyperparams.experiment.training.loss.automated_prior_path
                 ).to(self.device)
             else:
-                os.makedirs(
-                    str.join(
-                        "/",
-                        self.hyperparams.experiment.training.loss.automated_prior_path.split(
-                            "/"
-                        )[
-                            :-1
-                        ],
-                    ),
-                    exist_ok=True,
-                )
+                self.automated_prior_exists = False
                 self.prior = dict()
 
     def on_train_epoch_end(self) -> None:

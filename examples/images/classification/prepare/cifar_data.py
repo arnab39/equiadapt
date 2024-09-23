@@ -18,6 +18,12 @@ class CustomRotationTransform:
         return transforms.functional.rotate(x, angle)
 
 
+class IndexedCIFAR10(CIFAR10):
+    def __getitem__(self, index):
+        img, target = super(IndexedCIFAR10, self).__getitem__(index)
+        return img, target, index
+
+
 class CIFAR10DataModule(pl.LightningDataModule):
     def __init__(self, hyperparams, download=False):
         super().__init__()
@@ -28,7 +34,7 @@ class CIFAR10DataModule(pl.LightningDataModule):
                 [
                     transforms.RandomCrop(32, padding=4),
                     transforms.Resize(224),
-                    transforms.RandomHorizontalFlip(),
+                    # transforms.RandomHorizontalFlip(),
                     transforms.RandomRotation(5),
                     transforms.ToTensor(),
                     transforms.Normalize(
@@ -96,7 +102,7 @@ class CIFAR10DataModule(pl.LightningDataModule):
             # print('Train dataset size: ', len(self.train_dataset))
             # print('Valid dataset size: ', len(self.valid_dataset))
             # Not a good strategy for splitting data but most papers use this
-            self.train_dataset = CIFAR10(
+            self.train_dataset = IndexedCIFAR10(
                 self.data_path,
                 train=True,
                 transform=self.train_transform,
@@ -145,6 +151,12 @@ class CIFAR10DataModule(pl.LightningDataModule):
         return test_loader
 
 
+class IndexedCIFAR100(CIFAR100):
+    def __getitem__(self, index):
+        img, target = super(IndexedCIFAR100, self).__getitem__(index)
+        return img, target, index
+
+
 class CIFAR100DataModule(pl.LightningDataModule):
     def __init__(self, hyperparams, download=False):
         super().__init__()
@@ -155,7 +167,7 @@ class CIFAR100DataModule(pl.LightningDataModule):
                 [
                     transforms.RandomCrop(32, padding=4),
                     transforms.Resize(224),
-                    transforms.RandomHorizontalFlip(),
+                    # transforms.RandomHorizontalFlip(),
                     transforms.RandomRotation(5),
                     transforms.ToTensor(),
                     transforms.Normalize(
@@ -223,7 +235,7 @@ class CIFAR100DataModule(pl.LightningDataModule):
             # print('Train dataset size: ', len(self.train_dataset))
             # print('Valid dataset size: ', len(self.valid_dataset))
             # Not a good strategy for splitting data but most papers use this
-            self.train_dataset = CIFAR100(
+            self.train_dataset = IndexedCIFAR100(
                 self.data_path,
                 train=True,
                 transform=self.train_transform,
