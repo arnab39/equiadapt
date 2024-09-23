@@ -1,0 +1,9 @@
+canonicalization_type: opt_group_equivariant
+network_type: "dgcnn_small" # Options for canonization method 1) dgcnn_small 2) pointnet_small
+network_hyperparams:
+  n_knn: 20 # Number of nearest neighbors to use for the canonization network
+  dropout: 0.2 # Dropout rate
+  output_dim: 64 # Dimension of the output feature vector
+group_discretization_type: 'tetrahedron' # Type of SO3 discretization 1) icosahedron 2) octahedron 3) tetrahedron 4) cube
+learn_ref_vec: False # Whether to learn the reference vector
+beta: 1.0 # Beta parameter for the smoothness of the canonicalization distribution

@@ -3,10 +3,11 @@ import torch
 from omegaconf import DictConfig
 
 from equiadapt.common.basecanonicalization import IdentityCanonicalization
-from equiadapt.pointcloud.canonicalization.continuous_group import (
+from equiadapt.pointcloud.canonicalization import (
     EquivariantPointcloudCanonicalization,
+    OptimizedGroupEquivariantPointcloudCanonicalization
 )
-from equiadapt.pointcloud.canonicalization_networks import VNSmall
+from equiadapt.pointcloud.canonicalization_networks import PointNet_small, DGCNN_small, VNSmall 
 
 
 def get_canonicalization_network(
@@ -26,6 +27,10 @@ def get_canonicalization_network(
     canonicalization_network_dict = {
         "group_equivariant": {
             "vector_neuron_small": VNSmall,
+        },
+        "opt_group_equivariant": {
+            "dgcnn_small": DGCNN_small,
+            "pointnet_small": PointNet_small,
         },
     }
 
@@ -64,6 +69,7 @@ def get_canonicalizer(
 
     canonicalizer_dict = {
         "group_equivariant": EquivariantPointcloudCanonicalization,
+        "opt_group_equivariant": OptimizedGroupEquivariantPointcloudCanonicalization,
     }
 
     if canonicalization_type not in canonicalizer_dict:

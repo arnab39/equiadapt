@@ -35,10 +35,10 @@ class ContinuousGroupPointcloudCanonicalization(ContinuousGroupCanonicalization)
 
     def get_groupelement(self, x: torch.Tensor) -> dict:
         """
-        This method takes the input image and maps it to the group element.
+        This method takes the input pointcloud and maps it to the group element.
 
         Args:
-            x (torch.Tensor): The input image.
+            x (torch.Tensor): The input pointcloud.
 
         Returns:
             dict: The group element.

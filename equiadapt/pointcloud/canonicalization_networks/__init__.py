@@ -3,11 +3,18 @@
 from equiadapt.pointcloud.canonicalization_networks import (
     equivariant_networks,
     vector_neuron_layers,
+    utils,
+    non_equivariant_networks,
 )
 from equiadapt.pointcloud.canonicalization_networks.equivariant_networks import (
     VNSmall,
-    get_graph_feature_cross,
-    knn,
+)
+from equiadapt.pointcloud.canonicalization_networks.utils import (
+    get_graph_feature, knn, get_graph_feature_cross
+)
+from equiadapt.pointcloud.canonicalization_networks.non_equivariant_networks import (
+    DGCNN_small,
+    PointNet_small,
 )
 from equiadapt.pointcloud.canonicalization_networks.vector_neuron_layers import (
     EPS,
@@ -38,4 +45,9 @@ __all__ = [
     "knn",
     "vector_neuron_layers",
     "mean_pool",
+    "non_equivariant_networks",
+    "PointNet_small",
+    "DGCNN_small",
+    "utils",
+    "get_graph_feature",
 ]

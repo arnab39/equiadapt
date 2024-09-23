@@ -8,7 +8,6 @@ import torch.nn.functional as F
 from model_utils import get_prediction_network
 from omegaconf import DictConfig
 from pytorch3d.transforms import Rotate, RotateAxisAngle, random_rotations
-from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
 
 from examples.pointcloud.common.utils import (
     get_canonicalization_network,
@@ -17,6 +16,8 @@ from examples.pointcloud.common.utils import (
     random_scale_point_cloud,
     random_shift_point_cloud,
 )
+
+from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
 
 
 class PointcloudClassificationPipeline(pl.LightningModule):
@@ -92,6 +93,17 @@ class PointcloudClassificationPipeline(pl.LightningModule):
 
         # Canonicalize the pointcloud
         canonicalized_points = self.canonicalizer(points)
+        
+        # add group contrast loss while using optimzation based canonicalization
+        if "opt" in self.hyperparams.canonicalization_type:
+            group_contrast_loss = self.canonicalizer.get_optimization_specific_loss()
+            loss += (
+                group_contrast_loss 
+                * self.hyperparams.experiment.training.loss.group_contrast_weight
+            )
+            training_metrics.update(
+                {"train/optimization_specific_loss": group_contrast_loss}
+            )
 
         # calculate the task loss which is the cross-entropy loss for classification
         if self.hyperparams.experiment.training.loss.task_weight:
