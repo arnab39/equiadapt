@@ -86,6 +86,11 @@ class ModelNetDataset(Dataset):
 
     def __len__(self) -> int:
         return self.data.shape[0]
+    
+class IndexedModelNetDataset(ModelNetDataset):
+    def __getitem__(self, index: int) -> Tuple:
+        points, labels = super().__getitem__(index)
+        return points, labels, index
 
 
 class ModelNetDataModule(pl.LightningDataModule):
@@ -96,7 +101,7 @@ class ModelNetDataModule(pl.LightningDataModule):
 
     def setup(self, stage: Optional[str] = None) -> None:
         if stage == "fit" or stage is None:
-            self.train_dataset = ModelNetDataset(
+            self.train_dataset = IndexedModelNetDataset(
                 root_dir=self.data_path,
                 num_points=self.hyperparams.num_points,
                 partition="train",

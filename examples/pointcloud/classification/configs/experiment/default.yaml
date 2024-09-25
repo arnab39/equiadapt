@@ -17,6 +17,9 @@ training:
   loss:
     task_weight: 1.0 # Weight of the task in the loss function
     prior_weight: 100.0 # Weight of the prior in the loss function if zero dont use it
+    automated_prior: true # Whether to use automated prior weight or not
+    automated_prior_path: "/home/mila/a/arnab.mondal/scratch/equiadapt/pointcloud/prior/" # Directory to save the automated prior weight
+    tau_automated_prior: 0.1 # Tau for the automated prior weight
     group_contrast_weight: 0.0 # Weight of the group contrast in the loss function if zero dont use it
 validation:
   rotation_type: "so3" # Type of rotation to use for validation 1)so3 2)z 3) none

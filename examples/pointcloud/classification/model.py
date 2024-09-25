@@ -1,5 +1,6 @@
 from typing import List, Tuple, Union
 
+import os
 import numpy as np
 import pytorch_lightning as pl
 import sklearn.metrics as metrics
@@ -76,7 +77,8 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         return points
 
     def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
-        points, targets = batch
+        # FIX THE INDEX
+        points, targets, indices = batch
         targets = targets.squeeze()
 
         training_metrics = {}
@@ -123,7 +125,29 @@ class PointcloudClassificationPipeline(pl.LightningModule):
             self.hyperparams.experiment.training.loss.prior_weight
             and self.hyperparams.canonicalization_type != "identity"
         ):
-            prior_loss = self.canonicalizer.get_prior_regularization_loss()
+            if self.hyperparams.experiment.training.loss.automated_prior:
+
+                if self.current_epoch == 0 and not self.automated_prior_exists:
+                    # one time effort to get prior and add to self.prior
+                    def metric_function(model_predictions, targets):
+                        return - F.cross_entropy(model_predictions, targets, reduction="none", ignore_index=255)
+
+                    prior = self.canonicalizer.get_prior(
+                        points,
+                        self.prediction_network,
+                        targets,
+                        metric_function,
+                        tau=self.hyperparams.experiment.training.loss.tau_automated_prior,
+                    )
+
+                    indices_list = indices.tolist()
+                    for i, indices in enumerate(indices_list):
+                        self.prior[indices] = prior[i]
+                else:
+                    prior = self.prior[indices]
+                prior_loss = self.canonicalizer.get_prior_regularization_loss(prior)  # type: ignore
+            else:
+                prior_loss = self.canonicalizer.get_prior_regularization_loss()
             loss += prior_loss * self.hyperparams.experiment.training.loss.prior_weight
             metric_identity = self.canonicalizer.get_identity_metric()
             training_metrics.update(
@@ -142,6 +166,37 @@ class PointcloudClassificationPipeline(pl.LightningModule):
         self.log_dict(training_metrics, on_epoch=True, prog_bar=True, sync_dist=True)
 
         return loss
+    
+    def on_train_epoch_start(self) -> None:
+        if (
+            self.current_epoch == 0
+            and self.hyperparams.experiment.training.loss.automated_prior
+        ):
+            if os.path.exists(
+                self.hyperparams.experiment.training.loss.automated_prior_path
+            ):
+                self.automated_prior_exists = True
+                self.prior = torch.load(
+                    self.hyperparams.experiment.training.loss.automated_prior_path
+                ).to(self.device)
+            else:
+                self.automated_prior_exists = False
+                self.prior = dict()
+
+    def on_train_epoch_end(self) -> None:
+        if (
+            self.current_epoch == 0
+            and self.hyperparams.experiment.training.loss.automated_prior
+            and not os.path.exists(
+                self.hyperparams.experiment.training.loss.automated_prior_path
+            )
+        ):
+            # convert self.prior dictionary into a tensor and save it
+            self.prior = torch.stack(list(self.prior.values()))
+            torch.save(
+                self.prior,
+                self.hyperparams.experiment.training.loss.automated_prior_path,
+            )
 
     def on_validation_epoch_start(self) -> None:
         self.test_pred: List[np.ndarray] = []

@@ -113,7 +113,10 @@ class ImageClassifierPipeline(pl.LightningModule):
             training_metrics.update({"train/task_loss": task_loss, "train/acc": acc})
 
         # Add prior regularization loss if the prior weight is non-zero
-        if self.hyperparams.experiment.training.loss.prior_weight:
+        if (
+            self.hyperparams.experiment.training.loss.prior_weight
+            and self.hyperparams.canonicalization_type != "identity"
+        ):
             if self.hyperparams.experiment.training.loss.automated_prior:
 
                 if self.current_epoch == 0 and not self.automated_prior_exists:
@@ -131,7 +134,7 @@ class ImageClassifierPipeline(pl.LightningModule):
                         tau=self.hyperparams.experiment.training.loss.tau_automated_prior,
                     )
 
-                    indices_list = indices.tolist()
+                    indices_list = indices.tolist()get_prediction_network
                     for i, indices in enumerate(indices_list):
                         self.prior[indices] = prior[i]
                 else:

@@ -22,5 +22,13 @@ def get_prediction_network(
         )
 
     prediction_network = model_dict[architecture](hyperparams.network_hyperparams)
+    
+    # first train a model with identity canonicalization (or look online for pointnet pretrained model)
+    # load and remove last later as in image experiments
+    # look for Mamba3D weights on huggingface
+    # model is fixed only train the canonicalizer
+    # first time, need to run prior calculation with samll batch size
+    # second time, train canonicalizer
+    # shapenet benchmark from papers with code (same thing for segmentation)
 
     return prediction_network

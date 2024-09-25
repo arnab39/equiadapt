@@ -85,7 +85,7 @@ class DiscreteGroupPointcloudCanonicalization(DiscreteGroupCanonicalization):
         rotations_transposed = rotations_expanded.transpose(-1, -2)  # (1, num_group, 3, 3)
         
 
-        # Perform batched matrix multiplication
+        # Perform batched matrix multiplicationequiadapt
         # x_expanded: (batch_size, num_group, num_points, 3)
         # rotations_transposed: (1, num_group, 3, 3)
         # Resulting x_rotated: (batch_size, num_group, num_points, 3)
@@ -203,6 +203,55 @@ class DiscreteGroupPointcloudCanonicalization(DiscreteGroupCanonicalization):
         x_inverted = torch.matmul(x_canonicalized_out, Rot_inv.transpose(1, 2))  # (batch_size, num_points, feature_dim)
 
         return x_inverted
+    
+    def get_prior(
+        self,
+        x: torch.Tensor,
+        model: torch.nn.Module,
+        targets: torch.Tensor,
+        metric_function: torch.nn.Module,
+        tau: float = 1.0,
+    ) -> torch.Tensor:
+        """
+        Get the prior for the input images.
+
+        Args:
+            x (torch.Tensor): The input images. shape = (batch_size, in_channels, height, width)
+            model (torch.nn.Module): The prediction model which decides the prior.
+            targets (torch.Tensor): The targets for the task. shape = eg. (batch_size, num_classes)
+            metric_function (torch.nn.Module): The function to calculate the unnormalized probability masses for each group element.
+            tau (float, optional): The temperature parameter. Defaults to 1.0. Decides the sharpness of the prior distribution.
+
+        Returns:
+            torch.Tensor: output prior of the model and x. shape = (batch_size, group_size)
+        """
+        batch_size = x.shape[0]
+        with torch.no_grad():
+            x_augmented = self.group_augment(x.transpose(1,2)).transpose(1,2)  # Shape (batch_size * num_group, num_points, 3)
+            targets_augmented = targets.repeat(
+                    self.num_group, 1
+                ).flatten()  # size (group_size * batch_size)
+
+            # Get the output of the model for the augmented images
+            model_output = model(
+                x_augmented
+            )  # size (group_size * batch_size, num_classes)
+            
+
+            # Get the unnormalized probability masses for each group element
+            unnormalized_prob_masses = (
+                    metric_function(model_output, targets_augmented)
+                    .reshape(self.num_group, batch_size)
+                    .transpose(0, 1)
+                )  # size (batch_size, group_size)
+
+            # Get the prior for the input images
+            prior = F.softmax(
+                unnormalized_prob_masses / tau, dim=-1
+            )  # size (batch_size, group_size)
+
+        return prior
+        
 
 
 class OptimizedGroupEquivariantPointcloudCanonicalization(DiscreteGroupPointcloudCanonicalization):
