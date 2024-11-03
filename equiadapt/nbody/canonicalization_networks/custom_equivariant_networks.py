@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -51,8 +51,10 @@ class VNDeepSets(nn.Module):
     ) -> None:
         super().__init__()
         self.device: str = device
-        self.learning_rate: float = (
-            hyperparams.learning_rate if hasattr(hyperparams, "learning_rate") else None
+        self.learning_rate: Optional[float] = (
+            float(hyperparams.learning_rate)
+            if hasattr(hyperparams, "learning_rate")
+            else None
         )
         self.weight_decay: float = (
             hyperparams.weight_decay if hasattr(hyperparams, "weight_decay") else 0.0

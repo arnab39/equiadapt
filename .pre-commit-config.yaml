@@ -40,7 +40,7 @@ repos:
   - id: isort
 
 - repo: https://github.com/psf/black
-  rev: 24.4.2
+  rev: 24.10.0
   hooks:
   - id: black
     language_version: python3
@@ -53,7 +53,7 @@ repos:
 #     additional_dependencies: [black]
 
 - repo: https://github.com/PyCQA/flake8
-  rev: 7.0.0
+  rev: 7.1.1
   hooks:
   - id: flake8
     additional_dependencies: [flake8-docstrings]
@@ -66,7 +66,7 @@ repos:
 
 # Check for type errors with mypy:
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 'v1.10.0'
+  rev: 'v1.13.0'
   hooks:
   - id: mypy
     args: [--disallow-untyped-defs, --ignore-missing-imports]

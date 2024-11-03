@@ -300,8 +300,10 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
     #         self.device
     #     )
     #     return torch.nn.CrossEntropyLoss()(group_activations, dataset_prior)
-    
-    def get_prior_regularization_loss(self, dataset_prior: Optional[torch.Tensor] = None) -> torch.Tensor:
+
+    def get_prior_regularization_loss(
+        self, dataset_prior: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         """
         Gets the prior regularization loss.
 
@@ -322,7 +324,7 @@ class DiscreteGroupCanonicalization(BaseCanonicalization):
         log_group_activations = F.log_softmax(group_activations, dim=1)
 
         # KL Divergence
-        return F.kl_div(log_group_activations, dataset_prior, reduction='batchmean')
+        return F.kl_div(log_group_activations, dataset_prior, reduction="batchmean")
 
     def get_identity_metric(self) -> torch.Tensor:
         """
@@ -430,7 +432,6 @@ class ContinuousGroupCanonicalization(BaseCanonicalization):
             .to(self.device)
         )
         return torch.nn.MSELoss()(group_elements_rep, dataset_prior)
-    
 
     def get_identity_metric(self) -> torch.Tensor:
         """

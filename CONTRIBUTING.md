@@ -224,7 +224,7 @@ package:
    ```
 
 3. Make sure to have a reliable [tox] installation that uses the correct
-   Python version (e.g., 3.7+). When in doubt you can run:
+   Python version (e.g., 3.8+). When in doubt you can run:
 
    ```
    tox --version
