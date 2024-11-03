@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import kornia as K
 import torch
-from omegaconf import DictConfig
+from omegaconf import DictConfig, ListConfig
 from torch.nn import functional as F
 from torchvision import transforms
 
@@ -98,13 +98,22 @@ class DiscreteGroupImageCanonicalization(DiscreteGroupCanonicalization):
             if in_shape[0] == 1
             else transforms.CenterCrop(group_augment_in_shape)
         )
-        self.pad_group_augment = (
-            torch.nn.Identity()
-            if in_shape[0] == 1
-            else transforms.Pad(
-                math.ceil(group_augment_in_shape * 0.5), padding_mode="edge"
-            )
-        )
+        self._set_pad_group_augment(in_shape, group_augment_in_shape)
+
+    def _set_pad_group_augment(
+        self, in_shape: tuple, group_augment_in_shape: Union[ListConfig, float]
+    ) -> None:
+        if in_shape[0] == 1:
+            self.pad_group_augment = torch.nn.Identity()
+        else:
+            padding = []
+            if isinstance(group_augment_in_shape, ListConfig):
+                for i in range(len(group_augment_in_shape)):
+                    padding.append(math.ceil(group_augment_in_shape[i] * 0.5))
+            else:
+                padding.append(math.ceil(group_augment_in_shape * 0.5))
+
+            self.pad_group_augment = transforms.Pad(padding, padding_mode="edge")
 
     def rotate_and_maybe_reflect(
         self, x: torch.Tensor, degrees: torch.Tensor, reflect: bool = False
