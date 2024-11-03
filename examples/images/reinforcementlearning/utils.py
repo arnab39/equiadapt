@@ -1,15 +1,17 @@
 import random
 from collections import namedtuple
-import dotenv
 from typing import Optional
 
+import dotenv
+
 # Define Transition as a namedtuple for better structure and readability
-Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
+
 
 class ReplayMemory:
     def __init__(self, capacity):
         """Initialize the ReplayMemory with a fixed capacity.
-        
+
         Args:
             capacity (int): The maximum size of the memory.
         """
@@ -19,7 +21,7 @@ class ReplayMemory:
 
     def push(self, state, action, next_state, reward):
         """Saves a transition into memory.
-        
+
         Overwrites the oldest transition if memory is at capacity.
         Args:
             state: The state of the environment before taking the action.
@@ -29,7 +31,7 @@ class ReplayMemory:
         """
         # Create a Transition from the given arguments
         transition = Transition(state, action, next_state, reward)
-        
+
         # Check if there is still room to append a new transition
         if len(self.memory) < self.capacity:
             self.memory.append(None)
@@ -40,10 +42,10 @@ class ReplayMemory:
 
     def sample(self, batch_size):
         """Samples a batch of transitions from memory.
-        
+
         Args:
             batch_size (int): Number of transitions to sample.
-        
+
         Returns:
             list: A list of randomly sampled transitions.
         """
@@ -52,6 +54,7 @@ class ReplayMemory:
     def __len__(self):
         """Return the current size of internal memory."""
         return len(self.memory)
+
 
 def load_envs(env_file: Optional[str] = None) -> None:
     """

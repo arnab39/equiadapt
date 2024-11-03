@@ -1,7 +1,9 @@
+import random
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import random
+
 
 class DQN(nn.Module):
     def __init__(self, input_shape, num_actions, dueling_DQN=False):
@@ -20,7 +22,7 @@ class DQN(nn.Module):
             nn.ReLU(),
             nn.Conv2d(64, 64, kernel_size=5, stride=2),
             nn.BatchNorm2d(64),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         feature_size = self._get_feature_size()
@@ -30,20 +32,20 @@ class DQN(nn.Module):
                 nn.Linear(feature_size, 512),
                 nn.BatchNorm1d(512),
                 nn.ReLU(),
-                nn.Linear(512, self.num_actions)
+                nn.Linear(512, self.num_actions),
             )
             self.value = nn.Sequential(
                 nn.Linear(feature_size, 512),
                 nn.BatchNorm1d(512),
                 nn.ReLU(),
-                nn.Linear(512, 1)
+                nn.Linear(512, 1),
             )
         else:
             self.action_value = nn.Sequential(
                 nn.Linear(feature_size, 512),
                 nn.BatchNorm1d(512),
                 nn.ReLU(),
-                nn.Linear(512, self.num_actions)
+                nn.Linear(512, self.num_actions),
             )
 
     def forward(self, x):
@@ -57,11 +59,10 @@ class DQN(nn.Module):
             q_values = value + (advantage - advantage.mean(dim=1, keepdim=True))
         else:
             q_values = self.action_value(x)
-        
+
         return q_values
 
     def _get_feature_size(self):
         self.features.eval()
         with torch.no_grad():
             return self.features(torch.zeros(1, *self.input_shape)).view(1, -1).size(1)
-
