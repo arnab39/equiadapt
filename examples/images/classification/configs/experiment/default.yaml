@@ -13,6 +13,7 @@ training:
   loss:
     task_weight: 1.0 # Weight of the task loss in the total loss
     prior_weight: 100.0 # Weight of the prior in the loss function if zero dont use it
+    automated_prior: true # Whether to use automated prior weight or not
     group_contrast_weight: 0 # Weight of the group contrastive loss (set to 0 for group_equivariant, 0.0001 for opt_equivariant)
 inference:
   method: group # Type of inference options 1) vanilla 2) group
