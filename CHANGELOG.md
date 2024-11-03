@@ -10,9 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Fixed
+- Initialization of padding parameters in `DiscreteGroupImageCanonicalization` class, allowing for multiple types of `resize_shape`.
 
 ### Changed
 - Increased minimum Python version to 3.8.
+- Specified maximum NumPy version as <2.0.
 
 ### Removed
 
